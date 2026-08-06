@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro EduCreator Studio - Offline</title>
+    <!-- Tailwind CSS for sleek UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1e1e1e; color: white; user-select: none; }
+        
+        /* The Canvas Area */
+        #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
+        #slide-image { max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; z-index: 1; }
+        #drawing-canvas { position: absolute; z-index: 10; cursor: crosshair; }
+        
+        /* Custom Bandicam-style Cursor for Pen */
+        .pen-cursor { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>') 0 24, auto; }
+        
+        /* iPad Style Ink Buttons Bottom Left */
+        .ink-toolbar { position: absolute; bottom: 20px; left: 20px; z-index: 50; display: flex; gap: 12px; background: rgba(30, 30, 30, 0.8); padding: 10px 20px; border-radius: 30px; backdrop-filter: blur(10px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .ink-btn { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; position: relative; }
+        .ink-btn.active { transform: translateY(-8px) scale(1.1); border-color: white; box-shadow: 0 5px 15px rgba(255,255,255,0.3); }
+        
+        /* Glowing Pen Animation */
+        .glow-pen { background: radial-gradient(circle, #ff007f, #8a2be2); animation: pulseGlow 1.5s infinite alternate; }
+        @keyframes pulseGlow { 0% { box-shadow: 0 0 5px #ff007f; } 100% { box-shadow: 0 0 20px #8a2be2, 0 0 30px #ff007f; } }
+        
+        /* Bandicam Style Recorder Panel Right Side */
+        .recorder-panel { position: absolute; top: 20px; right: 20px; z-index: 50; background: #2c2c2c; width: 300px; border-radius: 10px; border: 1px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.8); padding: 15px; }
+        .record-btn { background: #e74c3c; transition: 0.3s; }
+        .record-btn:hover { background: #c0392b; }
+        .record-btn.recording { background: #e67e22; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* Slide Navigation Bottom Center */
+        .slide-nav { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; gap: 15px; background: rgba(0,0,0,0.7); padding: 10px 25px; border-radius: 30px; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Presentation & Canvas Area -->
+    <div id="presentation-area">
+        <!-- Default Text if no slides loaded -->
+        <div id="upload-prompt" class="absolute z-0 flex flex-col items-center justify-center text-gray-400">
+            <i class="fas fa-file-image text-6xl mb-4"></i>
+            <h2 class="text-2xl font-bold mb-2">PPT इमेजेस अपलोड करें</h2>
+            <p>अपनी PPT को Images (PNG/JPG) में सेव करें और यहाँ अपलोड करें (100% Quality)</p>
+            <input type="file" id="slide-upload" multiple accept="image/*" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
+        </div>
+
+        <img id="slide-image" src="" style="display: none;">
+        <canvas id="drawing-canvas" class="pen-cursor"></canvas>
+    </div>
+
+    <!-- iPad Style Ink Toolbar (Bottom Left) -->
+    <div class="ink-toolbar" id="toolbar" style="display: none;">
+        <!-- Glowing Pen -->
+        <button class="ink-btn glow-pen active" data-color="glow" data-size="4" title="Glowing Pen"></button>
+        <!-- Normal Pens -->
+        <button class="ink-btn bg-white" data-color="#ffffff" data-size="3" title="White Pen"></button>
+        <button class="ink-btn bg-yellow-400" data-color="#facc15" data-size="3" title="Yellow Pen"></button>
+        <button class="ink-btn bg-blue-500" data-color="#3b82f6" data-size="3" title="Blue Pen"></button>
+        <!-- Highlighter -->
+        <button class="ink-btn bg-green-400 opacity-80 border-dashed border-2" data-color="rgba(74, 222, 128, 0.4)" data-size="20" title="Highlighter"></button>
+        <!-- Eraser -->
+        <button class="ink-btn bg-gray-600 flex items-center justify-center text-white" data-color="erase" title="Eraser">
+            <i class="fas fa-eraser text-xs"></i>
+        </button>
+        <!-- Clear All -->
+        <button id="clear-slide" class="ml-2 text-gray-300 hover:text-red-500" title="Clear Slide"><i class="fas fa-trash"></i></button>
+    </div>
+
+    <!-- Slide Navigation (Bottom Center) -->
+    <div class="slide-nav" id="slide-nav" style="display: none;">
+        <button id="prev-btn" class="text-white hover:text-blue-400"><i class="fas fa-chevron-left fa-lg"></i></button>
+        <span id="slide-counter" class="text-white font-bold text-lg">1 / 1</span>
+        <button id="next-btn" class="text-white hover:text-blue-400"><i class="fas fa-chevron-right fa-lg"></i></button>
+    </div>
+
+    <!-- Bandicam Style Recorder Panel (Top Right) -->
+    <div class="recorder-panel">
+        <div class="flex justify-between items-center border-b border-gray-600 pb-2 mb-3">
+            <h3 class="font-bold text-lg"><i class="fas fa-video text-red-500 mr-2"></i>Screen Recorder</h3>
+            <button id="hide-ui-btn" class="text-sm text-gray-400 hover:text-white" title="Hide UI in Video">Hide UI</button>
+        </div>
+        
+        <div class="mb-4 text-sm text-gray-300">
+            <p class="mb-1"><i class="fas fa-check-circle text-green-400 mr-1"></i> Quality: 1080p 60FPS</p>
+            <p><i class="fas fa-check-circle text-green-400 mr-1"></i> Smart MB Saver (VP9 Codec)</p>
+        </div>
+
+        <button id="record-btn" class="record-btn w-full py-2 rounded font-bold text-white shadow-lg flex items-center justify-center">
+            <i class="fas fa-circle mr-2 text-xs"></i> START RECORDING
+        </button>
+    </div>
+
+    <script>
+        // --- 1. SLIDE MANAGEMENT SYSTEM ---
+        let slides = [];
+        let currentSlideIndex = 0;
+        let slideInks = {}; // Stores drawing data for each slide
+
+        const uploadInput = document.getElementById('slide-upload');
+        const slideImage = document.getElementById('slide-image');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const slideCounter = document.getElementById('slide-counter');
+
+        uploadInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files).sort((a, b) => a.name.localeCompare(b.name));
+            if(files.length > 0) {
+                slides = files.map(file => URL.createObjectURL(file));
+                uploadPrompt.style.display = 'none';
+                slideImage.style.display = 'block';
+                document.getElementById('toolbar').style.display = 'flex';
+                document.getElementById('slide-nav').style.display = 'flex';
+                loadSlide(0);
+            }
+        });
+
+        function loadSlide(index) {
+            // Save current ink before switching
+            saveCurrentInk();
+            
+            currentSlideIndex = index;
+            slideImage.src = slides[currentSlideIndex];
+            slideCounter.innerText = `${currentSlideIndex + 1} / ${slides.length}`;
+            
+            // Wait for image to load to resize canvas
+            slideImage.onload = () => {
+                resizeCanvas();
+                restoreInk(); // Load ink for this slide
+            };
+        }
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1);
+        });
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1);
+        });
+
+        // --- 2. ADVANCED iPAD STYLE INKING SYSTEM ---
+        const canvas = document.getElementById('drawing-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+        let currentPenSettings = { color: 'glow', size: 4, type: 'glow' };
+
+        function resizeCanvas() {
+            // Match canvas size to the presentation area exactly
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // iPad Pointer Events (Supports Mouse, Touch, & Stylus Pressure)
+        canvas.addEventListener('pointerdown', (e) => {
+            isDrawing = true;
+            [lastX, lastY] = [e.clientX, e.clientY];
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDrawing) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.clientX, e.clientY);
+
+            // Pressure Sensitivity (Apple Pencil/Stylus support)
+            let pressure = e.pressure !== 0 ? e.pressure : 0.5; // Default 0.5 if mouse
+            let dynamicSize = currentPenSettings.size * (0.5 + pressure);
+
+            if (currentPenSettings.type === 'erase') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 30; // Big eraser
+                ctx.shadowBlur = 0;
+            } else if (currentPenSettings.type === 'glow') {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.lineWidth = dynamicSize;
+                ctx.strokeStyle = '#fff'; // Inner core
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ff007f'; // Glow outer
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.lineWidth = dynamicSize;
+                ctx.strokeStyle = currentPenSettings.color;
+                ctx.shadowBlur = 0; // No glow for normal pens
+            }
+
+            ctx.stroke();
+            [lastX, lastY] = [e.clientX, e.clientY];
+        });
+
+        canvas.addEventListener('pointerup', () => isDrawing = false);
+        canvas.addEventListener('pointerout', () => isDrawing = false);
+
+        // Pen Selection Logic
+        document.querySelectorAll('.ink-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.ink-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                let color = btn.getAttribute('data-color');
+                let size = btn.getAttribute('data-size');
+                
+                if (color === 'glow') {
+                    currentPenSettings = { type: 'glow', size: size };
+                } else if (color === 'erase') {
+                    currentPenSettings = { type: 'erase', size: size };
+                } else {
+                    currentPenSettings = { type: 'normal', color: color, size: size };
+                }
+            });
+        });
+
+        document.getElementById('clear-slide').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // Save and Restore Ink per Slide
+        function saveCurrentInk() {
+            slideInks[currentSlideIndex] = canvas.toDataURL();
+        }
+        function restoreInk() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (slideInks[currentSlideIndex]) {
+                let img = new Image();
+                img.src = slideInks[currentSlideIndex];
+                img.onload = () => ctx.drawImage(img, 0, 0);
+            }
+        }
+
+        // --- 3. BANDICAM STYLE SMART SCREEN RECORDER ---
+        let mediaRecorder;
+        let recordedChunks = [];
+        const recordBtn = document.getElementById('record-btn');
+        const uiElements = [document.querySelector('.recorder-panel'), document.getElementById('toolbar'), document.getElementById('slide-nav')];
+        let isUIHidden = false;
+
+        document.getElementById('hide-ui-btn').addEventListener('click', () => {
+            isUIHidden = !isUIHidden;
+            uiElements[1].style.display = isUIHidden ? 'none' : 'flex'; // Toolbar
+            uiElements[2].style.display = isUIHidden ? 'none' : 'flex'; // Nav
+            document.getElementById('hide-ui-btn').innerText = isUIHidden ? 'Show UI' : 'Hide UI';
+            // Note: We don't hide the recorder panel itself so you can stop recording!
+        });
+
+        recordBtn.addEventListener('click', async () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                // STOP RECORDING
+                mediaRecorder.stop();
+                recordBtn.classList.remove('recording');
+                recordBtn.innerHTML = '<i class="fas fa-circle mr-2 text-xs"></i> START RECORDING';
+                return;
+            }
+
+            // START RECORDING
+            try {
+                // Request 1080p 60fps high quality screen stream
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } },
+                    audio: true // Captures system/mic audio if user allows
+                });
+
+                // VP9 Codec: The secret to "Smart MB Saver". It drops bitrate when the screen is static!
+                const options = { mimeType: 'video/webm; codecs=vp9' };
+                mediaRecorder = new MediaRecorder(stream, options);
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    // Auto-Save Offline to Gallery/Downloads
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `ProEduVideo_${new Date().getTime()}.webm`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    recordedChunks = [];
+                    alert("Recording Saved Offline Successfully! (MB saved thanks to VP9 Smart Encoding)");
+                };
+
+                mediaRecorder.start();
+                recordBtn.classList.add('recording');
+                recordBtn.innerHTML = '<i class="fas fa-stop mr-2"></i> STOP RECORDING';
+
+            } catch (err) {
+                console.error("Error: " + err);
+                alert("Recording cancelled or permission denied.");
+            }
+        });
+
+    </script>
+</body>
+</html>
