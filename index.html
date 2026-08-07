@@ -14,10 +14,21 @@
         #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
         #slide-image { max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; z-index: 1; }
         
-        /* Canvas Styling (Cursor is now handled dynamically via JavaScript) */
         #drawing-canvas { 
             position: absolute; 
             z-index: 10; 
+            cursor: none; 
+        }
+
+        /* Custom Vector Pen Cursor (No external file needed, 100% working locally) */
+        #custom-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            display: none;
+            width: 32px;
+            height: 32px;
+            transform: translate(0px, 0px);
         }
         
         /* Toolbar - Bottom Left */
@@ -77,6 +88,13 @@
     </style>
 </head>
 <body>
+
+    <!-- Embedded High-Precision Pen Cursor (No Missing File Issues) -->
+    <svg id="custom-cursor" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 21L6.5 20.5L19 8L16 5L3.5 17.5L3 21Z" fill="#3b82f6" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14.5 6.5L17.5 9.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="3.5" cy="20.5" r="1.5" fill="#ffffff"/>
+    </svg>
 
     <!-- Loading Screen -->
     <div id="loading-screen">
@@ -173,7 +191,6 @@
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
 
-            // Warn about PPTX
             if (files[0].name.toLowerCase().endsWith('.ppt') || files[0].name.toLowerCase().endsWith('.pptx')) {
                 alert("चेतावनी: आपने PPTX फाइल चुनी है। ब्राउज़र बिना सर्वर के कस्टम हिंदी फॉन्ट और लेआउट को सही से रेंडर नहीं कर सकता। अच्छे रिजल्ट्स के लिए कृपया PowerPoint से Save As -> PDF करके ही अपलोड करें।");
                 return; 
@@ -236,9 +253,10 @@
         document.getElementById('prev-btn').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
         document.getElementById('next-btn').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
 
-        // --- 2. ADVANCED SMOOTH INKING SYSTEM & CUSTOM CURSOR ---
+        // --- 2. ADVANCED SMOOTH INKING SYSTEM & JS CUSTOM CURSOR ---
         const canvas = document.getElementById('drawing-canvas');
         const ctx = canvas.getContext('2d');
+        const customCursor = document.getElementById('custom-cursor');
         let isDrawing = false;
         let points = []; 
         
@@ -268,21 +286,36 @@
             Object.values(tools).forEach(btn => btn.classList.remove('active'));
             tools[mode].classList.add('active');
             
-            // Adjust default sizes for tools
             if(mode === 'highlighter') sizeSlider.value = 25;
             else if(mode === 'eraser') sizeSlider.value = 35;
             else sizeSlider.value = 5;
 
-            // --- CURSOR LOGIC FIX ---
             if (mode === 'eraser') {
-                canvas.style.cursor = "crosshair"; // इरेज़र के लिए नार्मल कर्सर
+                customCursor.style.display = 'none';
+                canvas.style.cursor = 'crosshair';
             } else {
-                // पेन और हाइलाइटर के लिए Bandicam वाला इमेज कर्सर
-                canvas.style.cursor = "url('image_017e65.png') 0 0, crosshair";
+                customCursor.style.display = 'block';
+                canvas.style.cursor = 'none';
             }
         }
 
-        // Initialize default tool and cursor on load
+        window.addEventListener('mousemove', (e) => {
+            if (currentMode !== 'eraser') {
+                customCursor.style.left = (e.clientX - 2) + 'px';
+                customCursor.style.top = (e.clientY - 20) + 'px';
+            }
+        });
+
+        document.addEventListener('mouseleave', () => {
+            customCursor.style.display = 'none';
+        });
+
+        document.addEventListener('mouseenter', () => {
+            if (currentMode !== 'eraser' && document.getElementById('toolbar').style.display !== 'none') {
+                customCursor.style.display = 'block';
+            }
+        });
+
         setActiveTool('glow');
 
         colorPicker.addEventListener('input', (e) => {
