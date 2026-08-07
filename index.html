@@ -2,165 +2,574 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro EduCreator Studio - Optimized</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pro EduCreator Studio - Fully Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
-        * { box-sizing: border-box; touch-action: none; }
+        * { box-sizing: border-box; }
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #050505; color: white; 
-            font-family: sans-serif; 
+            overflow: hidden; background-color: #0b0b0e; color: white; 
+            user-select: none; touch-action: none; cursor: default; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
         
-        /* Container ensuring alignment */
-        #viewport-container {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            display: flex; justify-content: center; align-items: center;
+        #presentation-area { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            width: 100dvw; height: 100dvh; display: flex; justify-content: center; 
+            align-items: center; background: #030305; overflow: hidden;
         }
 
-        #canvas-wrapper {
+        /* Perfect Sync Wrapper for Slide & Canvas */
+        #slide-container {
             position: relative;
-            width: 100%; height: 100%;
-            max-width: 100%; max-height: 100%;
-            display: flex; justify-content: center; align-items: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         #slide-image { 
-            max-width: 100%; max-height: 100%; object-fit: contain;
-            position: absolute; z-index: 1;
+            max-width: 100vw; max-height: 100vh; 
+            object-fit: contain; z-index: 1; border-radius: 4px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
+            display: block;
         }
         
         #drawing-canvas { 
-            position: absolute; z-index: 2;
-            width: 100%; height: 100%;
-            cursor: crosshair;
+            position: absolute; 
+            z-index: 10; 
+            cursor: crosshair; 
+        }
+        
+        #upload-prompt {
+            position: absolute; z-index: 1000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            background: #18181b; padding: 30px; border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 400px; width: 90%;
         }
 
-        /* UI elements */
-        #upload-prompt { z-index: 100; position: absolute; background: #18181b; padding: 30px; border-radius: 20px; border: 1px solid #333; text-align: center; }
-        .ipad-dock { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 100; display: none; flex-direction: row; gap: 8px; background: rgba(0,0,0,0.7); padding: 8px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
-        .dock-btn { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #222; border: 1px solid #444; color: white; cursor: pointer; }
-        .dock-btn.active { background: #0a84ff; border-color: #0a84ff; }
-        .recorder-ui { position: absolute; top: 15px; right: 15px; z-index: 100; display: none; gap: 10px; }
-        .rec-circle-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+        .ipad-dock { 
+            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 100; 
+            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
+            padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
+            align-items: center; max-width: 85vw; overflow-x: auto;
+        }
+        
+        .dock-btn { 
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer; 
+            border: 1px solid transparent; transition: all 0.2s; 
+            display: flex; justify-content: center; align-items: center; 
+            background: rgba(255, 255, 255, 0.06); color: white; font-size: 11px; flex-shrink: 0;
+        }
+        .dock-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
+        .dock-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 8px rgba(10, 132, 255, 0.5); }
+        
+        .color-picker-wrapper { position: relative; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+        #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
+        
+        .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
+        .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
+
+        .side-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
+            width: 36px; height: 50px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
+            color: white; display: none; justify-content: center; align-items: center; cursor: pointer;
+            backdrop-filter: blur(10px); transition: 0.2s; font-size: 14px;
+        }
+        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.8); }
+        #left-nav { left: 0; border-radius: 0 8px 8px 0; }
+        #right-nav { right: 0; border-radius: 8px 0 0 8px; }
+
+        .recorder-ui { 
+            position: absolute; top: 12px; right: 12px; z-index: 100; 
+            display: none; align-items: center; gap: 6px;
+        }
+        
+        .rec-circle-btn {
+            width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: 0.3s; color: white; font-size: 11px;
+        }
+        #btn-start { background: #30d158; }
+        #btn-start:hover { background: #28b84d; transform: scale(1.05); }
+        #btn-stop { background: #ff453a; display: none; animation: pulse 1.5s infinite; }
+        #btn-settings { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        #btn-settings:hover { background: rgba(255,255,255,0.25); }
+
+        #rec-settings-menu {
+            position: absolute; top: 45px; right: 0; width: 230px;
+            background: rgba(20, 20, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 10px;
+        }
+        .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; }
+        .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
+
+        .timer-badge {
+            background: rgba(20, 20, 25, 0.85); padding: 2px 6px; border-radius: 12px;
+            font-family: monospace; font-size: 10px; font-weight: bold; border: 1px solid rgba(255,255,255,0.12); display: none; backdrop-filter: blur(10px);
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
+
+        #loading-screen { display: none; position: absolute; z-index: 2000; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #0a84ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="viewport-container">
+    <div id="loading-screen">
+        <div class="spinner mb-3"></div>
+        <h2 id="loading-text" class="text-sm font-medium text-white">फाइल हाई-क्वालिटी में प्रोसेस हो रही है...</h2>
+    </div>
+
+    <div id="presentation-area">
         <div id="upload-prompt">
-            <h2 class="text-white text-lg font-bold mb-4">फाइल अपलोड करें</h2>
-            <button id="browse-btn" class="bg-[#0a84ff] text-white px-6 py-2 rounded-full font-semibold">फाइल चुनें</button>
-            <input type="file" id="slide-upload" accept=".pdf, image/*" multiple style="display: none;">
+            <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
+            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
+            <p class="text-[11px] mb-4 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और वीडियो रिकॉर्डिंग शुरू करें।</p>
+            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
+                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
+            </button>
+            <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
         </div>
 
-        <div id="canvas-wrapper">
+        <div id="slide-container">
             <img id="slide-image" src="" style="display: none;">
             <canvas id="drawing-canvas"></canvas>
         </div>
+
+        <button class="side-nav-btn" id="left-nav" title="पिछला स्लाइड"><i class="fas fa-chevron-left"></i></button>
+        <button class="side-nav-btn" id="right-nav" title="अगला स्लाइड"><i class="fas fa-chevron-right"></i></button>
     </div>
 
-    <!-- Toolbar & Recorder (Simplified for stability) -->
+    <div class="recorder-ui" id="recorder-ui">
+        <span class="timer-badge" id="timer-text">00:00</span>
+        <button class="rec-circle-btn" id="btn-start" title="Start Recording"><i class="fas fa-video"></i></button>
+        <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
+        <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
+
+        <div id="rec-settings-menu">
+            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व अनुमतियाँ</div>
+            <div class="rec-setting-item">
+                <span>माइक्रोफोन (Mic Audio):</span>
+                <input type="checkbox" id="setting-mic" checked>
+            </div>
+            <div class="rec-setting-item">
+                <span>वीडियो क्वालिटी (Quality):</span>
+                <select id="setting-quality">
+                    <option value="high">High (1080p)</option>
+                    <option value="medium" selected>Standard (720p)</option>
+                </select>
+            </div>
+            <div class="rec-setting-item">
+                <span>फॉर्मेट (Format):</span>
+                <select id="setting-format">
+                    <option value="webm" selected>WebM (बेस्ट प्लेबैक)</option>
+                    <option value="mp4">MP4 (यदि समर्थित हो)</option>
+                </select>
+            </div>
+            <button id="btn-request-permission" class="mt-1 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
+                <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
+            </button>
+        </div>
+    </div>
+
     <div class="ipad-dock" id="toolbar">
-        <button class="dock-btn active" id="glow-pen-btn"><i class="fas fa-magic"></i></button>
-        <button class="dock-btn" id="eraser-btn"><i class="fas fa-eraser"></i></button>
-        <button class="dock-btn" id="clear-btn" style="color:#ff453a"><i class="fas fa-trash"></i></button>
-    </div>
-
-    <div class="recorder-ui" id="recorder-ui" style="display: flex;">
-        <button class="rec-circle-btn" id="btn-start" style="background: #30d158;"><i class="fas fa-video"></i></button>
-        <button class="rec-circle-btn" id="btn-stop" style="background: #ff453a; display: none;"><i class="fas fa-stop"></i></button>
+        <span id="slide-counter" class="text-white text-[10px] font-bold px-1 tracking-wider">1/1</span>
+        <div class="dock-divider"></div>
+        <div class="color-picker-wrapper" title="रंग बदलें (Color)">
+            <input type="color" id="color-picker" value="#ffff00">
+            <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[8px]"></i></button>
+        </div>
+        <button class="dock-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic text-[9px]"></i></button>
+        <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[9px]"></i></button>
+        <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[9px]"></i></button>
+        <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[9px]"></i></button>
+        <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
+        <div class="dock-divider"></div>
+        <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
+        <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        let slides = []; 
+        let currentSlideIndex = 0; 
+        let slideInks = {}; 
         
-        let slides = [];
-        let currentSlideIndex = 0;
-        let slideInks = {};
-        let isDrawing = false;
-        
-        const canvas = document.getElementById('drawing-canvas');
-        const ctx = canvas.getContext('2d', { alpha: true }); // Alpha enabled for overlay
+        const browseBtn = document.getElementById('browse-btn');
+        const uploadInput = document.getElementById('slide-upload');
         const slideImage = document.getElementById('slide-image');
+        const slideContainer = document.getElementById('slide-container');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingText = document.getElementById('loading-text');
 
-        // Initialization
-        function initCanvas() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-            ctx.lineCap = 'round';
+        browseBtn.addEventListener('click', () => uploadInput.click());
+
+        uploadInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            uploadPrompt.style.display = 'none';
+            loadingScreen.style.display = 'flex';
+            
+            try {
+                const firstFile = files[0];
+                const fileName = firstFile.name.toLowerCase();
+
+                if (firstFile.type === 'application/pdf' || fileName.endsWith('.pdf')) {
+                    loadingText.innerText = "PDF को High Quality Slides में बदला जा रहा है...";
+                    const fileReader = new FileReader();
+                    fileReader.onload = async function() {
+                        try {
+                            const typedarray = new Uint8Array(this.result);
+                            const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+                            const pdf = await loadingTask.promise;
+                            slides = [];
+                            for (let i = 1; i <= pdf.numPages; i++) {
+                                const page = await pdf.getPage(i);
+                                const viewport = page.getViewport({ scale: 2.5 }); 
+                                const canvasTemp = document.createElement('canvas');
+                                canvasTemp.height = viewport.height; 
+                                canvasTemp.width = viewport.width;
+                                const contextTemp = canvasTemp.getContext('2d');
+                                await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                                slides.push(canvasTemp.toDataURL('image/png', 1.0));
+                            }
+                            startApp();
+                        } catch (err) {
+                            alert("PDF पढ़ने में त्रुटि: " + err.message);
+                            resetUploadUI();
+                        }
+                    };
+                    fileReader.readAsArrayBuffer(firstFile);
+                } else if (fileName.endsWith('.ppt') || fileName.endsWith('.pptx')) {
+                    alert("कृपया .ppt फाइल को पहले PDF या Images (JPG/PNG) में सेव करके अपलोड करें!");
+                    resetUploadUI();
+                } else {
+                    loadingText.innerText = "इमेज फाइलें लोड हो रही हैं...";
+                    slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
+                    startApp();
+                }
+            } catch (err) {
+                alert("फाइल इम्पोर्ट करने में समस्या आई।");
+                resetUploadUI();
+            }
+        });
+
+        function resetUploadUI() {
+            loadingScreen.style.display = 'none';
+            uploadPrompt.style.display = 'flex';
+        }
+
+        function startApp() {
+            loadingScreen.style.display = 'none'; 
+            slideImage.style.display = 'block';
+            document.getElementById('toolbar').style.display = 'flex';
+            document.getElementById('recorder-ui').style.display = 'flex';
+            document.getElementById('left-nav').style.display = 'flex';
+            document.getElementById('right-nav').style.display = 'flex';
+            loadSlide(0);
+        }
+
+        function loadSlide(index) {
+            saveCurrentInk(); 
+            currentSlideIndex = index; 
+            slideImage.src = slides[currentSlideIndex]; 
+            document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); }; 
+        }
+
+        document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
+        document.getElementById('right-nav').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); }
+            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); }
+        });
+
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        fullscreenBtn.addEventListener('click', () => {
+            let docEl = document.documentElement;
+            let isFs = document.fullscreenElement || document.webkitFullscreenElement;
+            if (!isFs) {
+                if (docEl.requestFullscreen) docEl.requestFullscreen().catch(err => {});
+                else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>';
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>';
+            }
+        });
+
+        const canvas = document.getElementById('drawing-canvas'); 
+        const ctx = canvas.getContext('2d', { alpha: true });
+        let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
+        
+        const sizeSlider = document.getElementById('pen-size'); 
+        const colorPicker = document.getElementById('color-picker'); 
+        const colorBtn = document.getElementById('color-btn');
+        const tools = { 
+            'glow': document.getElementById('glow-pen-btn'), 
+            'normal': document.getElementById('normal-pen-btn'), 
+            'highlighter': document.getElementById('highlighter-btn'), 
+            'eraser': document.getElementById('eraser-btn') 
+        };
+
+        // Perfectly match canvas size to rendered image dimensions
+        function resizeCanvas() {
+            if (!slideImage.complete || slideImage.naturalWidth === 0) return;
+            
+            const rect = slideImage.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            canvas.style.left = slideImage.offsetLeft + 'px';
+            canvas.style.top = slideImage.offsetTop + 'px';
+
+            ctx.lineCap = 'round'; 
             ctx.lineJoin = 'round';
             ctx.imageSmoothingEnabled = true;
+            restoreInk(); 
         }
-        window.addEventListener('resize', initCanvas);
-        initCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-        // Optimized Drawing Loop
-        canvas.addEventListener('pointerdown', (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
+        function setActiveTool(mode) {
+            currentMode = mode; 
+            Object.values(tools).forEach(btn => btn.classList.remove('active')); 
+            tools[mode].classList.add('active');
+            if(mode === 'highlighter') sizeSlider.value = 30; 
+            else if(mode === 'eraser') sizeSlider.value = 40; 
+            else sizeSlider.value = 6;
+        }
+        setActiveTool('glow');
+
+        colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
+        tools['glow'].addEventListener('click', () => setActiveTool('glow')); 
+        tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
+        tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); 
+        tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
+        
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveCurrentInk();
+        });
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        canvas.addEventListener('pointerdown', (e) => { 
+            isDrawing = true; 
+            const pos = getMousePos(e);
+            points = [pos]; 
+            ctx.beginPath(); 
+            ctx.moveTo(pos.x, pos.y); 
+        });
+
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return;
-            ctx.lineWidth = 6;
-            ctx.strokeStyle = '#ffff00';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ffff00';
-            ctx.lineTo(e.offsetX, e.offsetY);
-            ctx.stroke();
-        });
-        canvas.addEventListener('pointerup', () => { isDrawing = false; saveInk(); });
-
-        function saveInk() { slideInks[currentSlideIndex] = canvas.toDataURL(); }
-
-        // --- OPTIMIZED RECORDER ---
-        let mediaRecorder;
-        let recordedChunks = [];
-        let recStream;
-
-        document.getElementById('btn-start').addEventListener('click', async () => {
-            // Setup canvas capture
-            // We use the canvas wrapper to capture, ensuring we only record the active area
-            recStream = canvas.captureStream(25); // Cap at 25 FPS for stability
-
-            mediaRecorder = new MediaRecorder(recStream, { mimeType: 'video/webm;codecs=vp9' });
-            recordedChunks = [];
+            const pos = getMousePos(e);
+            points.push(pos);
+            let baseSize = parseInt(sizeSlider.value);
             
-            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-            mediaRecorder.onstop = saveVideo;
-            
-            mediaRecorder.start(100);
-            document.getElementById('btn-start').style.display = 'none';
-            document.getElementById('btn-stop').style.display = 'flex';
+            if (currentMode === 'eraser') { 
+                ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; 
+            } else if (currentMode === 'highlighter') { 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; 
+            } else if (currentMode === 'glow') { 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 18; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; 
+            } else { 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; 
+            }
+
+            if (points.length >= 3) {
+                const controlPoint = points[points.length - 2];
+                const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
+                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); 
+                ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y);
+            }
         });
 
-        document.getElementById('btn-stop').addEventListener('click', () => {
-            mediaRecorder.stop();
-            document.getElementById('btn-start').style.display = 'flex';
-            document.getElementById('btn-stop').style.display = 'none';
-        });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); });
 
-        function saveVideo() {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Class_Recording.webm';
-            a.click();
+        function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
+        function restoreInk() { 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            if (slideInks[currentSlideIndex]) { 
+                let img = new Image(); 
+                img.src = slideInks[currentSlideIndex]; 
+                img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+            } 
         }
 
-        // File Loading (Simple)
-        document.getElementById('browse-btn').addEventListener('click', () => document.getElementById('slide-upload').click());
-        document.getElementById('slide-upload').addEventListener('change', (e) => {
-            // Simplified loading for brevity, keep your PDF logic here
-            const file = e.target.files[0];
-            const url = URL.createObjectURL(file);
-            slideImage.src = url;
-            slideImage.style.display = 'block';
-            document.getElementById('upload-prompt').style.display = 'none';
-            document.getElementById('toolbar').style.display = 'flex';
+        const btnSettings = document.getElementById('btn-settings');
+        const recSettingsMenu = document.getElementById('rec-settings-menu');
+        const btnRequestPermission = document.getElementById('btn-request-permission');
+
+        btnSettings.addEventListener('click', (e) => {
+            e.stopPropagation();
+            recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex';
         });
+        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
+        recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
+
+        btnRequestPermission.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                stream.getTracks().forEach(track => track.stop());
+                alert("माइक्रोफोन की अनुमति सफलतापूर्वक मिल गई है!");
+            } catch (err) {
+                alert("माइक्रोफोन की अनुमति नहीं मिल सकी। कृपया ब्राउज़र सेटिंग्स चेक करें।");
+            }
+        });
+
+        // --- OPTIMIZED BANDICAM-STYLE LIGHTWEIGHT RECORDER (Zero PC Lag) ---
+        let mediaRecorder; 
+        let recordedChunks = []; 
+        let timerInterval, seconds = 0;
+        
+        const btnStart = document.getElementById('btn-start'); 
+        const btnStop = document.getElementById('btn-stop'); 
+        const timerText = document.getElementById('timer-text');
+
+        btnStart.addEventListener('click', async () => {
+            try {
+                const useMic = document.getElementById('setting-mic').checked;
+                const quality = document.getElementById('setting-quality').value;
+                const formatChoice = document.getElementById('setting-format').value;
+
+                let videoBits = quality === 'high' ? 6000000 : 2500000;
+
+                // Create lightweight recording canvas (1280x720 standard HD for low CPU usage)
+                const recCanvas = document.createElement('canvas');
+                const recCtx = recCanvas.getContext('2d');
+                recCanvas.width = 1280;
+                recCanvas.height = 720;
+
+                let activeSlideImg = new Image();
+                if (slides.length > 0 && slides[currentSlideIndex]) {
+                    activeSlideImg.src = slides[currentSlideIndex];
+                }
+
+                // Bandicam-Style Throttled 20 FPS Render Loop (Extremely lightweight, zero CPU spikes)
+                let recordingInterval = setInterval(() => {
+                    recCtx.fillStyle = '#030305';
+                    recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+
+                    if (slides.length > 0 && slides[currentSlideIndex]) {
+                        if (activeSlideImg.src !== slides[currentSlideIndex]) {
+                            activeSlideImg.src = slides[currentSlideIndex];
+                        }
+                        if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
+                            let hRatio = recCanvas.width / activeSlideImg.naturalWidth;
+                            let vRatio = recCanvas.height / activeSlideImg.naturalHeight;
+                            let ratio = Math.min(hRatio, vRatio);
+                            let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2;
+                            let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
+                            recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
+                        }
+                    }
+
+                    if (canvas) {
+                        recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
+                    }
+                }, 1000 / 20); // Stable 20 FPS
+
+                let stream = recCanvas.captureStream(20);
+
+                if (useMic) {
+                    try {
+                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                        micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                    } catch (mErr) {
+                        console.log("Microphone access denied.");
+                    }
+                }
+
+                let mimeType = 'video/webm';
+                const candidateTypes = formatChoice === 'mp4' 
+                    ? ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'] 
+                    : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+
+                for (let type of candidateTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        mimeType = type;
+                        break;
+                    }
+                }
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: videoBits });
+                recordedChunks = [];
+                
+                mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    clearInterval(recordingInterval);
+                    saveVideoOffline();
+                };
+                
+                mediaRecorder.start(250); 
+                btnStart.style.display = 'none'; 
+                btnStop.style.display = 'flex'; 
+                timerText.style.display = 'block';
+                
+                seconds = 0;
+                timerInterval = setInterval(() => { 
+                    seconds++; 
+                    let mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    let secs = (seconds % 60).toString().padStart(2, '0');
+                    timerText.innerText = `${mins}:${secs}`; 
+                }, 1000);
+            } catch (err) { 
+                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया आवश्यक अनुमतियाँ (Permissions) दें।"); 
+            }
+        });
+
+        btnStop.addEventListener('click', () => { 
+            if(mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+                if(mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+            }
+            btnStart.style.display = 'flex'; 
+            btnStop.style.display = 'none'; 
+            timerText.style.display = 'none'; 
+            clearInterval(timerInterval); 
+        });
+
+        async function saveVideoOffline() {
+            let usedMime = mediaRecorder.mimeType || 'video/webm';
+            let extension = usedMime.includes('mp4') ? 'mp4' : 'webm';
+            
+            const blob = new Blob(recordedChunks, { type: usedMime });
+            const url = URL.createObjectURL(blob); 
+            const a = document.createElement('a'); 
+            a.style.display = 'none';
+            a.href = url; 
+            a.download = `EduStudio_Class_${Date.now()}.${extension}`; 
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
     </script>
 </body>
 </html>
