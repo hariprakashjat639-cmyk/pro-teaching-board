@@ -13,7 +13,7 @@
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #0b0b0e; color: white; 
-            user-select: none; touch-action: none; cursor: default; 
+            user-select: none; touch-action: none; cursor: default !important; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
         
@@ -21,6 +21,7 @@
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             width: 100dvw; height: 100dvh; display: flex; justify-content: center; 
             align-items: center; background: #030305; overflow: hidden;
+            cursor: default !important;
         }
 
         #slide-image { 
@@ -31,7 +32,7 @@
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; cursor: default; /* Normal PC cursor restored, plus sign removed */
+            z-index: 10; cursor: default !important; /* Normal PC cursor strictly enforced, + sign completely removed */
         }
         
         #upload-prompt {
@@ -48,6 +49,7 @@
             padding: 6px 12px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
             box-shadow: 0 15px 35px rgba(0,0,0,0.85); backdrop-filter: blur(20px);
             align-items: center; max-width: 90vw; overflow-x: auto;
+            cursor: default !important;
         }
 
         .dock-drag-handle {
@@ -66,7 +68,7 @@
         .dock-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
         .dock-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 8px rgba(10, 132, 255, 0.5); }
         
-        .color-picker-wrapper { position: relative; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+        .color-picker-wrapper { position: relative; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; cursor: pointer; }
         #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
         
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
@@ -217,6 +219,7 @@
         let slides = []; 
         let currentSlideIndex = 0; 
         let slideInks = {}; 
+        let isScreenDirty = true; // Bandicam style smart change tracker to save CPU & data
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -298,6 +301,7 @@
             slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
             slideImage.onload = () => { resizeCanvas(); restoreInk(); }; 
+            isScreenDirty = true;
         }
 
         document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
@@ -410,6 +414,7 @@
         document.getElementById('clear-btn').addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             saveCurrentInk();
+            isScreenDirty = true;
         });
 
         function getMousePos(e) {
@@ -449,6 +454,7 @@
         // iPad-like smooth multi-point curve interpolation for writing
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; 
+            isScreenDirty = true;
             const pos = getMousePos(e);
             points = [pos, pos]; 
             ctx.beginPath(); 
@@ -461,6 +467,7 @@
 
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return;
+            isScreenDirty = true;
             const pos = getMousePos(e);
             points.push(pos);
             if (points.length > 3) {
@@ -470,7 +477,6 @@
             let baseSize = parseInt(sizeSlider.value);
             applyPenStyle(baseSize);
 
-            // Smooth quad curve rendering
             ctx.beginPath();
             ctx.moveTo(points[0].x, points[0].y);
             let xc = (points[0].x + points[1].x) / 2;
@@ -540,7 +546,13 @@
                     activeSlideImg.src = slides[currentSlideIndex];
                 }
 
+                // Bandicam style optimized smart recorder: only draws and renders frames when there is screen activity (motion/drawing/slide change), saving CPU and reducing video file size tremendously!
                 let recordingInterval = setInterval(() => {
+                    if (!isDrawing && !isScreenDirty) {
+                        return; // Skip rendering identical static frames to save CPU and optimize file data
+                    }
+                    isScreenDirty = false;
+
                     recCtx.fillStyle = '#030305';
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
 
