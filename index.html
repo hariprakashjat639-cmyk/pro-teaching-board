@@ -43,12 +43,19 @@
         }
 
         .ipad-dock { 
-            position: absolute; bottom: 12px; left: 15px; z-index: 100; 
-            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
-            padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
-            align-items: center; max-width: 85vw; overflow-x: auto;
+            position: absolute; bottom: 20px; left: 20px; z-index: 100; 
+            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.90); 
+            padding: 6px 12px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+            align-items: center; max-width: 90vw; overflow-x: auto;
         }
+
+        .dock-drag-handle {
+            cursor: grab; display: flex; align-items: center; justify-content: center;
+            padding: 0 4px; color: #888; transition: color 0.2s; flex-shrink: 0;
+        }
+        .dock-drag-handle:hover { color: #fff; }
+        .dock-drag-handle:active { cursor: grabbing; }
         
         .dock-btn { 
             width: 28px; height: 28px; border-radius: 50%; cursor: pointer; 
@@ -146,7 +153,6 @@
         <div id="rec-settings-menu">
             <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व अनुमतियाँ</div>
             
-            <!-- Original Settings -->
             <div class="rec-setting-item">
                 <span>माइक्रोफोन (Mic Audio):</span>
                 <input type="checkbox" id="setting-mic" checked>
@@ -165,8 +171,6 @@
                     <option value="mp4">MP4 (यदि समर्थित हो)</option>
                 </select>
             </div>
-
-            <!-- Added Advanced Screen Recording Settings -->
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
                 <select id="setting-fps">
@@ -186,7 +190,12 @@
         </div>
     </div>
 
+    <!-- Draggable Toolbar Dock (Positioned at Bottom-Left by default) -->
     <div class="ipad-dock" id="toolbar">
+        <div class="dock-drag-handle" id="dock-handle" title="Drag to move">
+            <i class="fas fa-grip-vertical text-[10px]"></i>
+        </div>
+        <div class="dock-divider"></div>
         <span id="slide-counter" class="text-white text-[10px] font-bold px-1 tracking-wider">1/1</span>
         <div class="dock-divider"></div>
         <div class="color-picker-wrapper" title="रंग बदलें (Color)">
@@ -314,6 +323,43 @@
             }
         });
 
+        // Draggable Toolbar Logic
+        const dock = document.getElementById('toolbar');
+        const dockHandle = document.getElementById('dock-handle');
+        let isDockDragging = false;
+        let dragStartX, dragStartY, dockLeft, dockTop;
+
+        dockHandle.addEventListener('pointerdown', (e) => {
+            isDockDragging = true;
+            dockHandle.setPointerCapture(e.pointerId);
+            const rect = dock.getBoundingClientRect();
+            
+            dock.style.bottom = 'auto';
+            dock.style.right = 'auto';
+            dock.style.left = rect.left + 'px';
+            dock.style.top = rect.top + 'px';
+
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            dockLeft = rect.left;
+            dockTop = rect.top;
+            e.stopPropagation();
+        });
+
+        dockHandle.addEventListener('pointermove', (e) => {
+            if (!isDockDragging) return;
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+            
+            dock.style.left = (dockLeft + dx) + 'px';
+            dock.style.top = (dockTop + dy) + 'px';
+        });
+
+        dockHandle.addEventListener('pointerup', (e) => {
+            isDockDragging = false;
+            try { dockHandle.releasePointerCapture(e.pointerId); } catch(err) {}
+        });
+
         const canvas = document.getElementById('drawing-canvas'); 
         const ctx = canvas.getContext('2d', { alpha: true });
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
@@ -438,7 +484,6 @@
             }
         });
 
-        // Optimized Recording Engine with Advanced FPS & Audio Options
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -467,7 +512,6 @@
                     activeSlideImg.src = slides[currentSlideIndex];
                 }
 
-                // Dynamic FPS Render Loop
                 let recordingInterval = setInterval(() => {
                     recCtx.fillStyle = '#030305';
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
@@ -505,7 +549,7 @@
                 if (useSystemAudio) {
                     try {
                         const sysStream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
-                        sysStream.getVideoTracks().forEach(track => track.stop()); // Stop video track, keep audio
+                        sysStream.getVideoTracks().forEach(track => track.stop());
                         sysStream.getAudioTracks().forEach(track => stream.addTrack(track));
                     } catch (sErr) {
                         console.log("System audio access denied or unsupported.");
