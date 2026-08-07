@@ -177,11 +177,22 @@
             </div>
             <div class="rec-setting-item">
                 <span>VST 2.x Plug-in:</span>
-                <input type="checkbox" id="setting-vst">
+                <input type="checkbox" id="setting-vst" checked>
             </div>
             <div class="rec-setting-item">
                 <span>Invert Polarity:</span>
                 <input type="checkbox" id="setting-invert-polarity">
+            </div>
+
+            <!-- Audio Interface & Profile Settings Added Here -->
+            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">ऑडियो इंटरफेस (Audio Interface)</div>
+            <div class="rec-setting-item">
+                <span>Audio Standard/Profile:</span>
+                <select id="setting-audio-interface">
+                    <option value="best" selected>Best (Studio Pro 20k)</option>
+                    <option value="standard">Standard Balanced</option>
+                    <option value="low">Low Latency / Raw</option>
+                </select>
             </div>
 
             <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">वीडियो एडवांस ऑप्शंस</div>
@@ -440,7 +451,7 @@
             }
         });
 
-        // Upgraded Composite Screen Recorder with 100% Mobile Slide Visibility Fix & Advanced OBS Options
+        // Upgraded Composite Screen Recorder with Audio Interface & Studio Filters
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -461,6 +472,8 @@
                 const useNoiseGate = document.getElementById('setting-noise-gate').checked;
                 const useVst = document.getElementById('setting-vst').checked;
                 const useInvertPolarity = document.getElementById('setting-invert-polarity').checked;
+                const audioInterfaceProfile = document.getElementById('setting-audio-interface').value;
+                
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 5;
 
@@ -471,7 +484,6 @@
                 recCanvas.width = 1920;
                 recCanvas.height = 1080;
 
-                // Pre-cache current slide image for robust mobile rendering
                 let activeSlideImg = new Image();
                 if (slides.length > 0 && slides[currentSlideIndex]) {
                     activeSlideImg.src = slides[currentSlideIndex];
@@ -483,7 +495,6 @@
                     recCtx.fillStyle = '#030305';
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
 
-                    // Robust Slide Drawing for Mobile
                     if (slides.length > 0 && slides[currentSlideIndex]) {
                         if (activeSlideImg.src !== slides[currentSlideIndex]) {
                             activeSlideImg.src = slides[currentSlideIndex];
@@ -498,7 +509,6 @@
                         }
                     }
 
-                    // Draw user drawing canvas layer on top
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
@@ -520,14 +530,14 @@
                             video: false 
                         });
 
-                        // Apply advanced audio processing via Web Audio API (Noise Gate, VST filter, Invert Polarity)
+                        // Advanced Web Audio API chain with Audio Interface Profiles & OBS/Audacity emulation
                         try {
                             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                             const source = audioCtx.createMediaStreamSource(micStream);
                             const destination = audioCtx.createMediaStreamDestination();
                             let lastNode = source;
 
-                            // Invert Polarity (Phase Inversion)
+                            // 1. Invert Polarity (Phase correction)
                             if (useInvertPolarity) {
                                 const inverter = audioCtx.createGain();
                                 inverter.gain.value = -1;
@@ -535,25 +545,51 @@
                                 lastNode = inverter;
                             }
 
-                            // Noise Gate Simulation using DynamicsCompressor
+                            // 2. Audio Interface Profile & Noise Gate / Audacity Compressor Configuration
+                            let thresholdVal = -45;
+                            let ratioVal = 12;
+                            let highPassFreq = 85;
+
+                            if (audioInterfaceProfile === 'best') {
+                                thresholdVal = -50; // High sensitivity for studio feel
+                                ratioVal = 16;      // Professional radio compression
+                                highPassFreq = 90;  // Cuts out low rumble/boom
+                            } else if (audioInterfaceProfile === 'standard') {
+                                thresholdVal = -40;
+                                ratioVal = 8;
+                                highPassFreq = 70;
+                            } else {
+                                thresholdVal = -30;
+                                ratioVal = 4;
+                                highPassFreq = 50;
+                            }
+
                             if (useNoiseGate) {
                                 const compressor = audioCtx.createDynamicsCompressor();
-                                compressor.threshold.setValueAtTime(-45, audioCtx.currentTime);
-                                compressor.knee.setValueAtTime(30, audioCtx.currentTime);
-                                compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
-                                compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
-                                compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+                                compressor.threshold.setValueAtTime(thresholdVal, audioCtx.currentTime);
+                                compressor.knee.setValueAtTime(25, audioCtx.currentTime);
+                                compressor.ratio.setValueAtTime(ratioVal, audioCtx.currentTime);
+                                compressor.attack.setValueAtTime(0.002, audioCtx.currentTime);
+                                compressor.release.setValueAtTime(0.2, audioCtx.currentTime);
                                 lastNode.connect(compressor);
                                 lastNode = compressor;
                             }
 
-                            // VST 2.x Plug-in Filter Simulation (Clean Studio High-pass & Presence)
+                            // 3. VST / Equalizer Filter (Studio Presence Boost)
                             if (useVst) {
                                 const vstFilter = audioCtx.createBiquadFilter();
                                 vstFilter.type = 'highpass';
-                                vstFilter.frequency.setValueAtTime(85, audioCtx.currentTime);
+                                vstFilter.frequency.setValueAtTime(highPassFreq, audioCtx.currentTime);
                                 lastNode.connect(vstFilter);
                                 lastNode = vstFilter;
+
+                                // Adding high-shelf for voice crispness (Studio 20k mic effect)
+                                const presenceFilter = audioCtx.createBiquadFilter();
+                                presenceFilter.type = 'highshelf';
+                                presenceFilter.frequency.setValueAtTime(3200, audioCtx.currentTime);
+                                presenceFilter.gain.setValueAtTime(4.5, audioCtx.currentTime); // boost high frequencies for clarity
+                                lastNode.connect(presenceFilter);
+                                lastNode = presenceFilter;
                             }
 
                             lastNode.connect(destination);
@@ -562,82 +598,77 @@
                             console.log("Web Audio advanced nodes error, using raw mic stream:", audioErr);
                             micStream.getAudioTracks().forEach(track => stream.addTrack(track));
                         }
-
-                    } catch (mErr) {
-                        console.log("Microphone access denied or unavailable.");
+                    } catch (micErr) {
+                        alert("माइक्रोफोन एक्सेस नहीं मिल पाया। कृपया अनुमति दें।");
                     }
                 }
 
-                let mimeType = 'video/webm';
-                const candidateTypes = formatChoice === 'mp4' 
-                    ? ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'] 
-                    : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-
-                for (let type of candidateTypes) {
-                    if (MediaRecorder.isTypeSupported(type)) {
-                        mimeType = type;
-                        break;
-                    }
+                let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+                if (formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4')) {
+                    options = { mimeType: 'video/mp4' };
+                } else if (!MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+                    options = { mimeType: 'video/webm' };
                 }
 
-                mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: videoBits });
+                mediaRecorder = new MediaRecorder(stream, { 
+                    ...options, 
+                    videoBitsPerSecond: videoBits 
+                });
+
                 recordedChunks = [];
-                
-                mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+
                 mediaRecorder.onstop = () => {
                     recordingLoopActive = false;
-                    saveVideoOffline();
+                    let blobType = formatChoice === 'mp4' ? 'video/mp4' : 'video/webm';
+                    const blob = new Blob(recordedChunks, { type: blobType });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `ProEduStudio_Recording_${Date.now()}.${formatChoice === 'mp4' ? 'mp4' : 'webm'}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
                 };
-                
-                mediaRecorder.start(250); 
-                btnStart.style.display = 'none'; 
-                btnStop.style.display = 'flex'; 
+
+                mediaRecorder.start(1000);
+                btnStart.style.display = 'none';
+                btnStop.style.display = 'flex';
                 timerText.style.display = 'block';
-                
                 seconds = 0;
-                timerInterval = setInterval(() => { 
-                    seconds++; 
-                    let mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-                    let secs = (seconds % 60).toString().padStart(2, '0');
-                    timerText.innerText = `${mins}:${secs}`; 
+                timerText.innerText = "00:00";
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    let s = (seconds % 60).toString().padStart(2, '0');
+                    timerText.innerText = `${m}:${s}`;
                 }, 1000);
-            } catch (err) { 
+
+            } catch (err) {
+                alert("रिकॉर्डर शुरू करने में त्रुटि: " + err.message);
                 recordingLoopActive = false;
-                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया आवश्यक अनुमतियाँ (Permissions) दें।"); 
             }
         });
 
-        btnStop.addEventListener('click', () => { 
-            recordingLoopActive = false;
-            if(mediaRecorder && mediaRecorder.state !== "inactive") {
+        btnStop.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
-                if(mediaRecorder.stream) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                }
             }
-            btnStart.style.display = 'flex'; 
-            btnStop.style.display = 'none'; 
-            timerText.style.display = 'none'; 
-            clearInterval(timerInterval); 
+            btnStop.style.display = 'none';
+            btnStart.style.display = 'flex';
+            timerText.style.display = 'none';
+            clearInterval(timerInterval);
+            recordingLoopActive = false;
         });
-
-        async function saveVideoOffline() {
-            let usedMime = mediaRecorder.mimeType || 'video/webm';
-            let extension = usedMime.includes('mp4') ? 'mp4' : 'webm';
-            
-            const blob = new Blob(recordedChunks, { type: usedMime });
-            const url = URL.createObjectURL(blob); 
-            const a = document.createElement('a'); 
-            a.style.display = 'none';
-            a.href = url; 
-            a.download = `EduStudio_Class_${Date.now()}.${extension}`; 
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }, 100);
-        }
     </script>
 </body>
 </html>
