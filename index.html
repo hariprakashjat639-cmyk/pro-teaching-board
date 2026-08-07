@@ -14,13 +14,24 @@
         #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
         #slide-image { max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; z-index: 1; }
         
-        /* Built-in SVG Pen Cursor with Top Tip Hotspot */
         #drawing-canvas { 
             position: absolute; 
             z-index: 10; 
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%233b82f6' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2l-7 18h14l-7-18z'/%3E%3C/svg%3E") 12 2, crosshair; 
+            cursor: none; /* सिस्टम कर्सर छिपाया गया है */
         }
 
+        /* 100% Reliable HTML Custom Pen Cursor (Tip at Top) */
+        #custom-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            display: none;
+            transform: translate(-2px, -28px); /* टिप को सटीक पॉइंटर पर सेट करने के लिए */
+            font-size: 26px;
+            color: #3b82f6;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
+        }
+        
         /* Toolbar - Bottom Left */
         .bottom-left-toolbar { 
             position: absolute; bottom: 20px; left: 20px; z-index: 50; 
@@ -78,6 +89,11 @@
     </style>
 </head>
 <body>
+
+    <!-- Custom HTML Pen Cursor (Never breaks) -->
+    <div id="custom-cursor">
+        <i class="fas fa-pencil-alt"></i>
+    </div>
 
     <!-- Loading Screen -->
     <div id="loading-screen">
@@ -168,6 +184,7 @@
         const uploadPrompt = document.getElementById('upload-prompt');
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
+        const customCursor = document.getElementById('custom-cursor');
 
         uploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
@@ -223,6 +240,9 @@
             document.getElementById('slide-nav').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
             loadSlide(0);
+            if(currentMode !== 'eraser') {
+                customCursor.style.display = 'block';
+            }
         }
 
         function loadSlide(index) {
@@ -236,7 +256,7 @@
         document.getElementById('prev-btn').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
         document.getElementById('next-btn').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
 
-        // --- CANVAS & TOOL LOGIC ---
+        // --- CANVAS & CUSTOM CURSOR LOGIC ---
         const canvas = document.getElementById('drawing-canvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
@@ -273,12 +293,24 @@
             else sizeSlider.value = 5;
 
             if (mode === 'eraser') {
-                canvas.style.cursor = 'crosshair';
+                customCursor.style.display = 'none';
             } else {
-                // डिफ़ॉल्ट रूप से बिल्ट-इन पेन कर्सर एक्टिव रहेगा
-                canvas.style.cursor = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 24 24\' fill=\'%233b82f6\' stroke=\'%23ffffff\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M12 2l-7 18h14l-7-18z\'/%3E%3C/svg%3E") 12 2, crosshair';
+                if(document.getElementById('toolbar').style.display !== 'none') {
+                    customCursor.style.display = 'block';
+                }
             }
         }
+
+        // Smooth Custom Cursor Movement across window
+        window.addEventListener('mousemove', (e) => {
+            if (currentMode !== 'eraser' && document.getElementById('toolbar').style.display !== 'none') {
+                customCursor.style.left = e.clientX + 'px';
+                customCursor.style.top = e.clientY + 'px';
+                customCursor.style.display = 'block';
+            }
+        });
+
+        document.addEventListener('mouseleave', () => { customCursor.style.display = 'none'; });
 
         setActiveTool('glow');
 
@@ -356,7 +388,7 @@
             }
         }
 
-        // --- RECORDER LOGIC (FIXED PLAYER) ---
+        // --- RECORDER LOGIC (PLAYER COMPATIBLE) ---
         let mediaRecorder; let recordedChunks = [];
         let timerInterval; let seconds = 0;
         
