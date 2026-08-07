@@ -524,7 +524,8 @@
                             audio: {
                                 noiseSuppression: useNoiseSuppression,
                                 echoCancellation: true,
-                                autoGainControl: true
+                                // Auto-Gain false करने से यह बैकग्राउंड साउंड को बेवजह नहीं बढ़ाएगा
+                                autoGainControl: false 
                             }, 
                             video: false 
                         });
@@ -565,111 +566,108 @@
                             lastNode.connect(mudCut);
                             lastNode = mudCut;
 
-                            // 4. Studio Presence Boost (Adds crispness and high clarity to speech at 3.5kHz by +4.0dB)
+                            // 4. Studio Presence Boost (Adds crispness and focuses on human voice clarity)
                             if (useEqPresence) {
-                                const presenceBoost = audioCtx.createBiquadFilter();
-                                presenceBoost.type = 'highshelf';
-                                presenceBoost.frequency.setValueAtTime(3500, audioCtx.currentTime);
-                                presenceBoost.gain.setValueAtTime(4.0, audioCtx.currentTime);
-                                lastNode.connect(presenceBoost);
-                                lastNode = presenceBoost;
+                                const presenceEq = audioCtx.createBiquadFilter();
+                                presenceEq.type = 'peaking';
+                                presenceEq.frequency.setValueAtTime(3500, audioCtx.currentTime); 
+                                presenceEq.gain.setValueAtTime(3.0, audioCtx.currentTime); // +3dB boost for human voice
+                                presenceEq.Q.setValueAtTime(1.0, audioCtx.currentTime);
+                                lastNode.connect(presenceEq);
+                                lastNode = presenceEq;
                             }
 
-                            // 5. Professional Vocal Compressor (Audacity Style)
-                            // Threshold: -28dB, Ratio: 4:1, Attack: 3ms, Release: 250ms
+                            // 5. Studio Compressor (Controls loud peaks and acts as a gentle noise gate for background sounds)
                             if (useCompressor) {
-                                let compThresh = audioProfile === 'studio' ? -28 : -22;
-                                let compRatio = audioProfile === 'studio' ? 4 : 3;
-                                
                                 const compressor = audioCtx.createDynamicsCompressor();
-                                compressor.threshold.setValueAtTime(compThresh, audioCtx.currentTime);
+                                compressor.threshold.setValueAtTime(-28, audioCtx.currentTime); 
                                 compressor.knee.setValueAtTime(12, audioCtx.currentTime);
-                                compressor.ratio.setValueAtTime(compRatio, audioCtx.currentTime);
-                                compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
-                                compressor.release.setValueAtTime(0.250, audioCtx.currentTime);
+                                compressor.ratio.setValueAtTime(4, audioCtx.currentTime);
+                                compressor.attack.setValueAtTime(0.005, audioCtx.currentTime);
+                                compressor.release.setValueAtTime(0.1, audioCtx.currentTime);
                                 lastNode.connect(compressor);
                                 lastNode = compressor;
                             }
 
-                            // 6. Makeup Gain / Volume Maximizer (+4.5 dB gain boost for clear loud output)
-                            const makeupGain = audioCtx.createGain();
-                            makeupGain.gain.setValueAtTime(1.68, audioCtx.currentTime); // ~ +4.5 dB boost
-                            lastNode.connect(makeupGain);
-                            lastNode = makeupGain;
+                            // 6. Master Volume / Gain Controller (Reduces overall gain as you requested)
+                            const masterGain = audioCtx.createGain();
+                            masterGain.gain.setValueAtTime(0.75, audioCtx.currentTime); // 75% volume कर दिया ताकि बैकग्राउंड नॉइज़ कट जाए
+                            lastNode.connect(masterGain);
+                            lastNode = masterGain;
 
-                            // 7. Brickwall Limiter (Prevents any digital clipping above -1.5dB)
-                            const limiter = audioCtx.createDynamicsCompressor();
-                            limiter.threshold.setValueAtTime(-1.5, audioCtx.currentTime);
-                            limiter.knee.setValueAtTime(0, audioCtx.currentTime);
-                            limiter.ratio.setValueAtTime(20, audioCtx.currentTime);
-                            limiter.attack.setValueAtTime(0.001, audioCtx.currentTime);
-                            limiter.release.setValueAtTime(0.1, audioCtx.currentTime);
-                            lastNode.connect(limiter);
-                            lastNode = limiter;
+                            lastNode.connect(destination);
 
-                            limiter.connect(destination);
-                            destination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+                            destination.stream.getAudioTracks().forEach(track => {
+                                stream.addTrack(track);
+                            });
+
                         } catch (audioErr) {
-                            console.log("Advanced Web Audio fallback to raw mic:", audioErr);
+                            console.error("Advanced audio setup failed, falling back to basic:", audioErr);
                             micStream.getAudioTracks().forEach(track => stream.addTrack(track));
                         }
                     } catch (micErr) {
-                        alert("माइक्रोफोन एक्सेस नहीं मिल पाया। कृपया अनुमति दें।");
+                        alert("माइक शुरू करने में समस्या। कृपया परमिशन चेक करें।");
+                        recordingLoopActive = false;
+                        return;
                     }
                 }
 
-                let options = { mimeType: 'video/webm;codecs=vp9,opus' };
-                if (formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4')) {
-                    options = { mimeType: 'video/mp4' };
-                } else if (!MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
-                    options = { mimeType: 'video/webm' };
-                }
-
-                mediaRecorder = new MediaRecorder(stream, { 
-                    ...options, 
-                    videoBitsPerSecond: videoBits 
+                const mimeType = formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4') 
+                                    ? 'video/mp4' 
+                                    : 'video/webm; codecs=vp8,opus';
+                
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: mimeType,
+                    videoBitsPerSecond: videoBits
                 });
 
-                recordedChunks = [];
                 mediaRecorder.ondataavailable = (e) => {
-                    if (e.data && e.data.size > 0) {
-                        recordedChunks.push(e.data);
-                    }
+                    if (e.data.size > 0) recordedChunks.push(e.data);
                 };
 
                 mediaRecorder.onstop = () => {
                     recordingLoopActive = false;
-                    let blobType = formatChoice === 'mp4' ? 'video/mp4' : 'video/webm';
-                    const blob = new Blob(recordedChunks, { type: blobType });
+                    clearInterval(timerInterval);
+                    
+                    const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = `ProEduStudio_ProAudio_${Date.now()}.${formatChoice === 'mp4' ? 'mp4' : 'webm'}`;
+                    a.download = `Pro_Recording_${new Date().getTime()}.${formatChoice}`;
                     document.body.appendChild(a);
                     a.click();
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
-                    }, 100);
+                    
+                    window.URL.revokeObjectURL(url);
+                    recordedChunks = [];
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    timerText.style.display = 'none';
+                    btnStart.style.display = 'flex';
+                    btnStop.style.display = 'none';
+                    timerText.innerText = "00:00";
+                    seconds = 0;
                 };
 
-                mediaRecorder.start(1000);
+                mediaRecorder.start(1000); 
+                
+                timerText.style.display = 'block';
                 btnStart.style.display = 'none';
                 btnStop.style.display = 'flex';
-                timerText.style.display = 'block';
+                recSettingsMenu.style.display = 'none';
+                
                 seconds = 0;
-                timerText.innerText = "00:00";
-                clearInterval(timerInterval);
                 timerInterval = setInterval(() => {
                     seconds++;
-                    let m = Math.floor(seconds / 60).toString().padStart(2, '0');
-                    let s = (seconds % 60).toString().padStart(2, '0');
+                    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    const s = String(seconds % 60).padStart(2, '0');
                     timerText.innerText = `${m}:${s}`;
                 }, 1000);
 
             } catch (err) {
-                alert("रिकॉर्डर शुरू करने में त्रुटि: " + err.message);
+                console.error("Recording setup failed:", err);
+                alert("रिकॉर्डिंग शुरू करने में त्रुटि आई।");
                 recordingLoopActive = false;
             }
         });
@@ -678,11 +676,6 @@
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
-            btnStop.style.display = 'none';
-            btnStart.style.display = 'flex';
-            timerText.style.display = 'none';
-            clearInterval(timerInterval);
-            recordingLoopActive = false;
         });
     </script>
 </body>
