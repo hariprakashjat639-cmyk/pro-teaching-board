@@ -14,11 +14,10 @@
         #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
         #slide-image { max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; z-index: 1; }
         
-        /* Custom Bandicam Cursor applied when tools are active */
+        /* Canvas Styling (Cursor is now handled dynamically via JavaScript) */
         #drawing-canvas { 
             position: absolute; 
             z-index: 10; 
-            cursor: url('image_017e65.png') 0 32, crosshair; 
         }
         
         /* Toolbar - Bottom Left */
@@ -177,7 +176,7 @@
             // Warn about PPTX
             if (files[0].name.toLowerCase().endsWith('.ppt') || files[0].name.toLowerCase().endsWith('.pptx')) {
                 alert("चेतावनी: आपने PPTX फाइल चुनी है। ब्राउज़र बिना सर्वर के कस्टम हिंदी फॉन्ट और लेआउट को सही से रेंडर नहीं कर सकता। अच्छे रिजल्ट्स के लिए कृपया PowerPoint से Save As -> PDF करके ही अपलोड करें।");
-                return; // Stop execution to protect their design
+                return; 
             }
 
             uploadPrompt.style.display = 'none';
@@ -237,13 +236,13 @@
         document.getElementById('prev-btn').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
         document.getElementById('next-btn').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
 
-        // --- 2. ADVANCED SMOOTH INKING SYSTEM (Auto-Correct Handwriting) ---
+        // --- 2. ADVANCED SMOOTH INKING SYSTEM & CUSTOM CURSOR ---
         const canvas = document.getElementById('drawing-canvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
-        let points = []; // Array to store points for smoothing
+        let points = []; 
         
-        let currentMode = 'glow'; // glow, normal, highlighter, eraser
+        let currentMode = 'glow'; 
         let currentColor = '#ffff00';
         
         const sizeSlider = document.getElementById('pen-size');
@@ -273,7 +272,18 @@
             if(mode === 'highlighter') sizeSlider.value = 25;
             else if(mode === 'eraser') sizeSlider.value = 35;
             else sizeSlider.value = 5;
+
+            // --- CURSOR LOGIC FIX ---
+            if (mode === 'eraser') {
+                canvas.style.cursor = "crosshair"; // इरेज़र के लिए नार्मल कर्सर
+            } else {
+                // पेन और हाइलाइटर के लिए Bandicam वाला इमेज कर्सर
+                canvas.style.cursor = "url('image_017e65.png') 0 0, crosshair";
+            }
         }
+
+        // Initialize default tool and cursor on load
+        setActiveTool('glow');
 
         colorPicker.addEventListener('input', (e) => {
             currentColor = e.target.value;
@@ -288,7 +298,7 @@
         
         document.getElementById('clear-btn').addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height));
 
-        // Drawing Logic with Smoothing Algorithm
+        // Drawing Logic
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; 
             points = [{x: e.clientX, y: e.clientY}];
@@ -302,7 +312,6 @@
             points.push({x: e.clientX, y: e.clientY});
             let baseSize = parseInt(sizeSlider.value);
 
-            // Set Tool Styles
             if (currentMode === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.lineWidth = baseSize;
@@ -312,21 +321,20 @@
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.lineWidth = baseSize;
                 ctx.shadowBlur = 0;
-                ctx.strokeStyle = currentColor + '66'; // 40% transparency
+                ctx.strokeStyle = currentColor + '66'; 
             } else if (currentMode === 'glow') {
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.lineWidth = baseSize;
-                ctx.shadowBlur = 15; // Glow effect
+                ctx.shadowBlur = 15; 
                 ctx.shadowColor = currentColor;
                 ctx.strokeStyle = currentColor;
-            } else { // Normal pen
+            } else { 
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.lineWidth = baseSize;
                 ctx.shadowBlur = 0;
                 ctx.strokeStyle = currentColor;
             }
             
-            // Smoothing Algorithm: Quadratic Bezier Curve through midpoints
             if (points.length >= 3) {
                 const lastTwo = points.slice(-2);
                 const controlPoint = lastTwo[0];
@@ -355,7 +363,7 @@
             }
         }
 
-        // --- 3. CIRCULAR RECORDER & DIRECT FILE MANAGER SAVE ---
+        // --- 3. CIRCULAR RECORDER ---
         let mediaRecorder; let recordedChunks = [];
         let timerInterval; let seconds = 0;
         
@@ -381,7 +389,6 @@
                 
                 mediaRecorder.start(1000);
                 
-                // UI Updates
                 btnStart.style.display = 'none';
                 btnStop.style.display = 'flex';
                 timerText.style.display = 'block';
@@ -401,13 +408,11 @@
             clearInterval(timerInterval);
         });
 
-        // Direct File Manager Save using showSaveFilePicker API
         async function saveVideo() {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             recordedChunks = [];
             
             try {
-                // Opens system Save As dialog!
                 const handle = await window.showSaveFilePicker({
                     suggestedName: `My_Class_${new Date().getTime()}.webm`,
                     types: [{
@@ -421,7 +426,6 @@
                 await writable.close();
                 
             } catch (err) {
-                // Fallback if user cancels or browser doesn't support it
                 if(err.name !== 'AbortError') {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
