@@ -17,19 +17,17 @@
         #drawing-canvas { 
             position: absolute; 
             z-index: 10; 
-            cursor: none; /* सिस्टम कर्सर छिपाया गया है */
+            cursor: none; 
         }
 
-        /* 100% Reliable HTML Custom Pen Cursor (Tip at Top) */
+        /* Exact Diagonal Pencil Cursor Matching User Image (Tip at top-left 0,0) */
         #custom-cursor {
             position: fixed;
             pointer-events: none;
             z-index: 99999;
             display: none;
-            transform: translate(-2px, -28px); /* टिप को सटीक पॉइंटर पर सेट करने के लिए */
-            font-size: 26px;
-            color: #3b82f6;
-            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
+            transform: translate(0px, 0px);
+            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.7));
         }
         
         /* Toolbar - Bottom Left */
@@ -90,9 +88,13 @@
 </head>
 <body>
 
-    <!-- Custom HTML Pen Cursor (Never breaks) -->
+    <!-- Custom Exact Pencil Cursor Matching Your Image -->
     <div id="custom-cursor">
-        <i class="fas fa-pencil-alt"></i>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ffffff" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 2.5l14 14L19 14 6.5 1.5a2 2 0 0 0-2.83 0z"/>
+            <path d="M6.5 6.5l11 11"/>
+            <path d="M14 20l3 3 4-4-3-3"/>
+        </svg>
     </div>
 
     <!-- Loading Screen -->
@@ -301,7 +303,7 @@
             }
         }
 
-        // Smooth Custom Cursor Movement across window
+        // Smooth Custom Cursor Movement
         window.addEventListener('mousemove', (e) => {
             if (currentMode !== 'eraser' && document.getElementById('toolbar').style.display !== 'none') {
                 customCursor.style.left = e.clientX + 'px';
@@ -388,7 +390,7 @@
             }
         }
 
-        // --- RECORDER LOGIC (PLAYER COMPATIBLE) ---
+        // --- RECORDER LOGIC ---
         let mediaRecorder; let recordedChunks = [];
         let timerInterval; let seconds = 0;
         
