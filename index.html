@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro EduCreator Studio - Master PPT & Notes Edition</title>
+    <title>Pro EduCreator Studio - Ultimate Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -21,9 +21,27 @@
             cursor: default; 
         }
         
+        /* Upload Prompt Overlay */
+        #upload-prompt {
+            position: absolute;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: #18181b;
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            max-width: 500px;
+            width: 90%;
+        }
+
         /* iPad & PPT Style Left Side Vertical Toolbar */
         .side-toolbar { 
-            position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 50; 
+            position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 100; 
             display: none; flex-direction: column; gap: 10px; background: rgba(24, 24, 27, 0.9); 
             padding: 12px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
             box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(20px);
@@ -47,7 +65,7 @@
 
         /* Recorder UI */
         .recorder-ui { 
-            position: absolute; top: 20px; right: 20px; z-index: 60; 
+            position: absolute; top: 20px; right: 20px; z-index: 100; 
             display: none; align-items: center; gap: 10px;
         }
         
@@ -69,7 +87,7 @@
 
         /* PPT Presentation Slide Navigation Bar (Bottom Center) */
         .slide-nav { 
-            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 50; 
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 100; 
             display: none; gap: 20px; background: rgba(24, 24, 27, 0.9); padding: 8px 20px; 
             border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); 
             align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
@@ -79,7 +97,7 @@
         body.fullscreen-mode .slide-nav:hover { opacity: 1; }
 
         /* Loading Screen */
-        #loading-screen { display: none; position: absolute; z-index: 100; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; justify-content: center; align-items: center; }
+        #loading-screen { display: none; position: absolute; z-index: 2000; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; justify-content: center; align-items: center; }
         .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #0a84ff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -94,14 +112,15 @@
 
     <!-- Main Workspace -->
     <div id="presentation-area">
-        <div id="upload-prompt" class="absolute z-20 flex flex-col items-center justify-center text-gray-300 p-10 bg-[#18181b] rounded-3xl border border-white/15 shadow-2xl text-center max-w-lg">
+        <!-- Upload Prompt Overlay (Directly Clickable Button Fixed) -->
+        <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-6xl mb-4 text-[#ff453a]"></i>
-            <h2 class="text-2xl font-bold mb-2 text-white">क्लास नोट्स या PDF/Images अपलोड करें</h2>
-            <p class="text-xs mb-6 text-gray-400">High Quality PDF या Multiple Images चुनें और PPT शो शुरू करें।</p>
-            <label class="bg-[#0a84ff] text-white text-sm px-6 py-3 rounded-2xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
-                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse)
-                <input type="file" id="slide-upload" accept=".pdf, image/*" multiple style="display: none;">
-            </label>
+            <h2 class="text-2xl font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
+            <p class="text-xs mb-6 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और PPT शो शुरू करें।</p>
+            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-sm px-6 py-3 rounded-2xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
+                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
+            </button>
+            <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
         </div>
 
         <img id="slide-image" src="" style="display: none;">
@@ -147,11 +166,17 @@
         let currentSlideIndex = 0; 
         let slideInks = {}; 
         
+        const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
         const slideImage = document.getElementById('slide-image');
         const uploadPrompt = document.getElementById('upload-prompt');
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
+
+        // Direct Click Trigger for File Dialog
+        browseBtn.addEventListener('click', () => {
+            uploadInput.click();
+        });
 
         uploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
@@ -161,7 +186,10 @@
             loadingScreen.style.display = 'flex';
             
             try {
-                if (files[0].type === 'application/pdf' || files[0].name.toLowerCase().endsWith('.pdf')) {
+                const firstFile = files[0];
+                const fileName = firstFile.name.toLowerCase();
+
+                if (firstFile.type === 'application/pdf' || fileName.endsWith('.pdf')) {
                     loadingText.innerText = "PDF को High Quality Slides में बदला जा रहा है...";
                     const fileReader = new FileReader();
                     fileReader.onload = async function() {
@@ -187,7 +215,10 @@
                             resetUploadUI();
                         }
                     };
-                    fileReader.readAsArrayBuffer(files[0]);
+                    fileReader.readAsArrayBuffer(firstFile);
+                } else if (fileName.endsWith('.ppt') || fileName.endsWith('.pptx')) {
+                    alert("कृपया .ppt फाइल को पहले PDF या Images (JPG/PNG) में सेव करके अपलोड करें ताकि बेहतरीन हाई-क्वालिटी मिल सके!");
+                    resetUploadUI();
                 } else {
                     loadingText.innerText = "इमेज फाइलें लोड हो रही हैं...";
                     slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
@@ -328,7 +359,7 @@
                 ctx.globalCompositeOperation = 'source-over'; 
                 ctx.lineWidth = baseSize; 
                 ctx.shadowBlur = 0; 
-                ctx.strokeStyle = currentColor + '55'; // 33% opacity highlight
+                ctx.strokeStyle = currentColor + '55'; 
             } else if (currentMode === 'glow') { 
                 ctx.globalCompositeOperation = 'source-over'; 
                 ctx.lineWidth = baseSize; 
