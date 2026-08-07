@@ -20,14 +20,14 @@
             cursor: none; 
         }
 
-        /* Exact Diagonal Pencil Cursor Matching User Image (Tip at top-left 0,0) */
+        /* Sharp Upward Pointing Pencil Cursor (Tip at exact top center 12,0) */
         #custom-cursor {
             position: fixed;
             pointer-events: none;
             z-index: 99999;
             display: none;
-            transform: translate(0px, 0px);
-            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.7));
+            transform: translate(-12px, -2px);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.9));
         }
         
         /* Toolbar - Bottom Left */
@@ -88,12 +88,17 @@
 </head>
 <body>
 
-    <!-- Custom Exact Pencil Cursor Matching Your Image -->
+    <!-- Sharp Upward Pointing Custom Pencil Cursor -->
     <div id="custom-cursor">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ffffff" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2.5 2.5l14 14L19 14 6.5 1.5a2 2 0 0 0-2.83 0z"/>
-            <path d="M6.5 6.5l11 11"/>
-            <path d="M14 20l3 3 4-4-3-3"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24">
+            <!-- Pencil Tip (Pointing Up) -->
+            <path d="M12 1L8 8H16L12 1Z" fill="#3b82f6" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
+            <!-- Pencil Body -->
+            <rect x="8" y="8" width="8" height="10" fill="#facc15" stroke="#000000" stroke-width="1.5"/>
+            <!-- Eraser Holder / Ferrule -->
+            <path d="M8 18H16V20H8V18Z" fill="#9ca3af" stroke="#000000" stroke-width="1.5"/>
+            <!-- Eraser -->
+            <path d="M8 20H16V22.5C16 23.3284 15.3284 24 14.5 24H9.5C8.67157 24 8 23.3284 8 22.5V20Z" fill="#f43f5e" stroke="#000000" stroke-width="1.5"/>
         </svg>
     </div>
 
