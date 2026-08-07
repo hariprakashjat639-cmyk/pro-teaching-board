@@ -92,7 +92,7 @@
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
         #rec-settings-menu {
-            position: absolute; top: 45px; right: 0; width: 260px; max-height: 80vh; overflow-y: auto;
+            position: absolute; top: 45px; right: 0; width: 270px; max-height: 80vh; overflow-y: auto;
             background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
@@ -165,18 +165,18 @@
                 </select>
             </div>
             
-            <!-- Advanced OBS Audio & Video Options Added Below -->
-            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">ऑडियो एडवांस ऑप्शंस (OBS Style)</div>
+            <!-- Professional Studio Audio Custom Options -->
+            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">स्टुडियो प्रो ऑडियो इंजन (Custom dB)</div>
             <div class="rec-setting-item">
                 <span>Noise Suppression:</span>
                 <input type="checkbox" id="setting-noise-suppression" checked>
             </div>
             <div class="rec-setting-item">
-                <span>Noise Gate:</span>
+                <span>Studio Compressor (-28dB):</span>
                 <input type="checkbox" id="setting-noise-gate" checked>
             </div>
             <div class="rec-setting-item">
-                <span>VST 2.x Plug-in:</span>
+                <span>Vocal Presence EQ (+4dB):</span>
                 <input type="checkbox" id="setting-vst" checked>
             </div>
             <div class="rec-setting-item">
@@ -184,14 +184,13 @@
                 <input type="checkbox" id="setting-invert-polarity">
             </div>
 
-            <!-- Audio Interface & Profile Settings Added Here -->
-            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">ऑडियो इंटरफेस (Audio Interface)</div>
+            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">ऑडियो प्रोफाइल (Audio Profile)</div>
             <div class="rec-setting-item">
-                <span>Audio Standard/Profile:</span>
+                <span>Pro Preset Mode:</span>
                 <select id="setting-audio-interface">
-                    <option value="best" selected>Best (Studio Pro 20k)</option>
-                    <option value="standard">Standard Balanced</option>
-                    <option value="low">Low Latency / Raw</option>
+                    <option value="studio" selected>Studio Broadcast (Best)</option>
+                    <option value="podcast">Podcast Clear</option>
+                    <option value="raw">Raw Natural</option>
                 </select>
             </div>
 
@@ -451,7 +450,7 @@
             }
         });
 
-        // Upgraded Composite Screen Recorder with Audio Interface & Studio Filters
+        // Upgraded Professional Studio Audio Recorder Engine
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -467,12 +466,12 @@
                 const quality = document.getElementById('setting-quality').value;
                 const formatChoice = document.getElementById('setting-format').value;
 
-                // Advanced Settings Values
+                // Professional Advanced Audio Parameters
                 const useNoiseSuppression = document.getElementById('setting-noise-suppression').checked;
-                const useNoiseGate = document.getElementById('setting-noise-gate').checked;
-                const useVst = document.getElementById('setting-vst').checked;
+                const useCompressor = document.getElementById('setting-noise-gate').checked;
+                const useEqPresence = document.getElementById('setting-vst').checked;
                 const useInvertPolarity = document.getElementById('setting-invert-polarity').checked;
-                const audioInterfaceProfile = document.getElementById('setting-audio-interface').value;
+                const audioProfile = document.getElementById('setting-audio-interface').value;
                 
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 5;
@@ -530,9 +529,12 @@
                             video: false 
                         });
 
-                        // Advanced Web Audio API chain with Audio Interface Profiles & OBS/Audacity emulation
+                        // Professional Web Audio Chain with precise studio dB and frequency tunings
                         try {
                             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                            if (audioCtx.state === 'suspended') {
+                                await audioCtx.resume();
+                            }
                             const source = audioCtx.createMediaStreamSource(micStream);
                             const destination = audioCtx.createMediaStreamDestination();
                             let lastNode = source;
@@ -545,57 +547,70 @@
                                 lastNode = inverter;
                             }
 
-                            // 2. Audio Interface Profile & Noise Gate / Audacity Compressor Configuration
-                            let thresholdVal = -45;
-                            let ratioVal = 12;
-                            let highPassFreq = 85;
+                            // 2. High-Pass Filter (Low Cut): Removes background rumble, AC hum, desk thuds
+                            let cutFreq = audioProfile === 'studio' ? 85 : (audioProfile === 'podcast' ? 70 : 50);
+                            const highPass = audioCtx.createBiquadFilter();
+                            highPass.type = 'highpass';
+                            highPass.frequency.setValueAtTime(cutFreq, audioCtx.currentTime);
+                            highPass.Q.setValueAtTime(0.707, audioCtx.currentTime);
+                            lastNode.connect(highPass);
+                            lastNode = highPass;
 
-                            if (audioInterfaceProfile === 'best') {
-                                thresholdVal = -50; // High sensitivity for studio feel
-                                ratioVal = 16;      // Professional radio compression
-                                highPassFreq = 90;  // Cuts out low rumble/boom
-                            } else if (audioInterfaceProfile === 'standard') {
-                                thresholdVal = -40;
-                                ratioVal = 8;
-                                highPassFreq = 70;
-                            } else {
-                                thresholdVal = -30;
-                                ratioVal = 4;
-                                highPassFreq = 50;
+                            // 3. Mud/Boxy Frequency Notch (Cuts harsh low-mids at 350Hz by -2.5dB)
+                            const mudCut = audioCtx.createBiquadFilter();
+                            mudCut.type = 'peaking';
+                            mudCut.frequency.setValueAtTime(350, audioCtx.currentTime);
+                            mudCut.gain.setValueAtTime(-2.5, audioCtx.currentTime);
+                            mudCut.Q.setValueAtTime(1.4, audioCtx.currentTime);
+                            lastNode.connect(mudCut);
+                            lastNode = mudCut;
+
+                            // 4. Studio Presence Boost (Adds crispness and high clarity to speech at 3.5kHz by +4.0dB)
+                            if (useEqPresence) {
+                                const presenceBoost = audioCtx.createBiquadFilter();
+                                presenceBoost.type = 'highshelf';
+                                presenceBoost.frequency.setValueAtTime(3500, audioCtx.currentTime);
+                                presenceBoost.gain.setValueAtTime(4.0, audioCtx.currentTime);
+                                lastNode.connect(presenceBoost);
+                                lastNode = presenceBoost;
                             }
 
-                            if (useNoiseGate) {
+                            // 5. Professional Vocal Compressor (Audacity Style)
+                            // Threshold: -28dB, Ratio: 4:1, Attack: 3ms, Release: 250ms
+                            if (useCompressor) {
+                                let compThresh = audioProfile === 'studio' ? -28 : -22;
+                                let compRatio = audioProfile === 'studio' ? 4 : 3;
+                                
                                 const compressor = audioCtx.createDynamicsCompressor();
-                                compressor.threshold.setValueAtTime(thresholdVal, audioCtx.currentTime);
-                                compressor.knee.setValueAtTime(25, audioCtx.currentTime);
-                                compressor.ratio.setValueAtTime(ratioVal, audioCtx.currentTime);
-                                compressor.attack.setValueAtTime(0.002, audioCtx.currentTime);
-                                compressor.release.setValueAtTime(0.2, audioCtx.currentTime);
+                                compressor.threshold.setValueAtTime(compThresh, audioCtx.currentTime);
+                                compressor.knee.setValueAtTime(12, audioCtx.currentTime);
+                                compressor.ratio.setValueAtTime(compRatio, audioCtx.currentTime);
+                                compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+                                compressor.release.setValueAtTime(0.250, audioCtx.currentTime);
                                 lastNode.connect(compressor);
                                 lastNode = compressor;
                             }
 
-                            // 3. VST / Equalizer Filter (Studio Presence Boost)
-                            if (useVst) {
-                                const vstFilter = audioCtx.createBiquadFilter();
-                                vstFilter.type = 'highpass';
-                                vstFilter.frequency.setValueAtTime(highPassFreq, audioCtx.currentTime);
-                                lastNode.connect(vstFilter);
-                                lastNode = vstFilter;
+                            // 6. Makeup Gain / Volume Maximizer (+4.5 dB gain boost for clear loud output)
+                            const makeupGain = audioCtx.createGain();
+                            makeupGain.gain.setValueAtTime(1.68, audioCtx.currentTime); // ~ +4.5 dB boost
+                            lastNode.connect(makeupGain);
+                            lastNode = makeupGain;
 
-                                // Adding high-shelf for voice crispness (Studio 20k mic effect)
-                                const presenceFilter = audioCtx.createBiquadFilter();
-                                presenceFilter.type = 'highshelf';
-                                presenceFilter.frequency.setValueAtTime(3200, audioCtx.currentTime);
-                                presenceFilter.gain.setValueAtTime(4.5, audioCtx.currentTime); // boost high frequencies for clarity
-                                lastNode.connect(presenceFilter);
-                                lastNode = presenceFilter;
-                            }
+                            // 7. Brickwall Limiter (Prevents any digital clipping above -1.5dB)
+                            const limiter = audioCtx.createDynamicsCompressor();
+                            limiter.threshold.setValueAtTime(-1.5, audioCtx.currentTime);
+                            limiter.knee.setValueAtTime(0, audioCtx.currentTime);
+                            limiter.ratio.setValueAtTime(20, audioCtx.currentTime);
+                            limiter.attack.setValueAtTime(0.001, audioCtx.currentTime);
+                            limiter.release.setValueAtTime(0.1, audioCtx.currentTime);
+                            lastNode.connect(limiter);
+                            lastNode = limiter;
 
-                            lastNode.connect(destination);
+                            limiter.connect(destination);
                             destination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
                         } catch (audioErr) {
-                            console.log("Web Audio advanced nodes error, using raw mic stream:", audioErr);
+                            console.log("Advanced Web Audio fallback to raw mic:", audioErr);
                             micStream.getAudioTracks().forEach(track => stream.addTrack(track));
                         }
                     } catch (micErr) {
@@ -630,7 +645,7 @@
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = `ProEduStudio_Recording_${Date.now()}.${formatChoice === 'mp4' ? 'mp4' : 'webm'}`;
+                    a.download = `ProEduStudio_ProAudio_${Date.now()}.${formatChoice === 'mp4' ? 'mp4' : 'webm'}`;
                     document.body.appendChild(a);
                     a.click();
                     setTimeout(() => {
