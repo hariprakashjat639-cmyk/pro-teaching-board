@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; background-color: #1e1e1e; color: white; user-select: none; touch-action: none; cursor: none; }
+        body { margin: 0; overflow: hidden; background-color: #1e1e1e; color: white; user-select: none; touch-action: none; }
         
         #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
         #slide-image { max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; z-index: 1; }
@@ -17,17 +17,7 @@
         #drawing-canvas { 
             position: absolute; 
             z-index: 10; 
-            cursor: none; 
-        }
-
-        /* Updated Left-Handed Pencil Cursor */
-        #custom-cursor {
-            position: fixed;
-            pointer-events: none;
-            z-index: 99999;
-            display: none;
-            transform: translate(-3px, -3px); 
-            filter: drop-shadow(2px 3px 5px rgba(0,0,0,0.8));
+            cursor: crosshair; 
         }
         
         .bottom-left-toolbar { 
@@ -82,18 +72,6 @@
     </style>
 </head>
 <body>
-
-    <!-- Left-Handed Pencil Cursor -->
-    <div id="custom-cursor">
-        <svg width="36" height="36" viewBox="0 0 32 32">
-            <!-- Body: Slanted Bottom-Right to Top-Left -->
-            <path d="M4 4 L 28 28 L 25 31 L 1 7 Z" fill="#fdf0cd" stroke="#000000" stroke-width="1.2"/>
-            <!-- Tip: Moved to Left Side -->
-            <path d="M1 7 L 4 4 L 5 5 L 2 8 Z" fill="#222222"/>
-            <!-- Eraser: Moved to Bottom-Right -->
-            <path d="M28 28 L 25 31 L 29 35 L 32 32 Z" fill="#ff4d4d" stroke="#000000" stroke-width="1"/>
-        </svg>
-    </div>
 
     <!-- Loading Screen -->
     <div id="loading-screen">
@@ -152,7 +130,6 @@
         const slideImage = document.getElementById('slide-image');
         const uploadPrompt = document.getElementById('upload-prompt');
         const loadingScreen = document.getElementById('loading-screen');
-        const customCursor = document.getElementById('custom-cursor');
 
         uploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
@@ -189,7 +166,7 @@
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('slide-nav').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
-            loadSlide(0); if(currentMode !== 'eraser') customCursor.style.display = 'block';
+            loadSlide(0);
         }
 
         function loadSlide(index) { saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1} / ${slides.length}`; slideImage.onload = () => { resizeCanvas(); restoreInk(); }; }
@@ -206,15 +183,8 @@
         function setActiveTool(mode) {
             currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
             if(mode === 'highlighter') sizeSlider.value = 25; else if(mode === 'eraser') sizeSlider.value = 35; else sizeSlider.value = 5;
-            customCursor.style.display = (mode === 'eraser' || document.getElementById('toolbar').style.display === 'none') ? 'none' : 'block';
         }
 
-        window.addEventListener('mousemove', (e) => {
-            if (currentMode !== 'eraser' && document.getElementById('toolbar').style.display !== 'none') {
-                customCursor.style.left = e.clientX + 'px'; customCursor.style.top = e.clientY + 'px'; customCursor.style.display = 'block';
-            }
-        });
-        document.addEventListener('mouseleave', () => { customCursor.style.display = 'none'; });
         setActiveTool('glow');
         colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
         tools['glow'].addEventListener('click', () => setActiveTool('glow')); tools['normal'].addEventListener('click', () => setActiveTool('normal')); tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
