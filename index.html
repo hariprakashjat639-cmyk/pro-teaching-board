@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro EduCreator Studio - iPad Note Edition</title>
+    <title>Pro EduCreator Studio - Ultimate iPad Note Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; overflow: hidden; background-color: #0d0d0d; color: white; user-select: none; touch-action: none; cursor: default; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #0b0b0e; color: white; user-select: none; touch-action: none; cursor: default; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         
-        #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #050505; }
+        #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #030305; }
         #slide-image { max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; z-index: 1; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         
         #drawing-canvas { 
@@ -31,63 +31,63 @@
             justify-content: center;
             text-align: center;
             background: #18181b;
-            padding: 40px;
-            border-radius: 24px;
+            padding: 35px;
+            border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-            max-width: 500px;
+            max-width: 450px;
             width: 90%;
         }
 
-        /* iPad Note-Taking Style Bottom Dock Toolbar */
+        /* iPad Note-Taking Style Bottom Dock Toolbar (Compact & Minimal) */
         .ipad-dock { 
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; 
-            display: none; flex-direction: row; gap: 8px; background: rgba(24, 24, 27, 0.85); 
-            padding: 8px 16px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.15); 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7); backdrop-filter: blur(20px);
-            align-items: center; transition: all 0.3s ease; max-width: 95vw; overflow-x: auto;
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 100; 
+            display: none; flex-direction: row; gap: 6px; background: rgba(20, 20, 25, 0.85); 
+            padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.12); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(25px);
+            align-items: center; transition: all 0.3s ease; max-width: 98vw; overflow-x: auto;
         }
         
         .dock-btn { 
-            width: 36px; height: 36px; border-radius: 50%; cursor: pointer; 
-            border: 2px solid transparent; transition: all 0.2s; 
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer; 
+            border: 1.5px solid transparent; transition: all 0.2s; 
             display: flex; justify-content: center; align-items: center; 
-            background: rgba(255, 255, 255, 0.08); color: white; font-size: 13px; flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.06); color: white; font-size: 12px; flex-shrink: 0;
         }
         .dock-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
         .dock-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 10px rgba(10, 132, 255, 0.5); }
         
-        .color-picker-wrapper { position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); flex-shrink: 0; }
+        .color-picker-wrapper { position: relative; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; }
         #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
         
-        .dock-slider { width: 55px; cursor: pointer; accent-color: #0a84ff; height: 4px; border-radius: 2px; background: #555; flex-shrink: 0; margin: 0 4px; }
-        .dock-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.2); margin: 0 4px; flex-shrink: 0; }
+        .dock-slider { width: 45px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
+        .dock-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
-        /* Recorder UI (Compact Top Right) */
+        /* Recorder UI (Ultra Compact Top Right) */
         .recorder-ui { 
-            position: absolute; top: 15px; right: 15px; z-index: 100; 
-            display: none; align-items: center; gap: 8px;
+            position: absolute; top: 12px; right: 12px; z-index: 100; 
+            display: none; align-items: center; gap: 6px;
         }
         
         .rec-circle-btn {
-            width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+            width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: 0.3s; color: white; font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); transition: 0.3s; color: white; font-size: 12px;
         }
         #btn-start { background: #30d158; }
         #btn-start:hover { background: #28b84d; transform: scale(1.05); }
         #btn-stop { background: #ff453a; display: none; animation: pulse 1.5s infinite; }
         
         .timer-badge {
-            background: rgba(24, 24, 27, 0.9); padding: 4px 10px; border-radius: 20px;
-            font-family: monospace; font-size: 12px; font-weight: bold; border: 1px solid rgba(255,255,255,0.15); display: none; backdrop-filter: blur(10px);
+            background: rgba(20, 20, 25, 0.85); padding: 3px 8px; border-radius: 15px;
+            font-family: monospace; font-size: 11px; font-weight: bold; border: 1px solid rgba(255,255,255,0.12); display: none; backdrop-filter: blur(10px);
         }
 
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
 
         /* Loading Screen */
         #loading-screen { display: none; position: absolute; z-index: 2000; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; justify-content: center; align-items: center; }
-        .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #0a84ff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #0a84ff; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -95,18 +95,18 @@
 
     <!-- Loading Screen -->
     <div id="loading-screen">
-        <div class="spinner mb-4"></div>
-        <h2 id="loading-text" class="text-lg font-medium text-white">फाइल हाई-क्वालिटी में प्रोसेस हो रही है...</h2>
+        <div class="spinner mb-3"></div>
+        <h2 id="loading-text" class="text-base font-medium text-white">फाइल हाई-क्वालिटी में प्रोसेस हो रही है...</h2>
     </div>
 
     <!-- Main Workspace -->
     <div id="presentation-area">
         <!-- Upload Prompt Overlay -->
         <div id="upload-prompt">
-            <i class="fas fa-file-powerpoint text-6xl mb-4 text-[#ff453a]"></i>
-            <h2 class="text-2xl font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
-            <p class="text-xs mb-6 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और पढ़ाना शुरू करें।</p>
-            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-sm px-6 py-3 rounded-2xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
+            <i class="fas fa-file-powerpoint text-5xl mb-3 text-[#ff453a]"></i>
+            <h2 class="text-xl font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
+            <p class="text-xs mb-5 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और वीडियो रिकॉर्डिंग शुरू करें।</p>
+            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
                 <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
             </button>
             <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
@@ -126,23 +126,23 @@
     <!-- iPad Note Style Bottom Dock Toolbar -->
     <div class="ipad-dock" id="toolbar">
         <!-- Slide Navigation -->
-        <button id="prev-btn" class="dock-btn" title="पिछला स्लाइड"><i class="fas fa-chevron-left"></i></button>
-        <span id="slide-counter" class="text-white text-xs font-bold px-1 tracking-wider">1/1</span>
-        <button id="next-btn" class="dock-btn" title="अगला स्लाइड"><i class="fas fa-chevron-right"></i></button>
+        <button id="prev-btn" class="dock-btn" title="पिछला स्लाइड"><i class="fas fa-chevron-left text-[10px]"></i></button>
+        <span id="slide-counter" class="text-white text-[11px] font-bold px-1 tracking-wider">1/1</span>
+        <button id="next-btn" class="dock-btn" title="अगला स्लाइड"><i class="fas fa-chevron-right text-[10px]"></i></button>
         
         <div class="dock-divider"></div>
 
         <!-- Color Picker -->
         <div class="color-picker-wrapper" title="रंग बदलें (Color)">
             <input type="color" id="color-picker" value="#ffff00">
-            <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[10px]"></i></button>
+            <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[9px]"></i></button>
         </div>
 
         <!-- Drawing Tools -->
         <button class="dock-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic"></i></button>
-        <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen"></i></button>
-        <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter"></i></button>
-        <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser"></i></button>
+        <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[10px]"></i></button>
+        <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[10px]"></i></button>
+        <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[10px]"></i></button>
 
         <!-- Size Slider -->
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
@@ -150,8 +150,8 @@
         <div class="dock-divider"></div>
 
         <!-- Utility Buttons -->
-        <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt"></i></button>
-        <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand"></i></button>
+        <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[10px]"></i></button>
+        <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[10px]"></i></button>
     </div>
 
     <script>
@@ -264,12 +264,12 @@
                 document.documentElement.requestFullscreen().catch(err => {
                     alert(`Full-screen error: ${err.message}`);
                 });
-                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[10px]"></i>';
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 }
-                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[10px]"></i>';
             }
         });
 
