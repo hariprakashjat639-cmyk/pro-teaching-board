@@ -450,7 +450,9 @@
             }
         });
 
-        // Upgraded Professional Studio Audio Recorder Engine
+        // ============================================================
+        // Upgraded Professional Studio Audio Recorder Engine (REVISED)
+        // ============================================================
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -462,25 +464,23 @@
 
         btnStart.addEventListener('click', async () => {
             try {
+                // 1. Get Settings
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
                 const formatChoice = document.getElementById('setting-format').value;
-
-                // Professional Advanced Audio Parameters
-                const useNoiseSuppression = document.getElementById('setting-noise-suppression').checked;
-                const useCompressor = document.getElementById('setting-noise-gate').checked;
-                const useEqPresence = document.getElementById('setting-vst').checked;
-                const useInvertPolarity = document.getElementById('setting-invert-polarity').checked;
-                const audioProfile = document.getElementById('setting-audio-interface').value;
-                
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 5;
 
-                let videoBits = bitrateMbps * 1000000;
+                // Audio specific settings
+                const useNoiseSuppression = document.getElementById('setting-noise-suppression').checked;
+                const useCompressor = document.getElementById('setting-noise-gate').checked; // UI calls it noise-gate, logic uses compressor
+                const useEqPresence = document.getElementById('setting-vst').checked; // UI calls it VST, logic uses EQ
+                const audioProfile = document.getElementById('setting-audio-interface').value;
 
+                // 2. Setup Video Stream from Canvas
                 const recCanvas = document.createElement('canvas');
                 const recCtx = recCanvas.getContext('2d');
-                recCanvas.width = 1920;
+                recCanvas.width = 1920; // Internal recording res
                 recCanvas.height = 1080;
 
                 let activeSlideImg = new Image();
@@ -491,9 +491,11 @@
                 recordingLoopActive = true;
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
+                    // Background
                     recCtx.fillStyle = '#030305';
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
 
+                    // Slide
                     if (slides.length > 0 && slides[currentSlideIndex]) {
                         if (activeSlideImg.src !== slides[currentSlideIndex]) {
                             activeSlideImg.src = slides[currentSlideIndex];
@@ -508,6 +510,7 @@
                         }
                     }
 
+                    // Drawings
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
@@ -516,111 +519,133 @@
                 }
                 drawRecordingFrame();
 
-                let stream = recCanvas.captureStream(targetFps);
+                const videoStream = recCanvas.captureStream(targetFps);
+                const finalStream = new MediaStream();
+                
+                // Add Video Track
+                videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
+                // 3. Setup Professional Audio Stream
                 if (useMic) {
                     try {
+                        // Constraints based on UI settings
                         const micStream = await navigator.mediaDevices.getUserMedia({ 
                             audio: {
                                 noiseSuppression: useNoiseSuppression,
-                                echoCancellation: true,
-                                // Auto-Gain false करने से यह बैकग्राउंड साउंड को बेवजह नहीं बढ़ाएगा
-                                autoGainControl: false 
+                                echoCancellation: true, // Generally always wanted for recording
+                                autoGainControl: false,  // We want manual control via compressor/gain nodes
+                                sampleRate: 48000,       // Studio quality sampleread
+                                channelCount: 1          // Voice is usually mono
                             }, 
                             video: false 
                         });
 
-                        // Professional Web Audio Chain with precise studio dB and frequency tunings
-                        try {
-                            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                            if (audioCtx.state === 'suspended') {
-                                await audioCtx.resume();
-                            }
-                            const source = audioCtx.createMediaStreamSource(micStream);
-                            const destination = audioCtx.createMediaStreamDestination();
-                            let lastNode = source;
-
-                            // 1. Invert Polarity (Phase correction)
-                            if (useInvertPolarity) {
-                                const inverter = audioCtx.createGain();
-                                inverter.gain.value = -1;
-                                lastNode.connect(inverter);
-                                lastNode = inverter;
-                            }
-
-                            // 2. High-Pass Filter (Low Cut): Removes background rumble, AC hum, desk thuds
-                            let cutFreq = audioProfile === 'studio' ? 85 : (audioProfile === 'podcast' ? 70 : 50);
-                            const highPass = audioCtx.createBiquadFilter();
-                            highPass.type = 'highpass';
-                            highPass.frequency.setValueAtTime(cutFreq, audioCtx.currentTime);
-                            highPass.Q.setValueAtTime(0.707, audioCtx.currentTime);
-                            lastNode.connect(highPass);
-                            lastNode = highPass;
-
-                            // 3. Mud/Boxy Frequency Notch (Cuts harsh low-mids at 350Hz by -2.5dB)
-                            const mudCut = audioCtx.createBiquadFilter();
-                            mudCut.type = 'peaking';
-                            mudCut.frequency.setValueAtTime(350, audioCtx.currentTime);
-                            mudCut.gain.setValueAtTime(-2.5, audioCtx.currentTime);
-                            mudCut.Q.setValueAtTime(1.4, audioCtx.currentTime);
-                            lastNode.connect(mudCut);
-                            lastNode = mudCut;
-
-                            // 4. Studio Presence Boost (Adds crispness and focuses on human voice clarity)
-                            if (useEqPresence) {
-                                const presenceEq = audioCtx.createBiquadFilter();
-                                presenceEq.type = 'peaking';
-                                presenceEq.frequency.setValueAtTime(3500, audioCtx.currentTime); 
-                                presenceEq.gain.setValueAtTime(3.0, audioCtx.currentTime); // +3dB boost for human voice
-                                presenceEq.Q.setValueAtTime(1.0, audioCtx.currentTime);
-                                lastNode.connect(presenceEq);
-                                lastNode = presenceEq;
-                            }
-
-                            // 5. Studio Compressor (Controls loud peaks and acts as a gentle noise gate for background sounds)
-                            if (useCompressor) {
-                                const compressor = audioCtx.createDynamicsCompressor();
-                                compressor.threshold.setValueAtTime(-28, audioCtx.currentTime); 
-                                compressor.knee.setValueAtTime(12, audioCtx.currentTime);
-                                compressor.ratio.setValueAtTime(4, audioCtx.currentTime);
-                                compressor.attack.setValueAtTime(0.005, audioCtx.currentTime);
-                                compressor.release.setValueAtTime(0.1, audioCtx.currentTime);
-                                lastNode.connect(compressor);
-                                lastNode = compressor;
-                            }
-
-                            // 6. Master Volume / Gain Controller (Reduces overall gain as you requested)
-                            const masterGain = audioCtx.createGain();
-                            masterGain.gain.setValueAtTime(0.75, audioCtx.currentTime); // 75% volume कर दिया ताकि बैकग्राउंड नॉइज़ कट जाए
-                            lastNode.connect(masterGain);
-                            lastNode = masterGain;
-
-                            lastNode.connect(destination);
-
-                            destination.stream.getAudioTracks().forEach(track => {
-                                stream.addTrack(track);
-                            });
-
-                        } catch (audioErr) {
-                            console.error("Advanced audio setup failed, falling back to basic:", audioErr);
-                            micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                        // Standard Web Audio API Setup
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+                        
+                        // Handle potential suspended state (browser security)
+                        if (audioCtx.state === 'suspended') {
+                            await audioCtx.resume();
                         }
+
+                        const source = audioCtx.createMediaStreamSource(micStream);
+                        const destination = audioCtx.createMediaStreamDestination();
+                        
+                        // Define processing nodes based on professional signal chain
+                        // INPUT -> [PRE-GAIN] -> [INPUT EQ] -> [COMPRESSOR] -> [OUTPUT GAIN] -> OUTPUT
+
+                        // N1: Input Gain (Normalize varied mic levels)
+                        // Setting based on profile. Radio/Studio often need a little boost, Raw implies untouched.
+                        const inputGain = audioCtx.createGain();
+                        if (audioProfile === 'studio') inputGain.gain.value = 1.5; // +3.5dB
+                        else if (audioProfile === 'podcast') inputGain.gain.value = 1.25; // +2dB
+                        else inputGain.gain.value = 1.0; // Raw
+
+                        // N2: High-Pass Filter (Low Cut): Removes background rumble, AC hum, desk thuds
+                        // Standard for voice: around 80Hz-100Hz
+                        const lowCutFilter = audioCtx.createBiquadFilter();
+                        lowCutFilter.type = 'highpass';
+                        lowCutFilter.frequency.setValueAtTime(85, audioCtx.currentTime); 
+                        lowCutFilter.Q.setValueAtTime(0.707, audioCtx.currentTime); // Standard Butterworth
+
+                        // N3: Peaking EQ (Mud Removal): Cut muddy frequencies around 300-400Hz
+                        const mudCutEq = audioCtx.createBiquadFilter();
+                        mudCutEq.type = 'peaking';
+                        mudCutEq.frequency.setValueAtTime(350, audioCtx.currentTime);
+                        mudCutEq.gain.setValueAtTime(-3, audioCtx.currentTime); // -3dB cut
+                        mudCutEq.Q.setValueAtTime(1.0, audioCtx.currentTime);
+
+                        // N4: Peaking EQ (Vocal Presence/VST Option): Boost intelligibility around 3kHz-5kHz
+                        const presenceEq = audioCtx.createBiquadFilter();
+                        presenceEq.type = 'peaking';
+                        presenceEq.frequency.setValueAtTime(4000, audioCtx.currentTime);
+                        // Apply boost only if VST/Presence setting is on, else bypassed (0dB)
+                        const presBoost = useEqPresence ? 4 : 0; 
+                        presenceEq.gain.setValueAtTime(presBoost, audioCtx.currentTime);
+                        presenceEq.Q.setValueAtTime(1.2, audioCtx.currentTime);
+
+                        // N5: Dynamics Compressor (Compressor Option): Balances loud and soft parts
+                        const dynamicsCompressor = audioCtx.createDynamicsCompressor();
+                        if (useCompressor) {
+                            // Professional settings for voice processing
+                            dynamicsCompressor.threshold.setValueAtTime(-24, audioCtx.currentTime); // Start compressing at -24dB
+                            dynamicsCompressor.knee.setValueAtTime(12, audioCtx.currentTime);      // Soft knee for natural sound
+                            dynamicsCompressor.ratio.setValueAtTime(4, audioCtx.currentTime);       // 4:1 compression ratio
+                            dynamicsCompressor.attack.setValueAtTime(0.003, audioCtx.currentTime);  // 3ms fast attack to catch peaks
+                            dynamicsCompressor.release.setValueAtTime(0.25, audioCtx.currentTime);  // 250ms release for smooth decay
+                        } else {
+                            // Effect bypassed (default uncompressed settings)
+                            dynamicsCompressor.ratio.setValueAtTime(1, audioCtx.currentTime); 
+                        }
+
+                        // N6: Output Gain / Limiter: Final level adjustment and hard limiting to prevent digital clipping
+                        // Web Audio Compressor has a built-in limiter looking at -1dBFS, 
+                        // but we add a gain node to act as 'makeup gain' or final volume master.
+                        const outputGain = audioCtx.createGain();
+                        // If compressed, we need makeup gain to bring level back up
+                        const makeup = useCompressor ? 1.4 : 1.0; // Approx +3dB if compressed
+                        outputGain.gain.value = makeup; 
+
+
+                        // 4. Connect the Audio Node Chain
+                        source
+                            .connect(inputGain)
+                            .connect(lowCutFilter)
+                            .connect(mudCutEq)
+                            .connect(presenceEq)
+                            .connect(dynamicsCompressor)
+                            .connect(outputGain)
+                            .connect(destination);
+
+                        // Add processed audio track to final stream
+                        destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+
                     } catch (micErr) {
-                        alert("माइक शुरू करने में समस्या। कृपया परमिशन चेक करें।");
-                        recordingLoopActive = false;
-                        return;
+                        console.error("Audio Setup Failed:", micErr);
+                        alert("माइक सेटअप विफल रहा। केवल वीडियो रिकॉर्ड होगा।");
                     }
                 }
 
-                const mimeType = formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4') 
-                                    ? 'video/mp4' 
-                                    : 'video/webm; codecs=vp8,opus';
-                
-                mediaRecorder = new MediaRecorder(stream, {
+                // 5. Setup MediaRecorder with Optimized Settings
+                let mimeType = 'video/webm; codecs=vp9,opus'; // Default HQ
+                if (formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
+                    mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
+                } else if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm; codecs=vp8,opus'; // Fallback to standard webm
+                }
+
+                recordedChunks = [];
+                // Dynamic bitrate calc based on Mbps setting
+                let finalBitrate = bitrateMbps * 1000000; 
+
+                // Ensure high quality audio encoding
+                mediaRecorder = new MediaRecorder(finalStream, {
                     mimeType: mimeType,
-                    videoBitsPerSecond: videoBits
+                    videoBitsPerSecond: finalBitrate,
+                    audioBitsPerSecond: 128000 // HQ Mono Audio
                 });
 
+                // 6. Define Recorder Event Handlers
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) recordedChunks.push(e.data);
                 };
@@ -629,20 +654,30 @@
                     recordingLoopActive = false;
                     clearInterval(timerInterval);
                     
+                    // Process recording for download
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = `Pro_Recording_${new Date().getTime()}.${formatChoice}`;
+                    
+                    const timestamp = new Date().toISOString().substring(0,19).replace(/:/g,'-');
+                    const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                    a.download = `Studio_Rec_${timestamp}.${extension}`;
+                    
                     document.body.appendChild(a);
                     a.click();
                     
-                    window.URL.revokeObjectURL(url);
-                    recordedChunks = [];
+                    // Cleanup
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+
+                    // Stop all source tracks to release hardware
+                    finalStream.getTracks().forEach(track => track.stop());
                     
-                    stream.getTracks().forEach(track => track.stop());
-                    
+                    // Reset UI
                     timerText.style.display = 'none';
                     btnStart.style.display = 'flex';
                     btnStop.style.display = 'none';
@@ -650,13 +685,17 @@
                     seconds = 0;
                 };
 
+                // 7. Start Recording
+                // Request data every 1s (timeslice) helps manage memory for long recordings
                 mediaRecorder.start(1000); 
                 
+                // UI Updates
                 timerText.style.display = 'block';
                 btnStart.style.display = 'none';
                 btnStop.style.display = 'flex';
-                recSettingsMenu.style.display = 'none';
+                recSettingsMenu.style.display = 'none'; // Hide menu if open
                 
+                // Start Timer
                 seconds = 0;
                 timerInterval = setInterval(() => {
                     seconds++;
@@ -666,8 +705,8 @@
                 }, 1000);
 
             } catch (err) {
-                console.error("Recording setup failed:", err);
-                alert("रिकॉर्डिंग शुरू करने में त्रुटि आई।");
+                console.error("Recording Start Failed:", err);
+                alert("रिकॉर्डिंग शुरू करने में त्रुटि आई। कृपया अनुमतियाँ जांचें।");
                 recordingLoopActive = false;
             }
         });
@@ -675,6 +714,7 @@
         btnStop.addEventListener('click', () => {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
+                // onstop handler above will manage the rest
             }
         });
     </script>
