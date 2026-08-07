@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro EduCreator Studio - Ultimate Master Edition</title>
+    <title>Pro EduCreator Studio - iPad Note Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -39,62 +39,51 @@
             width: 90%;
         }
 
-        /* iPad & PPT Style Left Side Vertical Toolbar */
-        .side-toolbar { 
-            position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 100; 
-            display: none; flex-direction: column; gap: 10px; background: rgba(24, 24, 27, 0.9); 
-            padding: 12px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(20px);
-            align-items: center; transition: all 0.3s ease;
+        /* iPad Note-Taking Style Bottom Dock Toolbar */
+        .ipad-dock { 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; 
+            display: none; flex-direction: row; gap: 8px; background: rgba(24, 24, 27, 0.85); 
+            padding: 8px 16px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.15); 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7); backdrop-filter: blur(20px);
+            align-items: center; transition: all 0.3s ease; max-width: 95vw; overflow-x: auto;
         }
         
-        .tool-btn { 
-            width: 40px; height: 40px; border-radius: 50%; cursor: pointer; 
+        .dock-btn { 
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer; 
             border: 2px solid transparent; transition: all 0.2s; 
             display: flex; justify-content: center; align-items: center; 
-            background: rgba(255, 255, 255, 0.08); color: white; position: relative; font-size: 14px;
+            background: rgba(255, 255, 255, 0.08); color: white; font-size: 13px; flex-shrink: 0;
         }
-        .tool-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
-        .tool-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 12px rgba(10, 132, 255, 0.5); }
+        .dock-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
+        .dock-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 10px rgba(10, 132, 255, 0.5); }
         
-        .color-picker-wrapper { position: relative; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); }
+        .color-picker-wrapper { position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); flex-shrink: 0; }
         #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
         
-        .size-container { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; width: 100%; }
-        input[type="range"] { width: 60px; cursor: pointer; accent-color: #0a84ff; height: 4px; border-radius: 2px; background: #555; transform: rotate(-90deg); margin: 15px 0; }
+        .dock-slider { width: 55px; cursor: pointer; accent-color: #0a84ff; height: 4px; border-radius: 2px; background: #555; flex-shrink: 0; margin: 0 4px; }
+        .dock-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.2); margin: 0 4px; flex-shrink: 0; }
 
-        /* Recorder UI */
+        /* Recorder UI (Compact Top Right) */
         .recorder-ui { 
-            position: absolute; top: 20px; right: 20px; z-index: 100; 
-            display: none; align-items: center; gap: 10px;
+            position: absolute; top: 15px; right: 15px; z-index: 100; 
+            display: none; align-items: center; gap: 8px;
         }
         
         .rec-circle-btn {
-            width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
+            width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: 0.3s; color: white; font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: 0.3s; color: white; font-size: 14px;
         }
         #btn-start { background: #30d158; }
         #btn-start:hover { background: #28b84d; transform: scale(1.05); }
         #btn-stop { background: #ff453a; display: none; animation: pulse 1.5s infinite; }
         
         .timer-badge {
-            background: rgba(24, 24, 27, 0.9); padding: 6px 12px; border-radius: 20px;
-            font-family: monospace; font-size: 13px; font-weight: bold; border: 1px solid rgba(255,255,255,0.15); display: none; backdrop-filter: blur(10px);
+            background: rgba(24, 24, 27, 0.9); padding: 4px 10px; border-radius: 20px;
+            font-family: monospace; font-size: 12px; font-weight: bold; border: 1px solid rgba(255,255,255,0.15); display: none; backdrop-filter: blur(10px);
         }
 
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
-
-        /* PPT Presentation Slide Navigation Bar (Bottom Center) */
-        .slide-nav { 
-            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 100; 
-            display: none; gap: 20px; background: rgba(24, 24, 27, 0.9); padding: 8px 20px; 
-            border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); 
-            align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        
-        body.fullscreen-mode .slide-nav { opacity: 0.7; transform: translateX(-50%) scale(0.95); }
-        body.fullscreen-mode .slide-nav:hover { opacity: 1; }
 
         /* Loading Screen */
         #loading-screen { display: none; position: absolute; z-index: 2000; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; justify-content: center; align-items: center; }
@@ -112,11 +101,11 @@
 
     <!-- Main Workspace -->
     <div id="presentation-area">
-        <!-- Upload Prompt Overlay (Directly Clickable Button Fixed) -->
+        <!-- Upload Prompt Overlay -->
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-6xl mb-4 text-[#ff453a]"></i>
             <h2 class="text-2xl font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
-            <p class="text-xs mb-6 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और PPT शो शुरू करें।</p>
+            <p class="text-xs mb-6 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और पढ़ाना शुरू करें।</p>
             <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-sm px-6 py-3 rounded-2xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
                 <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
             </button>
@@ -134,30 +123,35 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
     </div>
 
-    <!-- Side Markup Toolbar -->
-    <div class="side-toolbar" id="toolbar">
+    <!-- iPad Note Style Bottom Dock Toolbar -->
+    <div class="ipad-dock" id="toolbar">
+        <!-- Slide Navigation -->
+        <button id="prev-btn" class="dock-btn" title="पिछला स्लाइड"><i class="fas fa-chevron-left"></i></button>
+        <span id="slide-counter" class="text-white text-xs font-bold px-1 tracking-wider">1/1</span>
+        <button id="next-btn" class="dock-btn" title="अगला स्लाइड"><i class="fas fa-chevron-right"></i></button>
+        
+        <div class="dock-divider"></div>
+
+        <!-- Color Picker -->
         <div class="color-picker-wrapper" title="रंग बदलें (Color)">
             <input type="color" id="color-picker" value="#ffff00">
-            <button class="tool-btn" id="color-btn" style="background: #ffff00; color: black; z-index: 1; border: none;">
-                <i class="fas fa-palette text-xs"></i>
-            </button>
+            <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[10px]"></i></button>
         </div>
-        <button class="tool-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic"></i></button>
-        <button class="tool-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen"></i></button>
-        <button class="tool-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter"></i></button>
-        <button class="tool-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser"></i></button>
-        <button class="tool-btn" id="clear-btn" title="Clear Slide" style="background: rgba(255,69,58,0.2); color: #ff453a;"><i class="fas fa-trash-alt"></i></button>
-        <button class="tool-btn" id="fullscreen-btn" title="Full Screen Mode"><i class="fas fa-expand"></i></button>
-        <div class="size-container">
-            <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size">
-        </div>
-    </div>
 
-    <!-- PPT Show Slide Navigation Bar -->
-    <div class="slide-nav" id="slide-nav">
-        <button id="prev-btn" class="text-gray-300 hover:text-white text-sm px-2 py-1"><i class="fas fa-chevron-left mr-1"></i> पिछला</button>
-        <span id="slide-counter" class="text-white text-xs font-bold tracking-wider bg-black/40 px-3 py-1 rounded-full border border-white/10">1 / 1</span>
-        <button id="next-btn" class="text-gray-300 hover:text-white text-sm px-2 py-1">अगला <i class="fas fa-chevron-right ml-1"></i></button>
+        <!-- Drawing Tools -->
+        <button class="dock-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic"></i></button>
+        <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen"></i></button>
+        <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter"></i></button>
+        <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser"></i></button>
+
+        <!-- Size Slider -->
+        <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
+
+        <div class="dock-divider"></div>
+
+        <!-- Utility Buttons -->
+        <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt"></i></button>
+        <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand"></i></button>
     </div>
 
     <script>
@@ -173,7 +167,6 @@
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
 
-        // Direct Click Trigger for File Dialog
         browseBtn.addEventListener('click', () => {
             uploadInput.click();
         });
@@ -201,7 +194,7 @@
                             
                             for (let i = 1; i <= pdf.numPages; i++) {
                                 const page = await pdf.getPage(i);
-                                const viewport = page.getViewport({ scale: 2.5 }); // High Quality Scale
+                                const viewport = page.getViewport({ scale: 2.5 }); 
                                 const canvasTemp = document.createElement('canvas');
                                 canvasTemp.height = viewport.height; 
                                 canvasTemp.width = viewport.width;
@@ -239,7 +232,6 @@
             loadingScreen.style.display = 'none'; 
             slideImage.style.display = 'block';
             document.getElementById('toolbar').style.display = 'flex';
-            document.getElementById('slide-nav').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
             loadSlide(0);
         }
@@ -248,7 +240,7 @@
             saveCurrentInk(); 
             currentSlideIndex = index; 
             slideImage.src = slides[currentSlideIndex]; 
-            document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1} / ${slides.length}`; 
+            document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
             slideImage.onload = () => { 
                 resizeCanvas(); 
                 restoreInk(); 
@@ -258,7 +250,6 @@
         document.getElementById('prev-btn').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
         document.getElementById('next-btn').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
 
-        // Keyboard Arrow Support for PPT Navigation
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight' || e.key === 'PageDown') {
                 if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1);
@@ -267,7 +258,6 @@
             }
         });
 
-        // Full Screen Toggle Feature
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         fullscreenBtn.addEventListener('click', () => {
             if (!document.fullscreenElement) {
@@ -275,17 +265,14 @@
                     alert(`Full-screen error: ${err.message}`);
                 });
                 fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                document.body.classList.add('fullscreen-mode');
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 }
                 fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                document.body.classList.remove('fullscreen-mode');
             }
         });
 
-        // Canvas Drawing Logic
         const canvas = document.getElementById('drawing-canvas'); 
         const ctx = canvas.getContext('2d');
         let isDrawing = false; 
