@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro EduCreator Studio - iPad Notes Edition</title>
+    <title>Pro EduCreator Studio - iPad Side Toolbar Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -20,29 +20,29 @@
             cursor: default; 
         }
         
-        /* iPad Notes Floating Markup Toolbar */
-        .bottom-left-toolbar { 
-            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 50; 
-            display: none; gap: 6px; background: rgba(28, 28, 30, 0.85); 
-            padding: 8px 14px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.15); 
+        /* iPad Notes Left Side Vertical Toolbar */
+        .side-toolbar { 
+            position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 50; 
+            display: none; flex-direction: column; gap: 10px; background: rgba(28, 28, 30, 0.9); 
+            padding: 12px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(20px);
             align-items: center; transition: all 0.3s ease;
         }
         
         .tool-btn { 
-            width: 36px; height: 36px; border-radius: 50%; cursor: pointer; 
+            width: 38px; height: 38px; border-radius: 50%; cursor: pointer; 
             border: 2px solid transparent; transition: all 0.2s; 
             display: flex; justify-content: center; align-items: center; 
-            background: rgba(255, 255, 255, 0.08); color: white; position: relative; font-size: 13px;
+            background: rgba(255, 255, 255, 0.08); color: white; position: relative; font-size: 14px;
         }
         .tool-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
         .tool-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 12px rgba(10, 132, 255, 0.5); }
         
-        .color-picker-wrapper { position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); }
+        .color-picker-wrapper { position: relative; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); }
         #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
         
-        .size-container { display: flex; align-items: center; gap: 6px; margin-left: 5px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 8px; }
-        input[type="range"] { width: 70px; cursor: pointer; accent-color: #0a84ff; height: 4px; border-radius: 2px; background: #555; }
+        .size-container { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; width: 100%; }
+        input[type="range"] { width: 60px; cursor: pointer; accent-color: #0a84ff; height: 4px; border-radius: 2px; background: #555; transform: rotate(-90deg); margin: 15px 0; }
 
         /* Recorder UI */
         .recorder-ui { 
@@ -67,7 +67,7 @@
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
 
         /* Slide Navigation */
-        .slide-nav { position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%); z-index: 50; display: none; gap: 15px; background: rgba(28, 28, 30, 0.85); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(10px); align-items: center; }
+        .slide-nav { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); z-index: 50; display: none; gap: 15px; background: rgba(28, 28, 30, 0.85); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(10px); align-items: center; }
         
         body.fullscreen-mode .slide-nav { opacity: 0.7; transform: translateX(-50%) scale(0.9); }
         body.fullscreen-mode .slide-nav:hover { opacity: 1; }
@@ -104,8 +104,8 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
     </div>
 
-    <!-- iPad Floating Markup Toolbar -->
-    <div class="bottom-left-toolbar" id="toolbar">
+    <!-- iPad Left Side Vertical Markup Toolbar -->
+    <div class="side-toolbar" id="toolbar">
         <div class="color-picker-wrapper" title="रंग बदलें">
             <input type="color" id="color-picker" value="#ffff00">
             <button class="tool-btn" id="color-btn" style="background: #ffff00; color: black; z-index: 1; border: none;">
@@ -117,10 +117,10 @@
         <button class="tool-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter"></i></button>
         <button class="tool-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser"></i></button>
         <button class="tool-btn" id="clear-btn" title="Clear Slide" style="background: rgba(255,69,58,0.2); color: #ff453a;"><i class="fas fa-trash-alt"></i></button>
-        <div class="size-container">
-            <input type="range" id="pen-size" min="2" max="40" value="5">
-        </div>
         <button class="tool-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand"></i></button>
+        <div class="size-container">
+            <input type="range" id="pen-size" min="2" max="40" value="5" title="Pen Size">
+        </div>
     </div>
 
     <!-- Slide Navigation Capsule -->
