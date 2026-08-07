@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Fully Optimized</title>
+    <title>Pro EduCreator Studio - Optimized Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -23,27 +23,15 @@
             align-items: center; background: #030305; overflow: hidden;
         }
 
-        /* Perfect Sync Wrapper for Slide & Canvas */
-        #slide-container {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            max-width: 100%;
-            max-height: 100%;
-        }
-
         #slide-image { 
-            max-width: 100vw; max-height: 100vh; 
+            width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
             object-fit: contain; z-index: 1; border-radius: 4px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
-            display: block;
         }
         
         #drawing-canvas { 
-            position: absolute; 
-            z-index: 10; 
-            cursor: crosshair; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; cursor: default; 
         }
         
         #upload-prompt {
@@ -55,7 +43,7 @@
         }
 
         .ipad-dock { 
-            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 100; 
+            position: absolute; bottom: 12px; left: 15px; z-index: 100; 
             display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
             padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
@@ -142,10 +130,8 @@
             <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
         </div>
 
-        <div id="slide-container">
-            <img id="slide-image" src="" style="display: none;">
-            <canvas id="drawing-canvas"></canvas>
-        </div>
+        <img id="slide-image" src="" style="display: none;">
+        <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav" title="पिछला स्लाइड"><i class="fas fa-chevron-left"></i></button>
         <button class="side-nav-btn" id="right-nav" title="अगला स्लाइड"><i class="fas fa-chevron-right"></i></button>
@@ -157,6 +143,7 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
+        <!-- Popup Menu for Settings & Permissions -->
         <div id="rec-settings-menu">
             <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व अनुमतियाँ</div>
             <div class="rec-setting-item">
@@ -209,7 +196,6 @@
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
         const slideImage = document.getElementById('slide-image');
-        const slideContainer = document.getElementById('slide-container');
         const uploadPrompt = document.getElementById('upload-prompt');
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
@@ -313,7 +299,7 @@
         });
 
         const canvas = document.getElementById('drawing-canvas'); 
-        const ctx = canvas.getContext('2d', { alpha: true });
+        const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         
         const sizeSlider = document.getElementById('pen-size'); 
@@ -326,21 +312,11 @@
             'eraser': document.getElementById('eraser-btn') 
         };
 
-        // Perfectly match canvas size to rendered image dimensions
-        function resizeCanvas() {
-            if (!slideImage.complete || slideImage.naturalWidth === 0) return;
-            
-            const rect = slideImage.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-            canvas.style.width = rect.width + 'px';
-            canvas.style.height = rect.height + 'px';
-            canvas.style.left = slideImage.offsetLeft + 'px';
-            canvas.style.top = slideImage.offsetTop + 'px';
-
+        function resizeCanvas() { 
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight; 
             ctx.lineCap = 'round'; 
             ctx.lineJoin = 'round';
-            ctx.imageSmoothingEnabled = true;
             restoreInk(); 
         }
         window.addEventListener('resize', resizeCanvas);
@@ -366,26 +342,14 @@
             saveCurrentInk();
         });
 
-        function getMousePos(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: (e.clientX - rect.left) * (canvas.width / rect.width),
-                y: (e.clientY - rect.top) * (canvas.height / rect.height)
-            };
-        }
-
         canvas.addEventListener('pointerdown', (e) => { 
-            isDrawing = true; 
-            const pos = getMousePos(e);
-            points = [pos]; 
-            ctx.beginPath(); 
-            ctx.moveTo(pos.x, pos.y); 
+            isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; 
+            ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); 
         });
 
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return;
-            const pos = getMousePos(e);
-            points.push(pos);
+            points.push({x: e.clientX, y: e.clientY});
             let baseSize = parseInt(sizeSlider.value);
             
             if (currentMode === 'eraser') { 
@@ -412,12 +376,11 @@
         function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             if (slideInks[currentSlideIndex]) { 
-                let img = new Image(); 
-                img.src = slideInks[currentSlideIndex]; 
-                img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => ctx.drawImage(img, 0, 0); 
             } 
         }
 
+        // Recorder Settings Popup Toggle & Permission Handler
         const btnSettings = document.getElementById('btn-settings');
         const recSettingsMenu = document.getElementById('rec-settings-menu');
         const btnRequestPermission = document.getElementById('btn-request-permission');
@@ -439,10 +402,11 @@
             }
         });
 
-        // --- OPTIMIZED BANDICAM-STYLE LIGHTWEIGHT RECORDER (Zero PC Lag) ---
+        // Upgraded Composite Screen Recorder with 100% Mobile Slide Visibility Fix
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
+        let recordingLoopActive = false;
         
         const btnStart = document.getElementById('btn-start'); 
         const btnStop = document.getElementById('btn-stop'); 
@@ -454,24 +418,26 @@
                 const quality = document.getElementById('setting-quality').value;
                 const formatChoice = document.getElementById('setting-format').value;
 
-                let videoBits = quality === 'high' ? 6000000 : 2500000;
+                let videoBits = quality === 'high' ? 8000000 : 3000000;
 
-                // Create lightweight recording canvas (1280x720 standard HD for low CPU usage)
                 const recCanvas = document.createElement('canvas');
                 const recCtx = recCanvas.getContext('2d');
-                recCanvas.width = 1280;
-                recCanvas.height = 720;
+                recCanvas.width = 1920;
+                recCanvas.height = 1080;
 
+                // Pre-cache current slide image for robust mobile rendering
                 let activeSlideImg = new Image();
                 if (slides.length > 0 && slides[currentSlideIndex]) {
                     activeSlideImg.src = slides[currentSlideIndex];
                 }
 
-                // Bandicam-Style Throttled 20 FPS Render Loop (Extremely lightweight, zero CPU spikes)
-                let recordingInterval = setInterval(() => {
+                recordingLoopActive = true;
+                function drawRecordingFrame() {
+                    if (!recordingLoopActive) return;
                     recCtx.fillStyle = '#030305';
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
 
+                    // Robust Slide Drawing for Mobile
                     if (slides.length > 0 && slides[currentSlideIndex]) {
                         if (activeSlideImg.src !== slides[currentSlideIndex]) {
                             activeSlideImg.src = slides[currentSlideIndex];
@@ -486,19 +452,23 @@
                         }
                     }
 
+                    // Draw user drawing canvas layer on top
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
-                }, 1000 / 20); // Stable 20 FPS
 
-                let stream = recCanvas.captureStream(20);
+                    requestAnimationFrame(drawRecordingFrame);
+                }
+                drawRecordingFrame();
+
+                let stream = recCanvas.captureStream(30);
 
                 if (useMic) {
                     try {
                         const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                         micStream.getAudioTracks().forEach(track => stream.addTrack(track));
                     } catch (mErr) {
-                        console.log("Microphone access denied.");
+                        console.log("Microphone access denied or unavailable.");
                     }
                 }
 
@@ -519,7 +489,7 @@
                 
                 mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = () => {
-                    clearInterval(recordingInterval);
+                    recordingLoopActive = false;
                     saveVideoOffline();
                 };
                 
@@ -536,11 +506,13 @@
                     timerText.innerText = `${mins}:${secs}`; 
                 }, 1000);
             } catch (err) { 
+                recordingLoopActive = false;
                 alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया आवश्यक अनुमतियाँ (Permissions) दें।"); 
             }
         });
 
         btnStop.addEventListener('click', () => { 
+            recordingLoopActive = false;
             if(mediaRecorder && mediaRecorder.state !== "inactive") {
                 mediaRecorder.stop();
                 if(mediaRecorder.stream) {
@@ -573,4 +545,3 @@
     </script>
 </body>
 </html>
-                
