@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro EduCreator Studio - Complete Magic Edition</title>
+    <title>Pro EduCreator Studio - Flipped Pencil Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -20,13 +20,13 @@
             cursor: none; 
         }
 
-        /* Bandicam Style Long Slanted Pencil Cursor (Tip aligned at top-right tip of SVG) */
+        /* Flipped Bandicam Style Pencil Cursor (Tip aligned at top-left tip of SVG) */
         #custom-cursor {
             position: fixed;
             pointer-events: none;
             z-index: 99999;
             display: none;
-            transform: translate(-31px, -7px); 
+            transform: translate(-1px, -7px); 
             filter: drop-shadow(2px 3px 5px rgba(0,0,0,0.8));
         }
         
@@ -88,15 +88,15 @@
 </head>
 <body>
 
-    <!-- Professional Bandicam-Style Slanted Pencil Cursor -->
+    <!-- Horizontally Flipped Bandicam-Style Slanted Pencil Cursor -->
     <div id="custom-cursor">
         <svg width="36" height="36" viewBox="0 0 32 32">
-            <!-- Long Slanted Body -->
-            <path d="M28 4 L 4 28 L 7 31 L 31 7 Z" fill="#fdf0cd" stroke="#000000" stroke-width="1.2"/>
-            <!-- Tip -->
-            <path d="M31 7 L 28 4 L 27 5 L 30 8 Z" fill="#222222"/>
-            <!-- Eraser End -->
-            <path d="M4 28 L 7 31 L 3 35 L 0 32 Z" fill="#ff4d4d" stroke="#000000" stroke-width="1"/>
+            <!-- Flipped Body -->
+            <path d="M4 4 L 28 28 L 25 31 L 1 7 Z" fill="#fdf0cd" stroke="#000000" stroke-width="1.2"/>
+            <!-- Flipped Tip -->
+            <path d="M1 7 L 4 4 L 5 5 L 2 8 Z" fill="#222222"/>
+            <!-- Flipped Eraser End -->
+            <path d="M28 28 L 25 31 L 29 35 L 32 32 Z" fill="#ff4d4d" stroke="#000000" stroke-width="1"/>
         </svg>
     </div>
 
