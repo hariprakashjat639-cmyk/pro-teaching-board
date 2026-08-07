@@ -390,10 +390,11 @@
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
         recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
-        // Highly Optimized Cross-Device Screen Recording Logic
+        // Upgraded Agency-Grade Composite Screen Recorder (100% Mobile & PC Compatible)
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
+        let recordingLoopActive = false;
         
         const btnStart = document.getElementById('btn-start'); 
         const btnStop = document.getElementById('btn-stop'); 
@@ -406,18 +407,42 @@
                 const formatChoice = document.getElementById('setting-format').value;
 
                 let videoBits = quality === 'high' ? 8000000 : 3000000;
-                let stream;
 
-                // Robust Stream Acquisition with Mobile/Desktop Fallback
-                try {
-                    stream = await navigator.mediaDevices.getDisplayMedia({ 
-                        video: { frameRate: { ideal: 30 }, width: { ideal: 1920 }, height: { ideal: 1080 } }, 
-                        audio: true 
-                    });
-                } catch (err) {
-                    // Critical Fallback for Mobile browsers where getDisplayMedia is restricted
-                    stream = canvas.captureStream(30);
+                // Hidden Composite Canvas to merge Slide Image + Drawing Canvas in real-time
+                const recCanvas = document.createElement('canvas');
+                const recCtx = recCanvas.getContext('2d');
+                recCanvas.width = 1920;
+                recCanvas.height = 1080;
+
+                recordingLoopActive = true;
+                function drawRecordingFrame() {
+                    if (!recordingLoopActive) return;
+                    recCtx.fillStyle = '#030305';
+                    recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+
+                    // Draw slide image
+                    if (slideImage.style.display !== 'none' && slideImage.src) {
+                        let img = slideImage;
+                        if (img.complete && img.naturalWidth) {
+                            let hRatio = recCanvas.width / img.naturalWidth;
+                            let vRatio = recCanvas.height / img.naturalHeight;
+                            let ratio = Math.min(hRatio, vRatio);
+                            let centerShiftX = (recCanvas.width - img.naturalWidth * ratio) / 2;
+                            let centerShiftY = (recCanvas.height - img.naturalHeight * ratio) / 2;
+                            recCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, centerShiftX, centerShiftY, img.naturalWidth * ratio, img.naturalHeight * ratio);
+                        }
+                    }
+
+                    // Draw user drawing canvas on top
+                    if (canvas) {
+                        recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
+                    }
+
+                    requestAnimationFrame(drawRecordingFrame);
                 }
+                drawRecordingFrame();
+
+                let stream = recCanvas.captureStream(30);
 
                 if (useMic) {
                     try {
@@ -428,7 +453,6 @@
                     }
                 }
 
-                // Dynamic MIME Type Selection for Maximum Compatibility
                 let mimeType = 'video/webm';
                 const candidateTypes = formatChoice === 'mp4' 
                     ? ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'] 
@@ -445,7 +469,10 @@
                 recordedChunks = [];
                 
                 mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
-                mediaRecorder.onstop = saveVideoOffline;
+                mediaRecorder.onstop = () => {
+                    recordingLoopActive = false;
+                    saveVideoOffline();
+                };
                 
                 mediaRecorder.start(250); 
                 btnStart.style.display = 'none'; 
@@ -460,11 +487,13 @@
                     timerText.innerText = `${mins}:${secs}`; 
                 }, 1000);
             } catch (err) { 
+                recordingLoopActive = false;
                 alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया आवश्यक अनुमतियाँ (Permissions) दें।"); 
             }
         });
 
         btnStop.addEventListener('click', () => { 
+            recordingLoopActive = false;
             if(mediaRecorder && mediaRecorder.state !== "inactive") {
                 mediaRecorder.stop();
                 if(mediaRecorder.stream) {
