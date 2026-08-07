@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Recorder Settings Edition</title>
+    <title>Pro EduCreator Studio - Optimized Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -390,7 +390,7 @@
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
         recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
-        // Optimized Offline Screen Recording Logic
+        // Highly Optimized Cross-Device Screen Recording Logic
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -408,13 +408,14 @@
                 let videoBits = quality === 'high' ? 8000000 : 3000000;
                 let stream;
 
+                // Robust Stream Acquisition with Mobile/Desktop Fallback
                 try {
                     stream = await navigator.mediaDevices.getDisplayMedia({ 
                         video: { frameRate: { ideal: 30 }, width: { ideal: 1920 }, height: { ideal: 1080 } }, 
                         audio: true 
                     });
                 } catch (err) {
-                    // Fallback to canvas stream if screen capture is declined or unsupported on specific mobile browsers
+                    // Critical Fallback for Mobile browsers where getDisplayMedia is restricted
                     stream = canvas.captureStream(30);
                 }
 
@@ -423,21 +424,27 @@
                         const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                         micStream.getAudioTracks().forEach(track => stream.addTrack(track));
                     } catch (mErr) {
-                        console.log("Microphone access denied.");
+                        console.log("Microphone access denied or unavailable.");
                     }
                 }
 
-                let mimeType = 'video/webm;codecs=vp9,opus';
-                if (formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4')) {
-                    mimeType = 'video/mp4';
-                } else if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm';
+                // Dynamic MIME Type Selection for Maximum Compatibility
+                let mimeType = 'video/webm';
+                const candidateTypes = formatChoice === 'mp4' 
+                    ? ['video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'] 
+                    : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+
+                for (let type of candidateTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        mimeType = type;
+                        break;
+                    }
                 }
 
                 mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: videoBits });
                 recordedChunks = [];
                 
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = saveVideoOffline;
                 
                 mediaRecorder.start(250); 
@@ -448,17 +455,21 @@
                 seconds = 0;
                 timerInterval = setInterval(() => { 
                     seconds++; 
-                    timerText.innerText = new Date(seconds * 1000).toISOString().substr(14, 5); 
+                    let mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    let secs = (seconds % 60).toString().padStart(2, '0');
+                    timerText.innerText = `${mins}:${secs}`; 
                 }, 1000);
             } catch (err) { 
-                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया परमिशन दें या दूसरा ब्राउज़र आज़माएँ।"); 
+                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया आवश्यक अनुमतियाँ (Permissions) दें।"); 
             }
         });
 
         btnStop.addEventListener('click', () => { 
             if(mediaRecorder && mediaRecorder.state !== "inactive") {
                 mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                if(mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
             }
             btnStart.style.display = 'flex'; 
             btnStop.style.display = 'none'; 
