@@ -20,7 +20,7 @@
             cursor: none; 
         }
 
-        /* Custom Pen Cursor Image - Flipped & Aligned correctly */
+        /* Perfected Pen Cursor - Tip aligned at top & pointing correctly */
         #custom-cursor {
             position: fixed;
             pointer-events: none;
@@ -29,7 +29,7 @@
             width: 32px;
             height: 32px;
             object-fit: contain;
-            transform: scaleY(-1) translate(-2px, -2px); /* पेन को सीधा/उल्टा ठीक करने और टिप मिलाने के लिए */
+            transform: translate(-2px, -28px); /* पेन के टिप को सटीक पॉइंटर पर सेट करने के लिए */
         }
         
         /* Toolbar - Bottom Left */
@@ -237,6 +237,11 @@
             document.getElementById('slide-nav').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
             loadSlide(0);
+            
+            // App शुरू होते ही कस्टम कर्सर को तुरंत डिस्प्ले करें
+            if (currentMode !== 'eraser') {
+                customCursor.style.display = 'block';
+            }
         }
 
         function loadSlide(index) {
@@ -301,6 +306,9 @@
             if (currentMode !== 'eraser') {
                 customCursor.style.left = e.clientX + 'px';
                 customCursor.style.top = e.clientY + 'px';
+                if (customCursor.style.display === 'none' && document.getElementById('toolbar').style.display !== 'none') {
+                    customCursor.style.display = 'block';
+                }
             }
         });
 
