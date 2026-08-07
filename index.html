@@ -2,7 +2,7 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pro EduCreator Studio - Mobile & Tablet Pro Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -10,9 +10,32 @@
 
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; overflow: hidden; background-color: #0b0b0e; color: white; user-select: none; touch-action: none; cursor: default; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        html, body { 
+            margin: 0; 
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; 
+            background-color: #0b0b0e; 
+            color: white; 
+            user-select: none; 
+            touch-action: none; 
+            cursor: default; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        }
         
-        #presentation-area { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #030305; }
+        #presentation-area { 
+            position: fixed; 
+            top: 0;
+            left: 0;
+            width: 100vw; 
+            height: 100vh; 
+            width: 100dvh;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: #030305; 
+        }
         #slide-image { max-width: 100%; max-height: 100%; object-fit: contain; position: absolute; z-index: 1; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         
         #drawing-canvas { 
@@ -273,16 +296,28 @@
             }
         });
 
+        // Robust Fullscreen Toggle for Mobile, Tablet & PC (Offline & Cross-platform)
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    alert(`Full-screen error: ${err.message}`);
-                });
+            let docEl = document.documentElement;
+            let isFs = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            
+            if (!isFs) {
+                if (docEl.requestFullscreen) {
+                    docEl.requestFullscreen().catch(err => console.log(err));
+                } else if (docEl.webkitRequestFullscreen) { /* Safari / iOS / Mobile Chrome */
+                    docEl.webkitRequestFullscreen();
+                } else if (docEl.msRequestFullscreen) {
+                    docEl.msRequestFullscreen();
+                }
                 fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>';
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
                 }
                 fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>';
             }
@@ -409,7 +444,7 @@
             } 
         }
 
-        // Screen Recording Logic with Mobile Fallback (Canvas Capture + Mic Audio)
+        // Fully Offline Screen Recording Logic for Mobile, Tablet & PC (Direct File / Downloads Save)
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval; 
@@ -423,25 +458,34 @@
             try {
                 let stream;
                 try {
-                    // Desktop screen sharing
+                    // Try desktop display media first
                     stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: true });
                 } catch (err) {
-                    // Fallback for Mobile: Capture Canvas Stream + Microphone Audio
+                    // Fully Offline Fallback for Mobile & Tablet: Capture Canvas Stream + Microphone Audio locally
                     const canvasStream = canvas.captureStream(30);
                     try {
                         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                         audioStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
                     } catch (micErr) {
-                        console.log("Mic permission denied or not available, recording silent canvas.");
+                        console.log("Mic permission denied or not available, recording silent canvas offline.");
                     }
                     stream = canvasStream;
                 }
 
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                // Completely offline local recording without internet dependency
+                let options = { mimeType: 'video/webm; codecs=vp9' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm' };
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = {}; // Default browser supported format
+                }
+
+                mediaRecorder = new MediaRecorder(stream, options);
                 recordedChunks = [];
                 
                 mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-                mediaRecorder.onstop = saveVideo;
+                mediaRecorder.onstop = saveVideoOffline;
                 
                 mediaRecorder.start(250); 
                 btnStart.style.display = 'none'; 
@@ -459,20 +503,29 @@
         });
 
         btnStop.addEventListener('click', () => { 
-            if(mediaRecorder) mediaRecorder.stop(); 
+            if(mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
             btnStart.style.display = 'flex'; 
             btnStop.style.display = 'none'; 
             timerText.style.display = 'none'; 
             clearInterval(timerInterval); 
         });
 
-        async function saveVideo() {
+        // Offline automatic save to device files / downloads folder
+        async function saveVideoOffline() {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob); 
             const a = document.createElement('a'); 
+            a.style.display = 'none';
             a.href = url; 
-            a.download = `Class_Recording_${new Date().getTime()}.webm`; 
+            a.download = `EduStudio_Recording_${Date.now()}.webm`; 
+            document.body.appendChild(a);
             a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
         }
     </script>
 </body>
