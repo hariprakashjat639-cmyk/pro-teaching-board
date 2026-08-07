@@ -428,12 +428,43 @@
             };
         }
 
+        function applyPenStyle(baseSize) {
+            if (currentMode === 'eraser') { 
+                ctx.globalCompositeOperation = 'destination-out'; 
+                ctx.lineWidth = baseSize; 
+                ctx.shadowBlur = 0; 
+                ctx.strokeStyle = 'rgba(0,0,0,1)'; 
+            } else if (currentMode === 'highlighter') { 
+                ctx.globalCompositeOperation = 'source-over'; 
+                ctx.lineWidth = baseSize; 
+                ctx.shadowBlur = 0; 
+                ctx.strokeStyle = currentColor + '55'; 
+            } else if (currentMode === 'glow') { 
+                ctx.globalCompositeOperation = 'source-over'; 
+                ctx.lineWidth = baseSize; 
+                ctx.shadowBlur = 22; 
+                ctx.shadowColor = currentColor; 
+                ctx.strokeStyle = currentColor; 
+            } else { 
+                ctx.globalCompositeOperation = 'source-over'; 
+                ctx.lineWidth = baseSize; 
+                ctx.shadowBlur = 0; 
+                ctx.shadowColor = 'transparent';
+                ctx.strokeStyle = currentColor; 
+            }
+        }
+
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; 
             const pos = getMousePos(e);
             points = [pos]; 
             ctx.beginPath(); 
-            ctx.moveTo(pos.x, pos.y); 
+            ctx.moveTo(pos.x, pos.y);
+            let baseSize = parseInt(sizeSlider.value);
+            applyPenStyle(baseSize);
+            // Draw initial dot for responsiveness
+            ctx.lineTo(pos.x + 0.1, pos.y + 0.1);
+            ctx.stroke();
         });
 
         canvas.addEventListener('pointermove', (e) => {
@@ -442,15 +473,7 @@
             points.push(pos);
             let baseSize = parseInt(sizeSlider.value);
             
-            if (currentMode === 'eraser') { 
-                ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; 
-            } else if (currentMode === 'highlighter') { 
-                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; 
-            } else if (currentMode === 'glow') { 
-                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 18; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; 
-            } else { 
-                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; 
-            }
+            applyPenStyle(baseSize);
 
             if (points.length >= 3) {
                 const controlPoint = points[points.length - 2];
@@ -600,44 +623,40 @@
                     clearInterval(recordingInterval);
                     saveVideoOffline();
                 };
-                
-                mediaRecorder.start(250); 
-                btnStart.style.display = 'none'; 
-                btnStop.style.display = 'flex'; 
+                mediaRecorder.start();
+                btnStart.style.display = 'none';
+                btnStop.style.display = 'flex';
                 timerText.style.display = 'block';
-                
                 seconds = 0;
-                timerInterval = setInterval(() => { 
-                    seconds++; 
-                    let mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-                    let secs = (seconds % 60).toString().padStart(2, '0');
-                    timerText.innerText = `${mins}:${secs}`; 
+                timerText.innerText = "00:00";
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    let m = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    let s = String(seconds % 60).padStart(2, '0');
+                    timerText.innerText = `${m}:${s}`;
                 }, 1000);
-            } catch (err) { 
-                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया आवश्यक अनुमतियाँ (Permissions) दें।"); 
+            } catch (err) {
+                alert("रिकॉर्डिंग शुरू करने में समस्या आई: " + err.message);
             }
         });
 
-        btnStop.addEventListener('click', () => { 
-            if(mediaRecorder && mediaRecorder.state !== "inactive") {
+        btnStop.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
-                if(mediaRecorder.stream) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                }
             }
-            btnStart.style.display = 'flex'; 
+            clearInterval(timerInterval);
+            btnStart.style.display = 'flex';
             btnStop.style.display = 'none';
             timerText.style.display = 'none';
-            clearInterval(timerInterval);
         });
 
         function saveVideoOffline() {
-            const blob = new Blob(recordedChunks, { type: mediaRecorder ? mediaRecorder.mimeType : 'video/webm' });
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = `ProEduCreator-Recording-${Date.now()}.webm`;
+            a.download = `EduCreator-Class-Recording-${Date.now()}.webm`;
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
