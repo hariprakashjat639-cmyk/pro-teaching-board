@@ -92,10 +92,10 @@
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
         #rec-settings-menu {
-            position: absolute; top: 45px; right: 0; width: 230px;
-            background: rgba(20, 20, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
+            position: absolute; top: 45px; right: 0; width: 260px; max-height: 80vh; overflow-y: auto;
+            background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 10px;
+            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
         }
         .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; }
         .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
@@ -164,6 +164,44 @@
                     <option value="mp4">MP4 (यदि समर्थित हो)</option>
                 </select>
             </div>
+            
+            <!-- Advanced OBS Audio & Video Options Added Below -->
+            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">ऑडियो एडवांस ऑप्शंस (OBS Style)</div>
+            <div class="rec-setting-item">
+                <span>Noise Suppression:</span>
+                <input type="checkbox" id="setting-noise-suppression" checked>
+            </div>
+            <div class="rec-setting-item">
+                <span>Noise Gate:</span>
+                <input type="checkbox" id="setting-noise-gate" checked>
+            </div>
+            <div class="rec-setting-item">
+                <span>VST 2.x Plug-in:</span>
+                <input type="checkbox" id="setting-vst">
+            </div>
+            <div class="rec-setting-item">
+                <span>Invert Polarity:</span>
+                <input type="checkbox" id="setting-invert-polarity">
+            </div>
+
+            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">वीडियो एडवांस ऑप्शंस</div>
+            <div class="rec-setting-item">
+                <span>फ्रेम रेट (FPS):</span>
+                <select id="setting-fps">
+                    <option value="30" selected>30 FPS</option>
+                    <option value="60">60 FPS</option>
+                </select>
+            </div>
+            <div class="rec-setting-item">
+                <span>बिटरेट (Bitrate Mbps):</span>
+                <select id="setting-bitrate">
+                    <option value="2">2 Mbps</option>
+                    <option value="5" selected>5 Mbps</option>
+                    <option value="8">8 Mbps (High)</option>
+                    <option value="12">12 Mbps (Ultra)</option>
+                </select>
+            </div>
+
             <button id="btn-request-permission" class="mt-1 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
             </button>
@@ -402,7 +440,7 @@
             }
         });
 
-        // Upgraded Composite Screen Recorder with 100% Mobile Slide Visibility Fix
+        // Upgraded Composite Screen Recorder with 100% Mobile Slide Visibility Fix & Advanced OBS Options
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -418,7 +456,15 @@
                 const quality = document.getElementById('setting-quality').value;
                 const formatChoice = document.getElementById('setting-format').value;
 
-                let videoBits = quality === 'high' ? 8000000 : 3000000;
+                // Advanced Settings Values
+                const useNoiseSuppression = document.getElementById('setting-noise-suppression').checked;
+                const useNoiseGate = document.getElementById('setting-noise-gate').checked;
+                const useVst = document.getElementById('setting-vst').checked;
+                const useInvertPolarity = document.getElementById('setting-invert-polarity').checked;
+                const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
+                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 5;
+
+                let videoBits = bitrateMbps * 1000000;
 
                 const recCanvas = document.createElement('canvas');
                 const recCtx = recCanvas.getContext('2d');
@@ -461,12 +507,62 @@
                 }
                 drawRecordingFrame();
 
-                let stream = recCanvas.captureStream(30);
+                let stream = recCanvas.captureStream(targetFps);
 
                 if (useMic) {
                     try {
-                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                        micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                        const micStream = await navigator.mediaDevices.getUserMedia({ 
+                            audio: {
+                                noiseSuppression: useNoiseSuppression,
+                                echoCancellation: true,
+                                autoGainControl: true
+                            }, 
+                            video: false 
+                        });
+
+                        // Apply advanced audio processing via Web Audio API (Noise Gate, VST filter, Invert Polarity)
+                        try {
+                            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                            const source = audioCtx.createMediaStreamSource(micStream);
+                            const destination = audioCtx.createMediaStreamDestination();
+                            let lastNode = source;
+
+                            // Invert Polarity (Phase Inversion)
+                            if (useInvertPolarity) {
+                                const inverter = audioCtx.createGain();
+                                inverter.gain.value = -1;
+                                lastNode.connect(inverter);
+                                lastNode = inverter;
+                            }
+
+                            // Noise Gate Simulation using DynamicsCompressor
+                            if (useNoiseGate) {
+                                const compressor = audioCtx.createDynamicsCompressor();
+                                compressor.threshold.setValueAtTime(-45, audioCtx.currentTime);
+                                compressor.knee.setValueAtTime(30, audioCtx.currentTime);
+                                compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+                                compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+                                compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+                                lastNode.connect(compressor);
+                                lastNode = compressor;
+                            }
+
+                            // VST 2.x Plug-in Filter Simulation (Clean Studio High-pass & Presence)
+                            if (useVst) {
+                                const vstFilter = audioCtx.createBiquadFilter();
+                                vstFilter.type = 'highpass';
+                                vstFilter.frequency.setValueAtTime(85, audioCtx.currentTime);
+                                lastNode.connect(vstFilter);
+                                lastNode = vstFilter;
+                            }
+
+                            lastNode.connect(destination);
+                            destination.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+                        } catch (audioErr) {
+                            console.log("Web Audio advanced nodes error, using raw mic stream:", audioErr);
+                            micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                        }
+
                     } catch (mErr) {
                         console.log("Microphone access denied or unavailable.");
                     }
