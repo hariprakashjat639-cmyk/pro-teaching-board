@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Ultimate Master Edition</title>
+    <title>Pro EduCreator Studio - Optimized Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -13,8 +13,8 @@
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #0b0b0e; color: white; 
-            user-select: none; touch-action: none; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            user-select: none; touch-action: none; cursor: default; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
         
         #presentation-area { 
@@ -24,91 +24,91 @@
         }
 
         #slide-image { 
-            max-width: 100%; max-height: 100%; 
+            width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
             object-fit: contain; z-index: 1; border-radius: 4px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
         }
         
         #drawing-canvas { 
-            position: absolute; z-index: 10; cursor: crosshair; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; cursor: crosshair; 
         }
         
         #upload-prompt {
             position: absolute; z-index: 1000; display: flex; flex-direction: column;
             align-items: center; justify-content: center; text-align: center;
-            background: #18181b; padding: 35px; border-radius: 20px;
+            background: #18181b; padding: 30px; border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 420px; width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 400px; width: 90%;
         }
 
-        /* Sidebar Dock */
-        .side-dock { 
-            position: absolute; top: 50%; left: 15px; transform: translateY(-50%); z-index: 100; 
-            display: none; flex-direction: column; gap: 8px; background: rgba(20, 20, 25, 0.9); 
-            padding: 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
+        .ipad-dock { 
+            position: absolute; bottom: 12px; left: 15px; z-index: 100; 
+            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
+            padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
-            align-items: center; max-height: 90vh; overflow-y: auto;
+            align-items: center; max-width: 85vw; overflow-x: auto;
         }
         
         .dock-btn { 
-            width: 36px; height: 36px; border-radius: 10px; cursor: pointer; 
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer; 
             border: 1px solid transparent; transition: all 0.2s; 
             display: flex; justify-content: center; align-items: center; 
-            background: rgba(255, 255, 255, 0.06); color: white; font-size: 13px; flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.06); color: white; font-size: 11px; flex-shrink: 0;
         }
         .dock-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
-        .dock-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 10px rgba(10, 132, 255, 0.6); }
+        .dock-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 8px rgba(10, 132, 255, 0.5); }
         
-        .color-picker-wrapper { position: relative; width: 36px; height: 36px; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+        .color-picker-wrapper { position: relative; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; }
         #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
         
-        .dock-slider { width: 36px; cursor: pointer; accent-color: #0a84ff; height: 65px; writing-mode: vertical-lr; direction: rtl; margin: 4px 0; flex-shrink: 0; }
-        .dock-divider { width: 24px; height: 1px; background: rgba(255,255,255,0.15); margin: 2px 0; flex-shrink: 0; }
+        .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
+        .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
-            width: 38px; height: 55px; background: rgba(20, 20, 25, 0.7); border: 1px solid rgba(255,255,255,0.12);
+            width: 36px; height: 50px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
             color: white; display: none; justify-content: center; align-items: center; cursor: pointer;
-            backdrop-filter: blur(10px); transition: 0.2s; font-size: 15px; border-radius: 8px;
+            backdrop-filter: blur(10px); transition: 0.2s; font-size: 14px;
         }
-        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.9); }
-        #left-nav { left: 75px; }
-        #right-nav { right: 15px; }
+        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.8); }
+        #left-nav { left: 0; border-radius: 0 8px 8px 0; }
+        #right-nav { right: 0; border-radius: 8px 0 0 8px; }
 
         .recorder-ui { 
             position: absolute; top: 12px; right: 12px; z-index: 100; 
-            display: none; align-items: center; gap: 8px;
+            display: none; align-items: center; gap: 6px;
         }
         
         .rec-circle-btn {
-            width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+            width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: 0.3s; color: white; font-size: 13px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: 0.3s; color: white; font-size: 11px;
         }
         #btn-start { background: #30d158; }
         #btn-start:hover { background: #28b84d; transform: scale(1.05); }
         #btn-stop { background: #ff453a; display: none; animation: pulse 1.5s infinite; }
-        #btn-settings { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); }
+        #btn-settings { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
         #rec-settings-menu {
-            position: absolute; top: 48px; right: 0; width: 240px;
-            background: rgba(20, 20, 25, 0.96); border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 10px;
+            position: absolute; top: 45px; right: 0; width: 240px;
+            background: rgba(20, 20, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
         }
         .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; }
-        .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 3px 6px; font-size: 11px; }
+        .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
 
         .timer-badge {
-            background: rgba(20, 20, 25, 0.9); padding: 5px 12px; border-radius: 12px;
-            font-family: monospace; font-size: 12px; font-weight: bold; border: 1px solid rgba(255,255,255,0.15); display: none; backdrop-filter: blur(10px);
+            background: rgba(20, 20, 25, 0.85); padding: 2px 6px; border-radius: 12px;
+            font-family: monospace; font-size: 10px; font-weight: bold; border: 1px solid rgba(255,255,255,0.12); display: none; backdrop-filter: blur(10px);
         }
 
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
 
-        #loading-screen { display: none; position: absolute; z-index: 2000; width: 100%; height: 100%; background: rgba(0,0,0,0.94); flex-direction: column; justify-content: center; align-items: center; }
-        .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #0a84ff; border-radius: 50%; width: 42px; height: 42px; animation: spin 1s linear infinite; }
+        #loading-screen { display: none; position: absolute; z-index: 2000; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #0a84ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -121,16 +121,16 @@
 
     <div id="presentation-area">
         <div id="upload-prompt">
-            <i class="fas fa-file-pdf text-4xl mb-3 text-[#ff453a]"></i>
-            <h2 class="text-base font-bold mb-2 text-white">PDF या Images फाइल चुनें</h2>
+            <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
+            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
             <p class="text-[11px] mb-4 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और वीडियो रिकॉर्डिंग शुरू करें।</p>
-            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
-                <i class="fas fa-folder-open mr-2"></i> फाइल ब्राउज़ करें (Browse)
+            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
+                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
             </button>
-            <input type="file" id="slide-upload" accept=".pdf, image/*" multiple style="display: none;">
+            <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
         </div>
 
-        <img id="slide-image" src="" style="display: none;" alt="Slide">
+        <img id="slide-image" src="" style="display: none;">
         <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav" title="पिछला स्लाइड"><i class="fas fa-chevron-left"></i></button>
@@ -139,20 +139,22 @@
 
     <div class="recorder-ui" id="recorder-ui">
         <span class="timer-badge" id="timer-text">00:00</span>
-        <button class="rec-circle-btn" id="btn-start" title="Start Smooth Recording"><i class="fas fa-video"></i></button>
-        <button class="rec-circle-btn" id="btn-stop" title="Stop & Save Video"><i class="fas fa-stop"></i></button>
+        <button class="rec-circle-btn" id="btn-start" title="Start Recording"><i class="fas fa-video"></i></button>
+        <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
         <div id="rec-settings-menu">
-            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व माइक</div>
+            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व अनुमतियाँ</div>
+            
+            <!-- Original Settings -->
             <div class="rec-setting-item">
-                <span>माइक्रोफोन ऑडियो (Mic):</span>
+                <span>माइक्रोफोन (Mic Audio):</span>
                 <input type="checkbox" id="setting-mic" checked>
             </div>
             <div class="rec-setting-item">
                 <span>वीडियो क्वालिटी (Quality):</span>
                 <select id="setting-quality">
-                    <option value="high">High (1080p HD)</option>
+                    <option value="high">High (1080p)</option>
                     <option value="medium" selected>Standard (720p)</option>
                 </select>
             </div>
@@ -163,28 +165,42 @@
                     <option value="mp4">MP4 (यदि समर्थित हो)</option>
                 </select>
             </div>
+
+            <!-- Added Advanced Screen Recording Settings -->
+            <div class="rec-setting-item">
+                <span>फ्रेम रेट (FPS):</span>
+                <select id="setting-fps">
+                    <option value="20" selected>20 FPS (Lightweight)</option>
+                    <option value="30">30 FPS (Smooth)</option>
+                    <option value="60">60 FPS (Ultra Smooth)</option>
+                </select>
+            </div>
+            <div class="rec-setting-item">
+                <span>सिस्टम ऑडियो (System Audio):</span>
+                <input type="checkbox" id="setting-system-audio">
+            </div>
+
             <button id="btn-request-permission" class="mt-1 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
             </button>
         </div>
     </div>
 
-    <!-- Sidebar Dock -->
-    <div class="side-dock" id="toolbar">
+    <div class="ipad-dock" id="toolbar">
         <span id="slide-counter" class="text-white text-[10px] font-bold px-1 tracking-wider">1/1</span>
         <div class="dock-divider"></div>
         <div class="color-picker-wrapper" title="रंग बदलें (Color)">
             <input type="color" id="color-picker" value="#ffff00">
-            <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[10px]"></i></button>
+            <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[8px]"></i></button>
         </div>
-        <button class="dock-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic text-[11px]"></i></button>
-        <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[11px]"></i></button>
-        <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[11px]"></i></button>
-        <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[11px]"></i></button>
+        <button class="dock-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic text-[9px]"></i></button>
+        <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[9px]"></i></button>
+        <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[9px]"></i></button>
+        <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[9px]"></i></button>
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
-        <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[11px]"></i></button>
-        <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[11px]"></i></button>
+        <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
+        <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
     </div>
 
     <script>
@@ -238,6 +254,9 @@
                         }
                     };
                     fileReader.readAsArrayBuffer(firstFile);
+                } else if (fileName.endsWith('.ppt') || fileName.endsWith('.pptx')) {
+                    alert("कृपया .ppt फाइल को पहले PDF या Images (JPG/PNG) में सेव करके अपलोड करें!");
+                    resetUploadUI();
                 } else {
                     loadingText.innerText = "इमेज फाइलें लोड हो रही हैं...";
                     slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
@@ -287,11 +306,11 @@
             if (!isFs) {
                 if (docEl.requestFullscreen) docEl.requestFullscreen().catch(err => {});
                 else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
-                fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[11px]"></i>';
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>';
             } else {
                 if (document.exitFullscreen) document.exitFullscreen();
                 else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-                fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[11px]"></i>';
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>';
             }
         });
 
@@ -413,13 +432,13 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 stream.getTracks().forEach(track => track.stop());
-                alert("माइक्रोफोन की अनुमति मिल गई है!");
+                alert("माइक्रोफोन की अनुमति सफलतापूर्वक मिल गई है!");
             } catch (err) {
-                alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
+                alert("माइक्रोफोन की अनुमति नहीं मिल सकी। कृपया ब्राउज़र सेटिंग्स चेक करें।");
             }
         });
 
-        // Bandicam-Style 20 FPS Smooth Lightweight Recording Engine
+        // Optimized Recording Engine with Advanced FPS & Audio Options
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -433,6 +452,8 @@
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
                 const formatChoice = document.getElementById('setting-format').value;
+                const selectedFps = parseInt(document.getElementById('setting-fps').value) || 20;
+                const useSystemAudio = document.getElementById('setting-system-audio').checked;
 
                 let videoBits = quality === 'high' ? 6000000 : 2500000;
 
@@ -446,7 +467,7 @@
                     activeSlideImg.src = slides[currentSlideIndex];
                 }
 
-                // 20 FPS Stable Capture Loop (Bandicam Style)
+                // Dynamic FPS Render Loop
                 let recordingInterval = setInterval(() => {
                     recCtx.fillStyle = '#030305';
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
@@ -468,16 +489,26 @@
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
-                }, 1000 / 20);
+                }, 1000 / selectedFps);
 
-                let stream = recCanvas.captureStream(20);
+                let stream = recCanvas.captureStream(selectedFps);
 
                 if (useMic) {
                     try {
                         const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                         micStream.getAudioTracks().forEach(track => stream.addTrack(track));
                     } catch (mErr) {
-                        console.log("Mic access error");
+                        console.log("Microphone access denied.");
+                    }
+                }
+
+                if (useSystemAudio) {
+                    try {
+                        const sysStream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
+                        sysStream.getVideoTracks().forEach(track => track.stop()); // Stop video track, keep audio
+                        sysStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                    } catch (sErr) {
+                        console.log("System audio access denied or unsupported.");
                     }
                 }
 
@@ -515,7 +546,7 @@
                     timerText.innerText = `${mins}:${secs}`; 
                 }, 1000);
             } catch (err) { 
-                alert("रिकॉर्डिंग शुरू करने में असफलता। कृपया अनुमतियाँ चेक करें।"); 
+                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया आवश्यक अनुमतियाँ (Permissions) दें।"); 
             }
         });
 
@@ -541,7 +572,7 @@
             const a = document.createElement('a'); 
             a.style.display = 'none';
             a.href = url; 
-            a.download = `EduStudio_Recording_${Date.now()}.${extension}`; 
+            a.download = `EduStudio_Class_${Date.now()}.${extension}`; 
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
