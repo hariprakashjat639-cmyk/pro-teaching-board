@@ -364,6 +364,15 @@
         const ctx = canvas.getContext('2d', { alpha: true });
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         
+        // Mouse coordinate tracking for cursor rendering in recording
+        let mouseX = 0, mouseY = 0, isMouseActive = false;
+
+        window.addEventListener('pointermove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            isMouseActive = true;
+        });
+
         const sizeSlider = document.getElementById('pen-size'); 
         const colorPicker = document.getElementById('color-picker'); 
         const colorBtn = document.getElementById('color-btn');
@@ -533,6 +542,21 @@
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
+
+                    // Virtual Cursor Drawing on Record Canvas (so cursor is visible in video)
+                    if (isMouseActive) {
+                        recCtx.save();
+                        recCtx.beginPath();
+                        recCtx.arc(mouseX, mouseY, 10, 0, 2 * Math.PI);
+                        recCtx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+                        recCtx.shadowColor = 'black';
+                        recCtx.shadowBlur = 6;
+                        recCtx.fill();
+                        recCtx.lineWidth = 2;
+                        recCtx.strokeStyle = '#000';
+                        recCtx.stroke();
+                        recCtx.restore();
+                    }
                 }, 1000 / selectedFps);
 
                 let stream = recCanvas.captureStream(selectedFps);
@@ -602,21 +626,18 @@
                 }
             }
             btnStart.style.display = 'flex'; 
-            btnStop.style.display = 'none'; 
-            timerText.style.display = 'none'; 
-            clearInterval(timerInterval); 
+            btnStop.style.display = 'none';
+            timerText.style.display = 'none';
+            clearInterval(timerInterval);
         });
 
-        async function saveVideoOffline() {
-            let usedMime = mediaRecorder.mimeType || 'video/webm';
-            let extension = usedMime.includes('mp4') ? 'mp4' : 'webm';
-            
-            const blob = new Blob(recordedChunks, { type: usedMime });
-            const url = URL.createObjectURL(blob); 
-            const a = document.createElement('a'); 
+        function saveVideoOffline() {
+            const blob = new Blob(recordedChunks, { type: mediaRecorder ? mediaRecorder.mimeType : 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
             a.style.display = 'none';
-            a.href = url; 
-            a.download = `EduStudio_Class_${Date.now()}.${extension}`; 
+            a.href = url;
+            a.download = `ProEduCreator-Recording-${Date.now()}.webm`;
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
