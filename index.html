@@ -44,7 +44,7 @@
         }
 
         .ipad-dock { 
-            position: absolute; bottom: 20px; left: 20px; z-index: 100; 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; 
             display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.90); 
             padding: 6px 12px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); 
             box-shadow: 0 15px 35px rgba(0,0,0,0.85); backdrop-filter: blur(20px);
@@ -192,7 +192,7 @@
         </div>
     </div>
 
-    <!-- Draggable Toolbar Dock -->
+    <!-- Draggable Toolbar Dock (Bottom Positioned) -->
     <div class="ipad-dock" id="toolbar">
         <div class="dock-drag-handle" id="dock-handle" title="Drag to move">
             <i class="fas fa-grip-vertical text-[10px]"></i>
@@ -342,6 +342,7 @@
             dock.style.right = 'auto';
             dock.style.left = rect.left + 'px';
             dock.style.top = rect.top + 'px';
+            dock.style.transform = 'none';
 
             dragStartX = e.clientX;
             dragStartY = e.clientY;
@@ -366,7 +367,7 @@
 
         const canvas = document.getElementById('drawing-canvas'); 
         const ctx = canvas.getContext('2d', { alpha: true });
-        let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
+        let isDrawing = false, currentMode = 'glow', currentColor = '#ffff00';
         
         const sizeSlider = document.getElementById('pen-size'); 
         const colorPicker = document.getElementById('color-picker'); 
@@ -451,41 +452,27 @@
             }
         }
 
-        // iPad-like smooth multi-point curve interpolation for writing
+        // Original simple and fast drawing style (Restored as requested)
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; 
             isScreenDirty = true;
             const pos = getMousePos(e);
-            points = [pos, pos]; 
             ctx.beginPath(); 
             ctx.moveTo(pos.x, pos.y);
             let baseSize = parseInt(sizeSlider.value);
             applyPenStyle(baseSize);
-            ctx.lineTo(pos.x + 0.1, pos.y + 0.1);
-            ctx.stroke();
         });
 
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return;
             isScreenDirty = true;
             const pos = getMousePos(e);
-            points.push(pos);
-            if (points.length > 3) {
-                points.shift();
-            }
-
-            let baseSize = parseInt(sizeSlider.value);
-            applyPenStyle(baseSize);
-
-            ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-            let xc = (points[0].x + points[1].x) / 2;
-            let yc = (points[0].y + points[1].y) / 2;
-            ctx.quadraticCurveTo(points[0].x, points[0].y, xc, yc);
+            ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
         });
 
-        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; saveCurrentInk(); });
+        canvas.addEventListener('pointerleave', () => { if (isDrawing) { isDrawing = false; saveCurrentInk(); } });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { 
