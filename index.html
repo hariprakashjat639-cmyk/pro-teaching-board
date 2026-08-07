@@ -75,7 +75,6 @@
         #left-nav { left: 0; border-radius: 0 8px 8px 0; }
         #right-nav { right: 0; border-radius: 8px 0 0 8px; }
 
-        /* Recorder UI & Custom Popup Settings */
         .recorder-ui { 
             position: absolute; top: 12px; right: 12px; z-index: 100; 
             display: none; align-items: center; gap: 6px;
@@ -92,9 +91,8 @@
         #btn-settings { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
-        /* Recorder Settings Dropdown Popup */
         #rec-settings-menu {
-            position: absolute; top: 45px; right: 0; width: 210px;
+            position: absolute; top: 45px; right: 0; width: 230px;
             background: rgba(20, 20, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 10px;
@@ -139,16 +137,15 @@
         <button class="side-nav-btn" id="right-nav" title="अगला स्लाइड"><i class="fas fa-chevron-right"></i></button>
     </div>
 
-    <!-- Screen Recorder UI with Settings Popup -->
     <div class="recorder-ui" id="recorder-ui">
         <span class="timer-badge" id="timer-text">00:00</span>
         <button class="rec-circle-btn" id="btn-start" title="Start Recording"><i class="fas fa-video"></i></button>
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
-        <!-- Popup Menu for Settings -->
+        <!-- Popup Menu for Settings & Permissions -->
         <div id="rec-settings-menu">
-            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स (Settings)</div>
+            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व अनुमतियाँ</div>
             <div class="rec-setting-item">
                 <span>माइक्रोफोन (Mic Audio):</span>
                 <input type="checkbox" id="setting-mic" checked>
@@ -167,6 +164,9 @@
                     <option value="mp4">MP4 (यदि समर्थित हो)</option>
                 </select>
             </div>
+            <button id="btn-request-permission" class="mt-1 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
+                <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
+            </button>
         </div>
     </div>
 
@@ -380,9 +380,11 @@
             } 
         }
 
-        // Recorder Settings Popup Toggle
+        // Recorder Settings Popup Toggle & Permission Handler
         const btnSettings = document.getElementById('btn-settings');
         const recSettingsMenu = document.getElementById('rec-settings-menu');
+        const btnRequestPermission = document.getElementById('btn-request-permission');
+
         btnSettings.addEventListener('click', (e) => {
             e.stopPropagation();
             recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex';
@@ -390,7 +392,17 @@
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
         recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
-        // Upgraded Agency-Grade Composite Screen Recorder (100% Mobile & PC Compatible)
+        btnRequestPermission.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                stream.getTracks().forEach(track => track.stop());
+                alert("माइक्रोफोन की अनुमति सफलतापूर्वक मिल गई है!");
+            } catch (err) {
+                alert("माइक्रोफोन की अनुमति नहीं मिल सकी। कृपया ब्राउज़र सेटिंग्स चेक करें।");
+            }
+        });
+
+        // Upgraded Composite Screen Recorder with 100% Mobile Slide Visibility Fix
         let mediaRecorder; 
         let recordedChunks = []; 
         let timerInterval, seconds = 0;
@@ -408,11 +420,16 @@
 
                 let videoBits = quality === 'high' ? 8000000 : 3000000;
 
-                // Hidden Composite Canvas to merge Slide Image + Drawing Canvas in real-time
                 const recCanvas = document.createElement('canvas');
                 const recCtx = recCanvas.getContext('2d');
                 recCanvas.width = 1920;
                 recCanvas.height = 1080;
+
+                // Pre-cache current slide image for robust mobile rendering
+                let activeSlideImg = new Image();
+                if (slides.length > 0 && slides[currentSlideIndex]) {
+                    activeSlideImg.src = slides[currentSlideIndex];
+                }
 
                 recordingLoopActive = true;
                 function drawRecordingFrame() {
@@ -420,20 +437,22 @@
                     recCtx.fillStyle = '#030305';
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
 
-                    // Draw slide image
-                    if (slideImage.style.display !== 'none' && slideImage.src) {
-                        let img = slideImage;
-                        if (img.complete && img.naturalWidth) {
-                            let hRatio = recCanvas.width / img.naturalWidth;
-                            let vRatio = recCanvas.height / img.naturalHeight;
+                    // Robust Slide Drawing for Mobile
+                    if (slides.length > 0 && slides[currentSlideIndex]) {
+                        if (activeSlideImg.src !== slides[currentSlideIndex]) {
+                            activeSlideImg.src = slides[currentSlideIndex];
+                        }
+                        if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
+                            let hRatio = recCanvas.width / activeSlideImg.naturalWidth;
+                            let vRatio = recCanvas.height / activeSlideImg.naturalHeight;
                             let ratio = Math.min(hRatio, vRatio);
-                            let centerShiftX = (recCanvas.width - img.naturalWidth * ratio) / 2;
-                            let centerShiftY = (recCanvas.height - img.naturalHeight * ratio) / 2;
-                            recCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, centerShiftX, centerShiftY, img.naturalWidth * ratio, img.naturalHeight * ratio);
+                            let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2;
+                            let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
+                            recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
                         }
                     }
 
-                    // Draw user drawing canvas on top
+                    // Draw user drawing canvas layer on top
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
