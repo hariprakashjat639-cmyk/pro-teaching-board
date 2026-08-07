@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Mobile & Tablet Pro Edition</title>
+    <title>Pro EduCreator Studio - Recorder Settings Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -11,74 +11,37 @@
     <style>
         * { box-sizing: border-box; }
         html, body { 
-            margin: 0; 
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden; 
-            background-color: #0b0b0e; 
-            color: white; 
-            user-select: none; 
-            touch-action: none; 
-            cursor: default; 
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #0b0b0e; color: white; 
+            user-select: none; touch-action: none; cursor: default; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
         
         #presentation-area { 
-            position: fixed; 
-            top: 0;
-            left: 0;
-            width: 100vw; 
-            height: 100vh; 
-            width: 100dvw;
-            height: 100dvh;
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: #030305; 
-            overflow: hidden;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            width: 100dvw; height: 100dvh; display: flex; justify-content: center; 
+            align-items: center; background: #030305; overflow: hidden;
         }
 
         #slide-image { 
-            width: 100%;
-            height: 100%;
-            max-width: 100%; 
-            max-height: 100%; 
-            object-fit: contain; 
-            z-index: 1; 
-            border-radius: 4px; 
+            width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
+            object-fit: contain; z-index: 1; border-radius: 4px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
         }
         
         #drawing-canvas { 
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10; 
-            cursor: default; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; cursor: default; 
         }
         
-        /* Upload Prompt Overlay */
         #upload-prompt {
-            position: absolute;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            background: #18181b;
-            padding: 30px;
-            border-radius: 20px;
+            position: absolute; z-index: 1000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            background: #18181b; padding: 30px; border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-            max-width: 400px;
-            width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 400px; width: 90%;
         }
 
-        /* Left-aligned Bottom Dock Toolbar (Ultra Compact) */
         .ipad-dock { 
             position: absolute; bottom: 12px; left: 15px; z-index: 100; 
             display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
@@ -102,7 +65,6 @@
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
-        /* Side Navigation Buttons (Left & Right Edges) */
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
             width: 36px; height: 50px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
@@ -113,7 +75,7 @@
         #left-nav { left: 0; border-radius: 0 8px 8px 0; }
         #right-nav { right: 0; border-radius: 8px 0 0 8px; }
 
-        /* Recorder UI (Top Right) */
+        /* Recorder UI & Custom Popup Settings */
         .recorder-ui { 
             position: absolute; top: 12px; right: 12px; z-index: 100; 
             display: none; align-items: center; gap: 6px;
@@ -127,7 +89,19 @@
         #btn-start { background: #30d158; }
         #btn-start:hover { background: #28b84d; transform: scale(1.05); }
         #btn-stop { background: #ff453a; display: none; animation: pulse 1.5s infinite; }
-        
+        #btn-settings { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        #btn-settings:hover { background: rgba(255,255,255,0.25); }
+
+        /* Recorder Settings Dropdown Popup */
+        #rec-settings-menu {
+            position: absolute; top: 45px; right: 0; width: 210px;
+            background: rgba(20, 20, 25, 0.95); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 10px;
+        }
+        .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; }
+        .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
+
         .timer-badge {
             background: rgba(20, 20, 25, 0.85); padding: 2px 6px; border-radius: 12px;
             font-family: monospace; font-size: 10px; font-weight: bold; border: 1px solid rgba(255,255,255,0.12); display: none; backdrop-filter: blur(10px);
@@ -135,7 +109,6 @@
 
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 69, 58, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); } }
 
-        /* Loading Screen */
         #loading-screen { display: none; position: absolute; z-index: 2000; width: 100%; height: 100%; background: rgba(0,0,0,0.92); flex-direction: column; justify-content: center; align-items: center; }
         .spinner { border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid #0a84ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -143,15 +116,12 @@
 </head>
 <body>
 
-    <!-- Loading Screen -->
     <div id="loading-screen">
         <div class="spinner mb-3"></div>
         <h2 id="loading-text" class="text-sm font-medium text-white">फाइल हाई-क्वालिटी में प्रोसेस हो रही है...</h2>
     </div>
 
-    <!-- Main Workspace -->
     <div id="presentation-area">
-        <!-- Upload Prompt Overlay -->
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
             <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
@@ -165,43 +135,54 @@
         <img id="slide-image" src="" style="display: none;">
         <canvas id="drawing-canvas"></canvas>
 
-        <!-- Left & Right Edge Slide Navigation Buttons -->
         <button class="side-nav-btn" id="left-nav" title="पिछला स्लाइड"><i class="fas fa-chevron-left"></i></button>
         <button class="side-nav-btn" id="right-nav" title="अगला स्लाइड"><i class="fas fa-chevron-right"></i></button>
     </div>
 
-    <!-- Screen Recorder UI (Mobile Supported) -->
+    <!-- Screen Recorder UI with Settings Popup -->
     <div class="recorder-ui" id="recorder-ui">
         <span class="timer-badge" id="timer-text">00:00</span>
         <button class="rec-circle-btn" id="btn-start" title="Start Recording"><i class="fas fa-video"></i></button>
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
+        <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
+
+        <!-- Popup Menu for Settings -->
+        <div id="rec-settings-menu">
+            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स (Settings)</div>
+            <div class="rec-setting-item">
+                <span>माइक्रोफोन (Mic Audio):</span>
+                <input type="checkbox" id="setting-mic" checked>
+            </div>
+            <div class="rec-setting-item">
+                <span>वीडियो क्वालिटी (Quality):</span>
+                <select id="setting-quality">
+                    <option value="high">High (1080p)</option>
+                    <option value="medium" selected>Standard (720p)</option>
+                </select>
+            </div>
+            <div class="rec-setting-item">
+                <span>फॉर्मेट (Format):</span>
+                <select id="setting-format">
+                    <option value="webm" selected>WebM (बेस्ट प्लेबैक)</option>
+                    <option value="mp4">MP4 (यदि समर्थित हो)</option>
+                </select>
+            </div>
+        </div>
     </div>
 
-    <!-- Left-Aligned Bottom Dock Toolbar -->
     <div class="ipad-dock" id="toolbar">
-        <!-- Slide Counter Indicator -->
         <span id="slide-counter" class="text-white text-[10px] font-bold px-1 tracking-wider">1/1</span>
-        
         <div class="dock-divider"></div>
-
-        <!-- Color Picker -->
         <div class="color-picker-wrapper" title="रंग बदलें (Color)">
             <input type="color" id="color-picker" value="#ffff00">
             <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[8px]"></i></button>
         </div>
-
-        <!-- Drawing Tools -->
         <button class="dock-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic text-[9px]"></i></button>
         <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[9px]"></i></button>
         <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[9px]"></i></button>
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[9px]"></i></button>
-
-        <!-- Size Slider -->
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
-
         <div class="dock-divider"></div>
-
-        <!-- Utility Buttons -->
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
     </div>
@@ -219,14 +200,11 @@
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
 
-        browseBtn.addEventListener('click', () => {
-            uploadInput.click();
-        });
+        browseBtn.addEventListener('click', () => uploadInput.click());
 
         uploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
-            
             uploadPrompt.style.display = 'none';
             loadingScreen.style.display = 'flex';
             
@@ -243,7 +221,6 @@
                             const loadingTask = pdfjsLib.getDocument({ data: typedarray });
                             const pdf = await loadingTask.promise;
                             slides = [];
-                            
                             for (let i = 1; i <= pdf.numPages; i++) {
                                 const page = await pdf.getPage(i);
                                 const viewport = page.getViewport({ scale: 2.5 }); 
@@ -262,7 +239,7 @@
                     };
                     fileReader.readAsArrayBuffer(firstFile);
                 } else if (fileName.endsWith('.ppt') || fileName.endsWith('.pptx')) {
-                    alert("कृपया .ppt फाइल को पहले PDF या Images (JPG/PNG) में सेव करके अपलोड करें ताकि बेहतरीन हाई-क्वालिटी मिल सके!");
+                    alert("कृपया .ppt फाइल को पहले PDF या Images (JPG/PNG) में सेव करके अपलोड करें!");
                     resetUploadUI();
                 } else {
                     loadingText.innerText = "इमेज फाइलें लोड हो रही हैं...";
@@ -270,7 +247,7 @@
                     startApp();
                 }
             } catch (err) {
-                alert("फाइल इम्पोर्ट करने में समस्या आई। कृपया दूसरी फाइल ट्राई करें।");
+                alert("फाइल इम्पोर्ट करने में समस्या आई।");
                 resetUploadUI();
             }
         });
@@ -295,61 +272,39 @@
             currentSlideIndex = index; 
             slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
-            slideImage.onload = () => { 
-                resizeCanvas(); 
-                restoreInk(); 
-            }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); }; 
         }
 
         document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
         document.getElementById('right-nav').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-                if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1);
-            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-                if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1);
-            }
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); }
+            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); }
         });
 
-        // Robust Fullscreen Toggle for Mobile, Tablet & PC
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         fullscreenBtn.addEventListener('click', () => {
             let docEl = document.documentElement;
-            let isFs = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-            
+            let isFs = document.fullscreenElement || document.webkitFullscreenElement;
             if (!isFs) {
-                if (docEl.requestFullscreen) {
-                    docEl.requestFullscreen().catch(err => console.log(err));
-                } else if (docEl.webkitRequestFullscreen) {
-                    docEl.webkitRequestFullscreen();
-                } else if (docEl.msRequestFullscreen) {
-                    docEl.msRequestFullscreen();
-                }
+                if (docEl.requestFullscreen) docEl.requestFullscreen().catch(err => {});
+                else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
                 fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>';
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
                 fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>';
             }
         });
 
         const canvas = document.getElementById('drawing-canvas'); 
         const ctx = canvas.getContext('2d');
-        let isDrawing = false; 
-        let points = []; 
-        let currentMode = 'glow'; 
-        let currentColor = '#ffff00';
+        let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         
         const sizeSlider = document.getElementById('pen-size'); 
         const colorPicker = document.getElementById('color-picker'); 
         const colorBtn = document.getElementById('color-btn');
-        
         const tools = { 
             'glow': document.getElementById('glow-pen-btn'), 
             'normal': document.getElementById('normal-pen-btn'), 
@@ -374,14 +329,9 @@
             else if(mode === 'eraser') sizeSlider.value = 40; 
             else sizeSlider.value = 6;
         }
-
         setActiveTool('glow');
 
-        colorPicker.addEventListener('input', (e) => { 
-            currentColor = e.target.value; 
-            colorBtn.style.background = currentColor; 
-        });
-
+        colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
         tools['glow'].addEventListener('click', () => setActiveTool('glow')); 
         tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
         tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); 
@@ -393,10 +343,8 @@
         });
 
         canvas.addEventListener('pointerdown', (e) => { 
-            isDrawing = true; 
-            points = [{x: e.clientX, y: e.clientY}]; 
-            ctx.beginPath(); 
-            ctx.moveTo(e.clientX, e.clientY); 
+            isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; 
+            ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); 
         });
 
         canvas.addEventListener('pointermove', (e) => {
@@ -405,67 +353,47 @@
             let baseSize = parseInt(sizeSlider.value);
             
             if (currentMode === 'eraser') { 
-                ctx.globalCompositeOperation = 'destination-out'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = 'rgba(0,0,0,1)'; 
+                ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; 
             } else if (currentMode === 'highlighter') { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = currentColor + '55'; 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; 
             } else if (currentMode === 'glow') { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 18; 
-                ctx.shadowColor = currentColor; 
-                ctx.strokeStyle = currentColor; 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 18; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; 
             } else { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = currentColor; 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; 
             }
 
             if (points.length >= 3) {
                 const controlPoint = points[points.length - 2];
-                const endPoint = { 
-                    x: (points[points.length - 2].x + points[points.length - 1].x) / 2, 
-                    y: (points[points.length - 2].y + points[points.length - 1].y) / 2 
-                };
+                const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
                 ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); 
-                ctx.stroke(); 
-                ctx.beginPath(); 
-                ctx.moveTo(endPoint.x, endPoint.y);
+                ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y);
             }
         });
 
-        canvas.addEventListener('pointerup', () => { 
-            isDrawing = false; 
-            points = []; 
-            saveCurrentInk();
-        });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); });
 
-        function saveCurrentInk() { 
-            if(slides.length > 0) {
-                slideInks[currentSlideIndex] = canvas.toDataURL(); 
-            }
-        }
-
+        function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             if (slideInks[currentSlideIndex]) { 
-                let img = new Image(); 
-                img.src = slideInks[currentSlideIndex]; 
-                img.onload = () => ctx.drawImage(img, 0, 0); 
+                let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => ctx.drawImage(img, 0, 0); 
             } 
         }
 
-        // Fully Offline High-Quality Screen Recording & PC Playable MP4/WebM Logic
+        // Recorder Settings Popup Toggle
+        const btnSettings = document.getElementById('btn-settings');
+        const recSettingsMenu = document.getElementById('rec-settings-menu');
+        btnSettings.addEventListener('click', (e) => {
+            e.stopPropagation();
+            recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
+        recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
+
+        // Optimized Offline Screen Recording Logic
         let mediaRecorder; 
         let recordedChunks = []; 
-        let timerInterval; 
-        let seconds = 0;
+        let timerInterval, seconds = 0;
         
         const btnStart = document.getElementById('btn-start'); 
         const btnStop = document.getElementById('btn-stop'); 
@@ -473,34 +401,40 @@
 
         btnStart.addEventListener('click', async () => {
             try {
+                const useMic = document.getElementById('setting-mic').checked;
+                const quality = document.getElementById('setting-quality').value;
+                const formatChoice = document.getElementById('setting-format').value;
+
+                let videoBits = quality === 'high' ? 8000000 : 3000000;
                 let stream;
+
                 try {
-                    stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: true });
+                    stream = await navigator.mediaDevices.getDisplayMedia({ 
+                        video: { frameRate: { ideal: 30 }, width: { ideal: 1920 }, height: { ideal: 1080 } }, 
+                        audio: true 
+                    });
                 } catch (err) {
-                    const canvasStream = canvas.captureStream(30);
-                    try {
-                        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                        audioStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-                    } catch (micErr) {
-                        console.log("Mic permission denied or not available, recording silent canvas offline.");
-                    }
-                    stream = canvasStream;
+                    // Fallback to canvas stream if screen capture is declined or unsupported on specific mobile browsers
+                    stream = canvas.captureStream(30);
                 }
 
-                let mimeType = 'video/mp4';
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm; codecs=vp9';
+                if (useMic) {
+                    try {
+                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                        micStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                    } catch (mErr) {
+                        console.log("Microphone access denied.");
+                    }
                 }
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
+
+                let mimeType = 'video/webm;codecs=vp9,opus';
+                if (formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4')) {
+                    mimeType = 'video/mp4';
+                } else if (!MediaRecorder.isTypeSupported(mimeType)) {
                     mimeType = 'video/webm';
                 }
 
-                let options = { 
-                    mimeType: mimeType,
-                    videoBitsPerSecond: 5000000 
-                };
-
-                mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: videoBits });
                 recordedChunks = [];
                 
                 mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
@@ -517,13 +451,14 @@
                     timerText.innerText = new Date(seconds * 1000).toISOString().substr(14, 5); 
                 }, 1000);
             } catch (err) { 
-                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया सुनिश्चित करें कि आपने परमिशन दे दी है।"); 
+                alert("रिकॉर्डिंग शुरू नहीं हो सकी। कृपया परमिशन दें या दूसरा ब्राउज़र आज़माएँ।"); 
             }
         });
 
         btnStop.addEventListener('click', () => { 
             if(mediaRecorder && mediaRecorder.state !== "inactive") {
                 mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
             }
             btnStart.style.display = 'flex'; 
             btnStop.style.display = 'none'; 
@@ -540,7 +475,7 @@
             const a = document.createElement('a'); 
             a.style.display = 'none';
             a.href = url; 
-            a.download = `EduStudio_Recording_${Date.now()}.${extension}`; 
+            a.download = `EduStudio_Class_${Date.now()}.${extension}`; 
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
