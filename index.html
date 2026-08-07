@@ -20,7 +20,7 @@
             cursor: none; 
         }
 
-        /* Custom Bandicam Pen Cursor Image */
+        /* Custom Pen Cursor Image - Flipped & Aligned correctly */
         #custom-cursor {
             position: fixed;
             pointer-events: none;
@@ -29,7 +29,7 @@
             width: 32px;
             height: 32px;
             object-fit: contain;
-            transform: translate(0px, 0px); /* सटीक टिप पॉइंटर */
+            transform: scaleY(-1) translate(-2px, -2px); /* पेन को सीधा/उल्टा ठीक करने और टिप मिलाने के लिए */
         }
         
         /* Toolbar - Bottom Left */
@@ -387,7 +387,7 @@
             }
         }
 
-        // --- 3. FIXED PLAYER-COMPATIBLE RECORDER ---
+        // --- RECORDER LOGIC ---
         let mediaRecorder; let recordedChunks = [];
         let timerInterval; let seconds = 0;
         
@@ -407,7 +407,6 @@
                     video: { frameRate: { ideal: 30 } }, audio: true
                 });
 
-                // सही Player Compatible Codec सेट किया गया है
                 let options = { mimeType: 'video/webm;codecs=vp9,opus' };
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                     options = { mimeType: 'video/webm' };
@@ -419,7 +418,7 @@
                 mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = saveVideo;
                 
-                mediaRecorder.start(250); // छोटे चंक ताकि वीडियो करप्ट न हो
+                mediaRecorder.start(250);
                 
                 btnStart.style.display = 'none';
                 btnStop.style.display = 'flex';
@@ -456,7 +455,7 @@
                 const writable = await handle.createWritable();
                 await writable.write(blob);
                 await writable.close();
-                alert("वीडियो सफलतापूर्वक सेव हो गई है! अब यह किसी भी प्लेयर में चल जाएगी।");
+                alert("वीडियो सफलतापूर्वक सेव हो गई है!");
             } catch (err) {
                 if(err.name !== 'AbortError') {
                     const url = URL.createObjectURL(blob);
