@@ -158,30 +158,24 @@
             </div>
             
             <!-- AUDACITY PRO AUDIO ENGINE -->
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> Audacity प्रो ऑडियो इंजन</div>
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> स्मार्ट ऑडियो इंजन</div>
             <div class="rec-setting-item">
-                <span class="font-semibold">AI Noise Removal:</span>
+                <span class="font-semibold">Noise Attenuator (-9dB):</span>
                 <input type="checkbox" id="setting-ai-noise" checked>
             </div>
-            <div class="setting-desc">बैकग्राउंड की फालतू आवाज़ें (पंखे/शोर) हटाता है।</div>
+            <div class="setting-desc">रोबोटिक/बैकग्राउंड शोर के डेसिबल को कम करता है।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-yellow-400">SL40 Mic EQ (Bass & Air):</span>
+                <span class="font-semibold text-yellow-400">Human Voice Focus EQ:</span>
                 <input type="checkbox" id="setting-sl40-eq" checked>
             </div>
-            <div class="setting-desc">सस्ते माइक में भी भारी और क्रिस्प आवाज़ देता है।</div>
+            <div class="setting-desc">इंसानी बोली की फ्रीक्वेंसी (2.5kHz) को स्पष्ट करता है।</div>
 
             <div class="rec-setting-item">
                 <span class="font-semibold text-green-400">Pro Compressor:</span>
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
-            <div class="setting-desc">धीमी आवाज़ को उठाता है।</div>
-
-            <div class="rec-setting-item">
-                <span class="font-semibold text-red-400">Hard Limiter:</span>
-                <input type="checkbox" id="setting-limiter" checked>
-            </div>
-            <div class="setting-desc">ज़ोर से बोलने पर भी आवाज़ फटने (Distortion) नहीं देता।</div>
+            <div class="setting-desc">आवाज़ के स्तर को एकसमान (Steady) रखता है।</div>
 
             <!-- ADVANCED VIDEO SETTINGS -->
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
@@ -367,7 +361,7 @@
         }
 
         // ============================================================
-        // RECORDING ENGINE (With FPS, Bitrate & Pro Audio)
+        // RECORDING ENGINE (UPDATED AUDIO ATTENUATION & VOICE FOCUS)
         // ============================================================
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
@@ -383,7 +377,6 @@
                 const useAiNoise = document.getElementById('setting-ai-noise').checked;
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
-                const useLimiter = document.getElementById('setting-limiter').checked;
 
                 const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
@@ -418,7 +411,12 @@
 
                 if (useMic) {
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: useAiNoise, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
+                        audio: { 
+                            noiseSuppression: true, 
+                            echoCancellation: true, 
+                            autoGainControl: true, 
+                            sampleRate: 48000 
+                        }, 
                         video: false 
                     });
 
@@ -427,28 +425,51 @@
                     
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
-                    let currentNode = source;
 
-                    const lowCutFilter = audioCtx.createBiquadFilter(); lowCutFilter.type = 'highpass'; lowCutFilter.frequency.value = 85; 
-                    currentNode.connect(lowCutFilter); currentNode = lowCutFilter;
+                    // 1. LOW CUT FILTER: बहुत कम फ्रीक्वेंसी वाली बैकग्राउंड गूंज को 120Hz से नीचे दबाना
+                    const lowCutFilter = audioCtx.createBiquadFilter();
+                    lowCutFilter.type = 'highpass';
+                    lowCutFilter.frequency.value = 120; 
+
+                    // 2. HUMAN VOICE FOCUS: इंसानी आवाज़ (2.5kHz) को स्पष्ट और फोकस में लाना
+                    const voiceFocusEQ = audioCtx.createBiquadFilter();
+                    voiceFocusEQ.type = 'peaking';
+                    voiceFocusEQ.frequency.value = 2500;
+                    voiceFocusEQ.Q.value = 1.2;
+                    voiceFocusEQ.gain.value = 3.5;
+
+                    // 3. NOISE ATTENUATOR: रोबोटिक/बैकग्राउंड नॉइज़ का वॉल्यूम दबाना (-9 dB)
+                    const noiseDampener = audioCtx.createBiquadFilter();
+                    noiseDampener.type = 'highshelf';
+                    noiseDampener.frequency.value = 5500;
+                    noiseDampener.gain.value = -9.0;
+
+                    // 4. SOFT COMPRESSOR: बोलचाल को स्थिर रखना
+                    const voiceCompressor = audioCtx.createDynamicsCompressor();
+                    voiceCompressor.threshold.value = -22;
+                    voiceCompressor.knee.value = 12;
+                    voiceCompressor.ratio.value = 3;
+                    voiceCompressor.attack.value = 0.01;
+                    voiceCompressor.release.value = 0.2;
+
+                    // ऑडियो फिल्टर चैन कनेक्ट करना
+                    let currentNode = source;
+                    currentNode.connect(lowCutFilter);
+                    currentNode = lowCutFilter;
 
                     if (useSl40Eq) {
-                        const bassEq = audioCtx.createBiquadFilter(); bassEq.type = 'lowshelf'; bassEq.frequency.value = 150; bassEq.gain.value = 4.0;
-                        const airEq = audioCtx.createBiquadFilter(); airEq.type = 'highshelf'; airEq.frequency.value = 8000; airEq.gain.value = 3.5;
-                        currentNode.connect(bassEq); bassEq.connect(airEq); currentNode = airEq;
+                        currentNode.connect(voiceFocusEQ);
+                        currentNode = voiceFocusEQ;
+                    }
+
+                    if (useAiNoise) {
+                        currentNode.connect(noiseDampener);
+                        currentNode = noiseDampener;
                     }
 
                     if (useCompressor) {
-                        const compressor = audioCtx.createDynamicsCompressor();
-                        compressor.threshold.value = -30; compressor.knee.value = 10; compressor.ratio.value = 4; compressor.attack.value = 0.005; compressor.release.value = 0.15;
-                        currentNode.connect(compressor); currentNode = compressor;
-                    }
-
-                    if (useLimiter) {
-                        const limiter = audioCtx.createDynamicsCompressor();
-                        limiter.threshold.value = -2.5; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = 0.001; limiter.release.value = 0.05;
-                        const makeUpGain = audioCtx.createGain(); makeUpGain.gain.value = 1.2;
-                        currentNode.connect(limiter); limiter.connect(makeUpGain); currentNode = makeUpGain;
+                        currentNode.connect(voiceCompressor);
+                        currentNode = voiceCompressor;
                     }
 
                     currentNode.connect(destination);
