@@ -571,80 +571,67 @@
                     mudDipEq.Q.value = 1.2;
                     mudDipEq.gain.value = -3.5; // Dip by 3.5dB
 
-                    // Node 4: Presence EQ (Vocal Sparkle): Boost at ~3.5kHz for speech intelligibility
+                    // Node 4: Presence EQ (Vocal Sparkle): Boost
                     const presenceEq = audioCtx.createBiquadFilter();
                     presenceEq.type = 'peaking';
-                    presenceEq.frequency.value = 3500; 
+                    presenceEq.frequency.value = 4000; // 4kHz sparkle
                     presenceEq.Q.value = 1.0;
-                    // Apply boost only if VST setting is on, otherwise bypass (0dB)
-                    presenceEq.gain.value = useEqPresence ? 4.5 : 0; 
+                    presenceEq.gain.value = useEqPresence ? 4.0 : 0; // +4dB boost if checked
 
-                    // Node 5: Broadcast Dynamics Compressor: Leveler used in Pro software
-                    // Soft-knee, low ratio creates smooth consistent levels without hard "cuts".
-                    const broadcastCompressor = audioCtx.createDynamicsCompressor();
+                    // Node 5: Dynamics Compressor (Soft Compressor)
+                    const compressor = audioCtx.createDynamicsCompressor();
                     if (useCompressor) {
-                        broadcastCompressor.threshold.value = -28; // Engage early
-                        broadcastCompressor.knee.value = 20;      // Very soft transition
-                        broadcastCompressor.ratio.value = 4.5;    // Firmware but gentle broadcast ratio
-                        broadcastCompressor.attack.value = 0.005;  // 5ms fast attack to catch peaks
-                        broadcastCompressor.release.value = 0.180; // Smooth release to hold voice level
+                        compressor.threshold.value = -24;
+                        compressor.knee.value = 30;
+                        compressor.ratio.value = 3;
+                        compressor.attack.value = 0.003;
+                        compressor.release.value = 0.25;
                     } else {
-                        // Effect bypassed
-                        broadcastCompressor.ratio.value = 1; 
+                        compressor.threshold.value = 0;
+                        compressor.ratio.value = 1;
                     }
 
-                    // Node 6: Studio Brickwall Limiter (Safety): Prevents clipping/distorting the video
-                    const masterLimiter = audioCtx.createDynamicsCompressor();
-                    // Limiter settings (hard ratio, fast attack/release, ceiling just below 0dB)
-                    masterLimiter.threshold.value = -1.5; // Ceiling
-                    masterLimiter.knee.value = 0;        // Hard knee for limiting
-                    masterLimiter.ratio.value = 20;      // Infinite ratio
-                    masterLimiter.attack.value = 0.001;  // Near instant
-                    masterLimiter.release.value = 0.06;  // Fast release
+                    // Connect the Audio Chain: source -> inputGain -> lowCutFilter -> mudDipEq -> presenceEq -> compressor
+                    source.connect(inputGain);
+                    inputGain.connect(lowCutFilter);
+                    lowCutFilter.connect(mudDipEq);
+                    mudDipEq.connect(presenceEq);
+                    presenceEq.connect(compressor);
 
-                    // Node 7: Output Makeup Gain / Final Master Volume
-                    const masterOutputGainNode = audioCtx.createGain();
-                    // Compressed signal needs makeup gain to reach broadcast level.
-                    masterOutputGainNode.gain.value = useCompressor ? 1.6 : 1.0; // Bring processed sound up
+                    // Node 6: Invert Polarity (Phase Flip)
+                    const useInvertPolarity = document.getElementById('setting-invert-polarity').checked;
+                    if (useInvertPolarity) {
+                        const inverter = audioCtx.createGain();
+                        inverter.gain.value = -1;
+                        compressor.connect(inverter);
+                        inverter.connect(destination);
+                    } else {
+                        compressor.connect(destination);
+                    }
 
-                    // ==================================================
-                    // CONNECT NODES (Signal Signal Flow)
-                    // ==================================================
-                    source
-                        .connect(inputGain)
-                        .connect(lowCutFilter)
-                        .connect(mudDipEq)
-                        .connect(presenceEq)
-                        .connect(broadcastCompressor)
-                        .connect(masterLimiter)
-                        .connect(masterOutputGainNode)
-                        .connect(destination);
-
-                    // Add processed audio track to final stream
+                    // Add Audio Track to Final Stream
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                // 4. Setup MediaRecorder with optimized settings
-                let mimeType = 'video/webm; codecs=vp9,opus'; // HQ default
-                if (formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')) {
-                    mimeType = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
-                } else if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm; codecs=vp8,opus'; // Fallback
+                // ==================================================
+                // 4. Setup MediaRecorder for Final Output
+                // ==================================================
+                let mimeType = formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4') 
+                                ? 'video/mp4' 
+                                : 'video/webm;codecs=vp8,opus';
+                
+                // Fallback
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                     mimeType = 'video/webm';
                 }
 
-                recordedChunks = [];
-                // Dynamic bitrate based on MBps setting
-                let finalBitrate = bitrateMbps * 1000000; 
-
-                // Ensure HQ audio encoding bitrate
                 mediaRecorder = new MediaRecorder(finalStream, {
                     mimeType: mimeType,
-                    videoBitsPerSecond: finalBitrate,
-                    audioBitsPerSecond: 192000 // HQ Broadcast Audio Bitrate
+                    videoBitsPerSecond: bitrateMbps * 1000000 // Convert Mbps to bps
                 });
 
-                // 5. Define Recorder Event Handlers
-                mediaRecorder.ondataavailable = (e) => {
+                recordedChunks = [];
+                mediaRecorder.ondataavailable = e => {
                     if (e.data.size > 0) recordedChunks.push(e.data);
                 };
 
@@ -654,54 +641,39 @@
                     timerText.style.display = 'none';
                     btnStart.style.display = 'flex';
                     btnStop.style.display = 'none';
-                    
+                    seconds = 0;
+                    timerText.innerText = "00:00";
+
+                    // Save and Download File
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.style.display = 'none';
                     a.href = url;
-                    
-                    // Generate timestamped file name
-                    const timestamp = new Date().toISOString().substring(0,19).replace(/:/g,'-');
-                    const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
-                    a.download = `Gemini_Pro_Studio_${timestamp}.${extension}`;
-                    
-                    document.body.appendChild(a);
+                    const fileExtension = formatChoice === 'mp4' ? 'mp4' : 'webm';
+                    a.download = `EduCreator_Recording_${new Date().getTime()}.${fileExtension}`;
                     a.click();
+                    URL.revokeObjectURL(url);
                     
-                    setTimeout(() => {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    }, 100);
-
-                    // Stop all tracks to release hardware
+                    // Stop all running tracks (Camera/Mic)
                     finalStream.getTracks().forEach(track => track.stop());
-                    
-                    timerText.innerText = "00:00";
-                    seconds = 0;
                 };
 
-                // 6. Start Recording (timeslice logic for stability)
-                mediaRecorder.start(1000); 
+                mediaRecorder.start(1000); // Save chunk every 1 second
                 
-                // Update UI State
-                timerText.style.display = 'block';
+                // Update UI for Recording State
                 btnStart.style.display = 'none';
                 btnStop.style.display = 'flex';
-                recSettingsMenu.style.display = 'none'; // Close settings if open
+                timerText.style.display = 'block';
                 
-                // Start UI Timer
-                seconds = 0;
                 timerInterval = setInterval(() => {
                     seconds++;
-                    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-                    const s = String(seconds % 60).padStart(2, '0');
-                    timerText.innerText = `${m}:${s}`;
+                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    const secs = String(seconds % 60).padStart(2, '0');
+                    timerText.innerText = `${mins}:${secs}`;
                 }, 1000);
 
             } catch (err) {
-                console.error("Recording Setup Failed:", err);
-                alert("रिकॉर्डिंग शुरू करने में त्रुटि आई। कृपया अनुमतियाँ जांचें।");
+                alert("रिकॉर्डिंग शुरू करने में त्रुटि: " + err.message);
                 recordingLoopActive = false;
             }
         });
@@ -709,7 +681,6 @@
         btnStop.addEventListener('click', () => {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
-                // rest is handled in onstop handler
             }
         });
     </script>
