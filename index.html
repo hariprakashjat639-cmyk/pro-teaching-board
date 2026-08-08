@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Complete Master Edition</title>
+    <title>Pro EduCreator Studio - Advanced Audio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -19,7 +19,7 @@
         
         #presentation-area { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            width: 100dvw; height: 100dvh; display: flex; justify-content: center; 
+            display: flex; justify-content: center; 
             align-items: center; background: #030305; overflow: hidden;
         }
 
@@ -92,13 +92,14 @@
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
         #rec-settings-menu {
-            position: absolute; top: 45px; right: 0; width: 270px; max-height: 80vh; overflow-y: auto;
+            position: absolute; top: 45px; right: 0; width: 300px; max-height: 85vh; overflow-y: auto;
             background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
         }
-        .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; }
+        .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; margin-bottom: 2px;}
         .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
+        .setting-desc { font-size: 9px; color: #888; margin-top: -4px; margin-bottom: 4px; line-height: 1.1; }
 
         .timer-badge {
             background: rgba(20, 20, 25, 0.85); padding: 2px 6px; border-radius: 12px;
@@ -123,8 +124,7 @@
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
             <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
-            <p class="text-[11px] mb-4 text-gray-400">High Quality PDF या Multiple Images अपलोड करें और वीडियो रिकॉर्डिंग शुरू करें।</p>
-            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
+            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg mt-4">
                 <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
             </button>
             <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
@@ -133,8 +133,8 @@
         <img id="slide-image" src="" style="display: none;">
         <canvas id="drawing-canvas"></canvas>
 
-        <button class="side-nav-btn" id="left-nav" title="पिछला स्लाइड"><i class="fas fa-chevron-left"></i></button>
-        <button class="side-nav-btn" id="right-nav" title="अगला स्लाइड"><i class="fas fa-chevron-right"></i></button>
+        <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
+        <button class="side-nav-btn" id="right-nav"><i class="fas fa-chevron-right"></i></button>
     </div>
 
     <div class="recorder-ui" id="recorder-ui">
@@ -144,53 +144,46 @@
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
         <div id="rec-settings-menu">
-            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व अनुमतियाँ</div>
+            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स</div>
             <div class="rec-setting-item">
                 <span>माइक्रोफोन (Mic Audio):</span>
                 <input type="checkbox" id="setting-mic" checked>
             </div>
-            <div class="rec-setting-item">
-                <span>वीडियो क्वालिटी (Quality):</span>
-                <select id="setting-quality">
-                    <option value="high">High (1080p)</option>
-                    <option value="medium" selected>Standard (720p)</option>
-                </select>
-            </div>
             
-            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">स्टुडियो प्रो ऑडियो इंजन</div>
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> Audacity प्रो ऑडियो इंजन</div>
+            
             <div class="rec-setting-item">
-                <span>AI Noise Suppression:</span>
-                <input type="checkbox" id="setting-noise-suppression" checked>
+                <span class="font-semibold">AI Noise Removal:</span>
+                <input type="checkbox" id="setting-ai-noise" checked>
             </div>
-            <div class="rec-setting-item">
-                <span>Soft Compressor:</span>
-                <input type="checkbox" id="setting-noise-gate" checked>
-            </div>
-            <div class="rec-setting-item">
-                <span>Vocal Presence EQ:</span>
-                <input type="checkbox" id="setting-vst" checked>
-            </div>
+            <div class="setting-desc">बैकग्राउंड की फालतू आवाज़ें (पंखे/शोर) हटाता है।</div>
 
-            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
-                <span>फ्रेम रेट (FPS):</span>
-                <select id="setting-fps">
-                    <option value="15">15 FPS (Ultra Low CPU)</option>
-                    <option value="30" selected>30 FPS (Standard)</option>
+                <span class="font-semibold text-yellow-400">SL40 Mic EQ (Bass & Air):</span>
+                <input type="checkbox" id="setting-sl40-eq" checked>
+            </div>
+            <div class="setting-desc">सस्ते माइक में भी FiduCe SL40 जैसी भारी और क्रिस्प आवाज़ देता है।</div>
+
+            <div class="rec-setting-item">
+                <span class="font-semibold text-green-400">Pro Compressor:</span>
+                <input type="checkbox" id="setting-compressor" checked>
+            </div>
+            <div class="setting-desc">धीमी आवाज़ को उठाता है, ताकि आपकी आवाज़ दब न जाए।</div>
+
+            <div class="rec-setting-item">
+                <span class="font-semibold text-red-400">Hard Limiter (Anti-Crack):</span>
+                <input type="checkbox" id="setting-limiter" checked>
+            </div>
+            <div class="setting-desc">चाहे आप कितना भी ज़ोर से बोलें, आवाज़ फटेगी नहीं (No Distortion)।</div>
+
+            <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो क्वालिटी</div>
+            <div class="rec-setting-item">
+                <span>रेज़ोल्यूशन:</span>
+                <select id="setting-quality">
+                    <option value="high">1080p (FHD)</option>
+                    <option value="medium" selected>720p (HD)</option>
                 </select>
             </div>
-            <div class="rec-setting-item">
-                <span>बिटरेट (Bitrate Mbps):</span>
-                <select id="setting-bitrate">
-                    <option value="1.5">1.5 Mbps (Small Size)</option>
-                    <option value="3" selected>3 Mbps (Balanced)</option>
-                    <option value="5">5 Mbps (High Quality)</option>
-                </select>
-            </div>
-
-            <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
-                <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
-            </button>
         </div>
     </div>
 
@@ -212,11 +205,9 @@
     </div>
 
     <script>
+        // PDF & UI Setup (Same as before, fully functional)
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let slides = []; 
-        let currentSlideIndex = 0; 
-        let slideInks = {}; 
-        let screenDirty = true;
+        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -230,61 +221,42 @@
         uploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
-            uploadPrompt.style.display = 'none';
-            loadingScreen.style.display = 'flex';
+            uploadPrompt.style.display = 'none'; loadingScreen.style.display = 'flex';
             
             try {
-                const firstFile = files[0];
-                const fileName = firstFile.name.toLowerCase();
-
+                const firstFile = files[0]; const fileName = firstFile.name.toLowerCase();
                 if (firstFile.type === 'application/pdf' || fileName.endsWith('.pdf')) {
                     loadingText.innerText = "PDF को High Quality Slides में बदला जा रहा है...";
                     const fileReader = new FileReader();
                     fileReader.onload = async function() {
-                        try {
-                            const typedarray = new Uint8Array(this.result);
-                            const loadingTask = pdfjsLib.getDocument({ data: typedarray });
-                            const pdf = await loadingTask.promise;
-                            slides = [];
-                            for (let i = 1; i <= pdf.numPages; i++) {
-                                const page = await pdf.getPage(i);
-                                const viewport = page.getViewport({ scale: 2.0 }); 
-                                const canvasTemp = document.createElement('canvas');
-                                canvasTemp.height = viewport.height; 
-                                canvasTemp.width = viewport.width;
-                                const contextTemp = canvasTemp.getContext('2d');
-                                await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
-                                slides.push(canvasTemp.toDataURL('image/png', 0.9));
-                            }
-                            startApp();
-                        } catch (err) {
-                            alert("PDF पढ़ने में त्रुटि: " + err.message);
-                            resetUploadUI();
+                        const typedarray = new Uint8Array(this.result);
+                        const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+                        const pdf = await loadingTask.promise;
+                        slides = [];
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const viewport = page.getViewport({ scale: 2.0 }); 
+                            const canvasTemp = document.createElement('canvas');
+                            canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
+                            const contextTemp = canvasTemp.getContext('2d');
+                            await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                            slides.push(canvasTemp.toDataURL('image/png', 0.9));
                         }
+                        startApp();
                     };
                     fileReader.readAsArrayBuffer(firstFile);
-                } else if (fileName.endsWith('.ppt') || fileName.endsWith('.pptx')) {
-                    alert("कृपया .ppt फाइल को पहले PDF या Images में सेव करें!");
-                    resetUploadUI();
                 } else {
-                    loadingText.innerText = "इमेज फाइलें लोड हो रही हैं...";
                     slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
                     startApp();
                 }
             } catch (err) {
                 alert("फाइल इम्पोर्ट करने में समस्या आई।");
-                resetUploadUI();
+                loadingScreen.style.display = 'none'; uploadPrompt.style.display = 'flex';
             }
         });
 
-        function resetUploadUI() {
-            loadingScreen.style.display = 'none';
-            uploadPrompt.style.display = 'flex';
-        }
-
         function startApp() {
-            loadingScreen.style.display = 'none'; 
-            slideImage.style.display = 'block';
+            loadingScreen.style.display = 'none'; slideImage.style.display = 'block';
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
             document.getElementById('left-nav').style.display = 'flex';
@@ -293,16 +265,13 @@
         }
 
         function loadSlide(index) {
-            saveCurrentInk(); 
-            currentSlideIndex = index; 
-            slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
             slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
         }
 
         document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
         document.getElementById('right-nav').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
-
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight' || e.key === 'PageDown') { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); }
             else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); }
@@ -310,284 +279,236 @@
 
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         fullscreenBtn.addEventListener('click', () => {
-            let docEl = document.documentElement;
-            let isFs = document.fullscreenElement || document.webkitFullscreenElement;
-            if (!isFs) {
-                if (docEl.requestFullscreen) docEl.requestFullscreen().catch(err => {});
-                fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>';
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-                fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>';
-            }
+            let docEl = document.documentElement; let isFs = document.fullscreenElement || document.webkitFullscreenElement;
+            if (!isFs) { if (docEl.requestFullscreen) docEl.requestFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>'; } 
+            else { if (document.exitFullscreen) document.exitFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>'; }
             setTimeout(() => { screenDirty = true; }, 400);
         });
 
-        const canvas = document.getElementById('drawing-canvas'); 
-        const ctx = canvas.getContext('2d');
+        // Drawing Engine
+        const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
-        
-        const sizeSlider = document.getElementById('pen-size'); 
-        const colorPicker = document.getElementById('color-picker'); 
-        const colorBtn = document.getElementById('color-btn');
-        const tools = { 
-            'glow': document.getElementById('glow-pen-btn'), 
-            'normal': document.getElementById('normal-pen-btn'), 
-            'highlighter': document.getElementById('highlighter-btn'), 
-            'eraser': document.getElementById('eraser-btn') 
-        };
+        const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
+        const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
 
-        function resizeCanvas() { 
-            canvas.width = window.innerWidth; 
-            canvas.height = window.innerHeight; 
-            ctx.lineCap = 'round'; 
-            ctx.lineJoin = 'round';
-            restoreInk();
-            screenDirty = true;
-        }
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
 
         function setActiveTool(mode) {
-            currentMode = mode; 
-            Object.values(tools).forEach(btn => btn.classList.remove('active')); 
-            tools[mode].classList.add('active');
-            if(mode === 'highlighter') sizeSlider.value = 30; 
-            else if(mode === 'eraser') sizeSlider.value = 40; 
-            else sizeSlider.value = 6;
+            currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
+            if(mode === 'highlighter') sizeSlider.value = 30; else if(mode === 'eraser') sizeSlider.value = 40; else sizeSlider.value = 6;
         }
         setActiveTool('glow');
 
         colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
-        tools['glow'].addEventListener('click', () => setActiveTool('glow')); 
-        tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
-        tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); 
-        tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
-        
-        document.getElementById('clear-btn').addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            saveCurrentInk();
-            screenDirty = true;
-        });
+        tools['glow'].addEventListener('click', () => setActiveTool('glow')); tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
+        tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
+        document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); screenDirty = true; });
 
-        canvas.addEventListener('pointerdown', (e) => { 
-            isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; 
-            ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); 
-            screenDirty = true;
-        });
-
+        canvas.addEventListener('pointerdown', (e) => { isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); screenDirty = true; });
         canvas.addEventListener('pointermove', (e) => {
-            if (!isDrawing) return;
-            points.push({x: e.clientX, y: e.clientY});
-            let baseSize = parseInt(sizeSlider.value);
+            if (!isDrawing) return; points.push({x: e.clientX, y: e.clientY}); let baseSize = parseInt(sizeSlider.value);
             
-            if (currentMode === 'eraser') { 
-                ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; 
-            } else if (currentMode === 'highlighter') { 
-                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; 
-            } else if (currentMode === 'glow') { 
-                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 15; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; 
-            } else { 
-                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; 
-            }
+            if (currentMode === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; } 
+            else if (currentMode === 'highlighter') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; } 
+            else if (currentMode === 'glow') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 15; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; } 
+            else { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; }
 
             if (points.length >= 3) {
                 const controlPoint = points[points.length - 2];
                 const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
-                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); 
-                ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y);
-                screenDirty = true;
+                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y); screenDirty = true;
             }
         });
-
         canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
-        function restoreInk() { 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            if (slideInks[currentSlideIndex]) { 
-                let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; 
-            } 
-        }
+        function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
 
-        const btnSettings = document.getElementById('btn-settings');
-        const recSettingsMenu = document.getElementById('rec-settings-menu');
-        const btnRequestPermission = document.getElementById('btn-request-permission');
-
-        btnSettings.addEventListener('click', (e) => {
-            e.stopPropagation();
-            recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex';
-        });
-        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
-        recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
-
-        btnRequestPermission.addEventListener('click', async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                stream.getTracks().forEach(track => track.stop());
-                alert("माइक्रोफोन की अनुमति मिल गई है!");
-            } catch (err) {
-                alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
-            }
-        });
+        const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
+        btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
+        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
         // ============================================================
-        // Bandicam-Style Ultra-Low CPU Recording Engine (Fixed Codecs)
+        // ADVANCED PRO AUDIO & RECORDING ENGINE (Audacity Filters)
         // ============================================================
-        let mediaRecorder; 
-        let recordedChunks = []; 
-        let timerInterval, seconds = 0;
-        let recordingLoopActive = false;
+        let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
-        const btnStart = document.getElementById('btn-start'); 
-        const btnStop = document.getElementById('btn-stop'); 
-        const timerText = document.getElementById('timer-text');
+        const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
 
         btnStart.addEventListener('click', async () => {
             try {
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
-                const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
-                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
+                
+                // Get Audio Preferences
+                const useAiNoise = document.getElementById('setting-ai-noise').checked;
+                const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
+                const useCompressor = document.getElementById('setting-compressor').checked;
+                const useLimiter = document.getElementById('setting-limiter').checked;
 
-                const useNoiseSuppression = document.getElementById('setting-noise-suppression').checked;
-                const useCompressor = document.getElementById('setting-noise-gate').checked; 
-                const useEqPresence = document.getElementById('setting-vst').checked; 
-
-                const recCanvas = document.createElement('canvas');
-                const recCtx = recCanvas.getContext('2d', { alpha: false });
-                recCanvas.width = quality === 'high' ? 1920 : 1280; 
-                recCanvas.height = quality === 'high' ? 1080 : 720;
+                // Setup Video Canvas
+                const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
+                recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
 
                 let activeSlideImg = new Image();
-                if (slides.length > 0 && slides[currentSlideIndex]) {
-                    activeSlideImg.src = slides[currentSlideIndex];
-                }
+                if (slides.length > 0 && slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
 
-                recordingLoopActive = true;
-                screenDirty = true;
+                recordingLoopActive = true; screenDirty = true;
                 
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
-                    
                     if (screenDirty) {
-                        recCtx.fillStyle = '#030305';
-                        recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
-
+                        recCtx.fillStyle = '#030305'; recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
                         if (slides.length > 0 && slides[currentSlideIndex]) {
-                            if (activeSlideImg.src !== slides[currentSlideIndex]) {
-                                activeSlideImg.src = slides[currentSlideIndex];
-                            }
+                            if (activeSlideImg.src !== slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
                             if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
-                                let hRatio = recCanvas.width / activeSlideImg.naturalWidth;
-                                let vRatio = recCanvas.height / activeSlideImg.naturalHeight;
-                                let ratio = Math.min(hRatio, vRatio);
-                                let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2;
-                                let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
+                                let hRatio = recCanvas.width / activeSlideImg.naturalWidth; let vRatio = recCanvas.height / activeSlideImg.naturalHeight; let ratio = Math.min(hRatio, vRatio);
+                                let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2; let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
                                 recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
                             }
                         }
-
-                        if (canvas) {
-                            recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
-                        }
-                        
+                        if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         screenDirty = false;
                     }
-
                     requestAnimationFrame(drawRecordingFrame);
                 }
                 drawRecordingFrame();
 
-                const videoStream = recCanvas.captureStream(targetFps);
+                const videoStream = recCanvas.captureStream(30);
                 const finalStream = new MediaStream();
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
+                    // 1. Get raw mic input with or without AI noise suppression
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: useNoiseSuppression, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
+                        audio: { 
+                            noiseSuppression: useAiNoise, 
+                            echoCancellation: true, 
+                            autoGainControl: false, // Turn off browser AGC to use our pro compressor
+                            sampleRate: 48000 
+                        }, 
                         video: false 
                     });
 
+                    // 2. Initialize Advanced Web Audio API
                     const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
                     if (audioCtx.state === 'suspended') await audioCtx.resume();
+                    
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
                     
-                    const inputGain = audioCtx.createGain(); inputGain.gain.value = 1.5;
-                    const lowCutFilter = audioCtx.createBiquadFilter(); lowCutFilter.type = 'highpass'; lowCutFilter.frequency.value = 90;
-                    const presenceEq = audioCtx.createBiquadFilter(); presenceEq.type = 'peaking'; presenceEq.frequency.value = 4000; presenceEq.gain.value = useEqPresence ? 4.0 : 0;
-                    
-                    const compressor = audioCtx.createDynamicsCompressor();
-                    if (useCompressor) { compressor.threshold.value = -24; compressor.ratio.value = 3; }
-                    else { compressor.threshold.value = 0; compressor.ratio.value = 1; }
+                    let currentNode = source;
 
-                    source.connect(inputGain); inputGain.connect(lowCutFilter); lowCutFilter.connect(presenceEq); presenceEq.connect(compressor); compressor.connect(destination);
+                    // FILTER 1: Low Cut (Rumble/Wind noise removal like Audacity Highpass)
+                    const lowCutFilter = audioCtx.createBiquadFilter();
+                    lowCutFilter.type = 'highpass';
+                    lowCutFilter.frequency.value = 85; 
+                    currentNode.connect(lowCutFilter);
+                    currentNode = lowCutFilter;
+
+                    // FILTER 2: SL40 Simulator (Bass Warmth + Vocal Air)
+                    if (useSl40Eq) {
+                        // Bass Boost (Proximity Effect)
+                        const bassEq = audioCtx.createBiquadFilter();
+                        bassEq.type = 'lowshelf';
+                        bassEq.frequency.value = 150;
+                        bassEq.gain.value = 4.0; // Add warmth
+
+                        // Treble/Air Boost (Crispness)
+                        const airEq = audioCtx.createBiquadFilter();
+                        airEq.type = 'highshelf';
+                        airEq.frequency.value = 8000;
+                        airEq.gain.value = 3.5; // Shine and clarity
+
+                        currentNode.connect(bassEq);
+                        bassEq.connect(airEq);
+                        currentNode = airEq;
+                    }
+
+                    // FILTER 3: Pro Compressor (Evens out volume)
+                    if (useCompressor) {
+                        const compressor = audioCtx.createDynamicsCompressor();
+                        compressor.threshold.value = -30; // Catch quiet sounds
+                        compressor.knee.value = 10;
+                        compressor.ratio.value = 4; // Moderate compression
+                        compressor.attack.value = 0.005;
+                        compressor.release.value = 0.15;
+                        
+                        currentNode.connect(compressor);
+                        currentNode = compressor;
+                    }
+
+                    // FILTER 4: Hard Limiter (Prevents "Awaaz fatna" / Clipping)
+                    if (useLimiter) {
+                        const limiter = audioCtx.createDynamicsCompressor();
+                        limiter.threshold.value = -2.5; // Absolute ceiling
+                        limiter.knee.value = 0; // Hard knee
+                        limiter.ratio.value = 20; // Brickwall ratio
+                        limiter.attack.value = 0.001; // Instant catch
+                        limiter.release.value = 0.05;
+
+                        // Add makeup gain to make final output perfectly loud but safe
+                        const makeUpGain = audioCtx.createGain();
+                        makeUpGain.gain.value = 1.2;
+
+                        currentNode.connect(limiter);
+                        limiter.connect(makeUpGain);
+                        currentNode = makeUpGain;
+                    }
+
+                    // Final output to destination
+                    currentNode.connect(destination);
+                    
+                    // Add processed audio track to final video stream
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                // Stable Player-Compatible MimeType Selection
+                // Stable Video Format Selection (Fixes Windows Media Player issue)
                 let mimeType = 'video/webm;codecs=vp9,opus';
                 let fileExtension = 'webm';
 
                 if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) {
-                    mimeType = 'video/mp4;codecs=avc1.42E01E,aac';
-                    fileExtension = 'mp4';
+                    mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4';
                 } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-                    mimeType = 'video/mp4';
-                    fileExtension = 'mp4';
+                    mimeType = 'video/mp4'; fileExtension = 'mp4';
                 } else if (!MediaRecorder.isTypeSupported(mimeType)) {
                     mimeType = 'video/webm';
                 }
 
-                mediaRecorder = new MediaRecorder(finalStream, {
-                    mimeType: mimeType,
-                    videoBitsPerSecond: bitrateMbps * 1000000
-                });
-
+                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: 3000000 });
                 recordedChunks = [];
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
 
                 mediaRecorder.onstop = () => {
-                    recordingLoopActive = false;
-                    clearInterval(timerInterval);
-                    timerText.style.display = 'none'; 
-                    btnStart.style.display = 'flex'; 
-                    btnStop.style.display = 'none';
-                    seconds = 0; 
-                    timerText.innerText = "00:00";
+                    recordingLoopActive = false; clearInterval(timerInterval);
+                    timerText.style.display = 'none'; btnStart.style.display = 'flex'; btnStop.style.display = 'none';
+                    seconds = 0; timerText.innerText = "00:00";
 
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `EduCreator_Recording_${new Date().getTime()}.${fileExtension}`;
-                    a.click();
-                    URL.revokeObjectURL(url);
+                    const a = document.createElement('a'); a.href = url;
+                    a.download = `Pro_Class_Recording_${new Date().getTime()}.${fileExtension}`;
+                    a.click(); URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
                 };
 
                 mediaRecorder.start(1000); 
-                btnStart.style.display = 'none'; 
-                btnStop.style.display = 'flex'; 
-                timerText.style.display = 'block';
+                btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
                 
                 timerInterval = setInterval(() => {
                     seconds++;
-                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-                    const secs = String(seconds % 60).padStart(2, '0');
+                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0'); const secs = String(seconds % 60).padStart(2, '0');
                     timerText.innerText = `${mins}:${secs}`;
                 }, 1000);
 
             } catch (err) {
-                alert("रिकॉर्डिंग में एरर: " + err.message);
+                alert("रिकॉर्डिंग/माइक में एरर: " + err.message);
                 recordingLoopActive = false;
             }
         });
 
-        btnStop.addEventListener('click', () => { 
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop(); 
-            }
-        });
+        btnStop.addEventListener('click', () => { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); });
     </script>
 </body>
 </html>
