@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Advanced Audio Edition</title>
+    <title>Pro EduCreator Studio - Ultimate Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -149,9 +149,16 @@
                 <span>माइक्रोफोन (Mic Audio):</span>
                 <input type="checkbox" id="setting-mic" checked>
             </div>
+            <div class="rec-setting-item">
+                <span>वीडियो क्वालिटी:</span>
+                <select id="setting-quality">
+                    <option value="high">1080p (FHD)</option>
+                    <option value="medium" selected>720p (HD)</option>
+                </select>
+            </div>
             
+            <!-- NEW AUDACITY PRO AUDIO FEATURES -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> Audacity प्रो ऑडियो इंजन</div>
-            
             <div class="rec-setting-item">
                 <span class="font-semibold">AI Noise Removal:</span>
                 <input type="checkbox" id="setting-ai-noise" checked>
@@ -162,28 +169,43 @@
                 <span class="font-semibold text-yellow-400">SL40 Mic EQ (Bass & Air):</span>
                 <input type="checkbox" id="setting-sl40-eq" checked>
             </div>
-            <div class="setting-desc">सस्ते माइक में भी FiduCe SL40 जैसी भारी और क्रिस्प आवाज़ देता है।</div>
+            <div class="setting-desc">सस्ते माइक में भी भारी और क्रिस्प आवाज़ देता है।</div>
 
             <div class="rec-setting-item">
                 <span class="font-semibold text-green-400">Pro Compressor:</span>
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
-            <div class="setting-desc">धीमी आवाज़ को उठाता है, ताकि आपकी आवाज़ दब न जाए।</div>
+            <div class="setting-desc">धीमी आवाज़ को उठाता है।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-red-400">Hard Limiter (Anti-Crack):</span>
+                <span class="font-semibold text-red-400">Hard Limiter:</span>
                 <input type="checkbox" id="setting-limiter" checked>
             </div>
-            <div class="setting-desc">चाहे आप कितना भी ज़ोर से बोलें, आवाज़ फटेगी नहीं (No Distortion)।</div>
+            <div class="setting-desc">ज़ोर से बोलने पर भी आवाज़ फटने (Distortion) नहीं देता।</div>
 
-            <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो क्वालिटी</div>
+            <!-- OLD VIDEO ADVANCED OPTIONS (Restored) -->
+            <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
-                <span>रेज़ोल्यूशन:</span>
-                <select id="setting-quality">
-                    <option value="high">1080p (FHD)</option>
-                    <option value="medium" selected>720p (HD)</option>
+                <span>फ्रेम रेट (FPS):</span>
+                <select id="setting-fps">
+                    <option value="15">15 FPS (Ultra Low CPU)</option>
+                    <option value="30" selected>30 FPS (Standard)</option>
+                    <option value="60">60 FPS (Smooth)</option>
                 </select>
             </div>
+            <div class="rec-setting-item">
+                <span>बिटरेट (Bitrate):</span>
+                <select id="setting-bitrate">
+                    <option value="1.5">1.5 Mbps</option>
+                    <option value="3" selected>3.0 Mbps</option>
+                    <option value="5">5.0 Mbps</option>
+                </select>
+            </div>
+
+            <!-- OLD PERMISSION BUTTON (Restored) -->
+            <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
+                <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
+            </button>
         </div>
     </div>
 
@@ -205,7 +227,7 @@
     </div>
 
     <script>
-        // PDF & UI Setup (Same as before, fully functional)
+        // PDF & UI Setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
@@ -325,12 +347,27 @@
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
 
+        // Settings Menu Toggle
         const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
+        // Restore Manual Permission Request
+        const btnRequestPermission = document.getElementById('btn-request-permission');
+        if(btnRequestPermission) {
+            btnRequestPermission.addEventListener('click', async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    stream.getTracks().forEach(track => track.stop());
+                    alert("माइक्रोफोन की अनुमति मिल गई है!");
+                } catch (err) {
+                    alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
+                }
+            });
+        }
+
         // ============================================================
-        // ADVANCED PRO AUDIO & RECORDING ENGINE (Audacity Filters)
+        // FULL RECORDING ENGINE (With FPS, Bitrate & Pro Audio)
         // ============================================================
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
@@ -340,14 +377,14 @@
             try {
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
+                const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
+                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
                 
-                // Get Audio Preferences
                 const useAiNoise = document.getElementById('setting-ai-noise').checked;
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
                 const useLimiter = document.getElementById('setting-limiter').checked;
 
-                // Setup Video Canvas
                 const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
 
@@ -375,108 +412,55 @@
                 }
                 drawRecordingFrame();
 
-                const videoStream = recCanvas.captureStream(30);
+                const videoStream = recCanvas.captureStream(targetFps);
                 const finalStream = new MediaStream();
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
-                    // 1. Get raw mic input with or without AI noise suppression
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { 
-                            noiseSuppression: useAiNoise, 
-                            echoCancellation: true, 
-                            autoGainControl: false, // Turn off browser AGC to use our pro compressor
-                            sampleRate: 48000 
-                        }, 
+                        audio: { noiseSuppression: useAiNoise, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
                         video: false 
                     });
 
-                    // 2. Initialize Advanced Web Audio API
                     const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
                     if (audioCtx.state === 'suspended') await audioCtx.resume();
                     
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
-                    
                     let currentNode = source;
 
-                    // FILTER 1: Low Cut (Rumble/Wind noise removal like Audacity Highpass)
-                    const lowCutFilter = audioCtx.createBiquadFilter();
-                    lowCutFilter.type = 'highpass';
-                    lowCutFilter.frequency.value = 85; 
-                    currentNode.connect(lowCutFilter);
-                    currentNode = lowCutFilter;
+                    const lowCutFilter = audioCtx.createBiquadFilter(); lowCutFilter.type = 'highpass'; lowCutFilter.frequency.value = 85; 
+                    currentNode.connect(lowCutFilter); currentNode = lowCutFilter;
 
-                    // FILTER 2: SL40 Simulator (Bass Warmth + Vocal Air)
                     if (useSl40Eq) {
-                        // Bass Boost (Proximity Effect)
-                        const bassEq = audioCtx.createBiquadFilter();
-                        bassEq.type = 'lowshelf';
-                        bassEq.frequency.value = 150;
-                        bassEq.gain.value = 4.0; // Add warmth
-
-                        // Treble/Air Boost (Crispness)
-                        const airEq = audioCtx.createBiquadFilter();
-                        airEq.type = 'highshelf';
-                        airEq.frequency.value = 8000;
-                        airEq.gain.value = 3.5; // Shine and clarity
-
-                        currentNode.connect(bassEq);
-                        bassEq.connect(airEq);
-                        currentNode = airEq;
+                        const bassEq = audioCtx.createBiquadFilter(); bassEq.type = 'lowshelf'; bassEq.frequency.value = 150; bassEq.gain.value = 4.0;
+                        const airEq = audioCtx.createBiquadFilter(); airEq.type = 'highshelf'; airEq.frequency.value = 8000; airEq.gain.value = 3.5;
+                        currentNode.connect(bassEq); bassEq.connect(airEq); currentNode = airEq;
                     }
 
-                    // FILTER 3: Pro Compressor (Evens out volume)
                     if (useCompressor) {
                         const compressor = audioCtx.createDynamicsCompressor();
-                        compressor.threshold.value = -30; // Catch quiet sounds
-                        compressor.knee.value = 10;
-                        compressor.ratio.value = 4; // Moderate compression
-                        compressor.attack.value = 0.005;
-                        compressor.release.value = 0.15;
-                        
-                        currentNode.connect(compressor);
-                        currentNode = compressor;
+                        compressor.threshold.value = -30; compressor.knee.value = 10; compressor.ratio.value = 4; compressor.attack.value = 0.005; compressor.release.value = 0.15;
+                        currentNode.connect(compressor); currentNode = compressor;
                     }
 
-                    // FILTER 4: Hard Limiter (Prevents "Awaaz fatna" / Clipping)
                     if (useLimiter) {
                         const limiter = audioCtx.createDynamicsCompressor();
-                        limiter.threshold.value = -2.5; // Absolute ceiling
-                        limiter.knee.value = 0; // Hard knee
-                        limiter.ratio.value = 20; // Brickwall ratio
-                        limiter.attack.value = 0.001; // Instant catch
-                        limiter.release.value = 0.05;
-
-                        // Add makeup gain to make final output perfectly loud but safe
-                        const makeUpGain = audioCtx.createGain();
-                        makeUpGain.gain.value = 1.2;
-
-                        currentNode.connect(limiter);
-                        limiter.connect(makeUpGain);
-                        currentNode = makeUpGain;
+                        limiter.threshold.value = -2.5; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = 0.001; limiter.release.value = 0.05;
+                        const makeUpGain = audioCtx.createGain(); makeUpGain.gain.value = 1.2;
+                        currentNode.connect(limiter); limiter.connect(makeUpGain); currentNode = makeUpGain;
                     }
 
-                    // Final output to destination
                     currentNode.connect(destination);
-                    
-                    // Add processed audio track to final video stream
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                // Stable Video Format Selection (Fixes Windows Media Player issue)
-                let mimeType = 'video/webm;codecs=vp9,opus';
-                let fileExtension = 'webm';
+                let mimeType = 'video/webm;codecs=vp9,opus'; let fileExtension = 'webm';
+                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4'; } 
+                else if (MediaRecorder.isTypeSupported('video/mp4')) { mimeType = 'video/mp4'; fileExtension = 'mp4'; } 
+                else if (!MediaRecorder.isTypeSupported(mimeType)) { mimeType = 'video/webm'; }
 
-                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) {
-                    mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4';
-                } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-                    mimeType = 'video/mp4'; fileExtension = 'mp4';
-                } else if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm';
-                }
-
-                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: 3000000 });
+                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: bitrateMbps * 1000000 });
                 recordedChunks = [];
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
 
