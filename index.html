@@ -6,7 +6,10 @@
     <title>Pro EduCreator Studio - Ultimate Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -39,7 +42,7 @@
             align-items: center; justify-content: center; text-align: center;
             background: #18181b; padding: 30px; border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 400px; width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 420px; width: 90%;
         }
 
         .ipad-dock { 
@@ -124,10 +127,16 @@
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
             <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
-            <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg mt-4">
-                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
-            </button>
+            <div class="flex flex-col gap-2 w-full mt-3">
+                <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
+                    <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (PDF / PPTX / Images)
+                </button>
+                <button type="button" id="ppt-to-pdf-btn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs px-4 py-2.5 rounded-xl cursor-pointer hover:opacity-90 transition font-semibold shadow-lg">
+                    <i class="fas fa-wand-magic-sparkles mr-2"></i> PPT को PDF में बदलें (Converter)
+                </button>
+            </div>
             <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
+            <input type="file" id="converter-upload" accept=".pptx, .ppt" style="display: none;">
         </div>
 
         <img id="slide-image" src="" style="display: none;">
@@ -228,12 +237,104 @@
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
+        const pptToPdfBtn = document.getElementById('ppt-to-pdf-btn');
+        const converterUpload = document.getElementById('converter-upload');
         const slideImage = document.getElementById('slide-image');
         const uploadPrompt = document.getElementById('upload-prompt');
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
 
         browseBtn.addEventListener('click', () => uploadInput.click());
+        pptToPdfBtn.addEventListener('click', () => converterUpload.click());
+
+        // PPT to PDF Converter Integration Feature
+        converterUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadPrompt.style.display = 'none'; 
+            loadingScreen.style.display = 'flex';
+            loadingText.innerText = "PPTX फाइल को PDF में कन्वर्ट किया जा रहा है...";
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const zip = new JSZip();
+                const zipContent = await zip.loadAsync(arrayBuffer);
+
+                const imageFiles = [];
+                zipContent.forEach((relativePath, zipEntry) => {
+                    if (relativePath.startsWith('ppt/media/') && !zipEntry.dir) {
+                        imageFiles.push(zipEntry);
+                    }
+                });
+
+                if (imageFiles.length === 0) {
+                    throw new Error("इस PPTX में कोई इमेजेज नहीं मिलीं!");
+                }
+
+                imageFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [1280, 720]
+                });
+
+                for (let i = 0; i < imageFiles.length; i++) {
+                    const imgBlob = await imageFiles[i].async('blob');
+                    const imgDataUrl = await blobToDataURL(imgBlob);
+                    
+                    if (i > 0) pdf.addPage([1280, 720], 'landscape');
+                    pdf.addImage(imgDataUrl, 'JPEG', 0, 0, 1280, 720);
+                }
+
+                // Automatically Download Converted PDF and Load into App
+                const pdfBlob = pdf.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                
+                // Trigger download
+                const a = document.createElement('a');
+                a.href = pdfUrl;
+                a.download = `${file.name.replace(/\.[^/.]+$/, "")}_Converted.pdf`;
+                a.click();
+
+                // Also load directly into studio viewer as PDF
+                loadingText.innerText = "PDF स्लाइड्स लोड की जा रही हैं...";
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+                    const pdfDoc = await loadingTask.promise;
+                    slides = [];
+                    for (let i = 1; i <= pdfDoc.numPages; i++) {
+                        const page = await pdfDoc.getPage(i);
+                        const viewport = page.getViewport({ scale: 2.0 }); 
+                        const canvasTemp = document.createElement('canvas');
+                        canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
+                        const contextTemp = canvasTemp.getContext('2d');
+                        await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                        slides.push(canvasTemp.toDataURL('image/png', 0.9));
+                    }
+                    startApp();
+                };
+                fileReader.readAsArrayBuffer(pdfBlob);
+
+            } class="err" catch (err) {
+                alert("त्रुटि: " + err.message);
+                loadingScreen.style.display = 'none'; 
+                uploadPrompt.style.display = 'flex';
+            }
+        });
+
+        function blobToDataURL(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
 
         uploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
@@ -361,9 +462,7 @@
             });
         }
 
-        // ============================================================
-        // PURE & GENTLE AUDIO ENGINE (NATURAL & COMFORTABLE VOLUME)
-        // ============================================================
+        // PURE & GENTLE AUDIO ENGINE
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
         const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
@@ -412,12 +511,7 @@
 
                 if (useMic) {
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { 
-                            noiseSuppression: true, 
-                            echoCancellation: true, 
-                            autoGainControl: false, // ऑटो-गेन बंद किया ताकि आवाज़ अपने आप तेज़ न हो
-                            sampleRate: 48000 
-                        }, 
+                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
                         video: false 
                     });
 
@@ -427,22 +521,18 @@
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
 
-                    // 1. LIGHT HIGH PASS (केवल 70Hz से नीचे की अनावश्यक घड़घड़ाहट हटाएगा)
                     const gentleHighPass = audioCtx.createBiquadFilter();
                     gentleHighPass.type = 'highpass';
                     gentleHighPass.frequency.value = 70;
 
-                    // 2. SOFT DE-HARSHENER (हाई-ट्रिबल और तीखेपन को स्मूथ -3.0dB कम करना)
                     const softTrebleCut = audioCtx.createBiquadFilter();
                     softTrebleCut.type = 'highshelf';
                     softTrebleCut.frequency.value = 5200;
                     softTrebleCut.gain.value = -3.0; 
 
-                    // 3. COMFORT VOLUME CONTROL (ओवरऑल आवाज़ को थोड़ा घटाकर कानों के लिए सहज बनाना)
                     const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.72; // वॉल्यूम कम करके आरामदायक स्तर पर लाया गया
+                    masterGain.gain.value = 0.72;
 
-                    // 4. GENTLE PEAK LIMITER (आवाज़ को फटने या बहुत तेज़ होने से रोकने के लिए)
                     const gentleCompressor = audioCtx.createDynamicsCompressor();
                     gentleCompressor.threshold.value = -18;
                     gentleCompressor.knee.value = 20;
@@ -450,27 +540,11 @@
                     gentleCompressor.attack.value = 0.03;
                     gentleCompressor.release.value = 0.2;
 
-                    // नेचुरल ऑडियो सिग्नल फ़्लो
                     let currentNode = source;
-                    
-                    if (useAntiCrackle) {
-                        currentNode.connect(gentleHighPass);
-                        currentNode = gentleHighPass;
-                    }
-
-                    if (useSl40Eq) {
-                        currentNode.connect(softTrebleCut);
-                        currentNode = softTrebleCut;
-                    }
-
-                    currentNode.connect(masterGain);
-                    currentNode = masterGain;
-
-                    if (useCompressor) {
-                        currentNode.connect(gentleCompressor);
-                        currentNode = gentleCompressor;
-                    }
-
+                    if (useAntiCrackle) { currentNode.connect(gentleHighPass); currentNode = gentleHighPass; }
+                    if (useSl40Eq) { currentNode.connect(softTrebleCut); currentNode = softTrebleCut; }
+                    currentNode.connect(masterGain); currentNode = masterGain;
+                    if (useCompressor) { currentNode.connect(gentleCompressor); currentNode = gentleCompressor; }
                     currentNode.connect(destination);
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
@@ -507,8 +581,8 @@
                 }, 1000);
 
             } catch (err) {
-                alert("रिकॉर्डिंग/माइक में एरर: " + err.message);
-                recordingLoopActive = false;
+                alert("रिकॉर्डिंग शुरू करने में समस्या आई: " + err.message);
+                btnStart.style.display = 'flex'; btnStop.style.display = 'none';
             }
         });
 
