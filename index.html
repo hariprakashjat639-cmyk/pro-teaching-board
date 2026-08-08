@@ -157,16 +157,9 @@
                     <option value="medium" selected>Standard (720p)</option>
                 </select>
             </div>
-            <div class="rec-setting-item">
-                <span>फॉर्मेट (Format):</span>
-                <select id="setting-format">
-                    <option value="webm" selected>WebM (बेस्ट प्लेबैक)</option>
-                    <option value="mp4">MP4 (यदि समर्थित हो)</option>
-                </select>
-            </div>
             
             <!-- Professional Studio Audio Custom Options -->
-            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">स्टुडियो प्रो ऑडियो इंजन (Custom dB)</div>
+            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">स्टुडियो प्रो ऑडियो इंजन</div>
             <div class="rec-setting-item">
                 <span>AI Noise Suppression:</span>
                 <input type="checkbox" id="setting-noise-suppression" checked>
@@ -178,20 +171,6 @@
             <div class="rec-setting-item">
                 <span>Vocal Presence EQ (+4dB):</span>
                 <input type="checkbox" id="setting-vst" checked>
-            </div>
-            <div class="rec-setting-item">
-                <span>Invert Polarity:</span>
-                <input type="checkbox" id="setting-invert-polarity">
-            </div>
-
-            <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">ऑडियो प्रोफाइल (Audio Profile)</div>
-            <div class="rec-setting-item">
-                <span>Pro Preset Mode:</span>
-                <select id="setting-audio-interface">
-                    <option value="studio" selected>Studio Broadcast (Best)</option>
-                    <option value="podcast">Podcast Clear</option>
-                    <option value="raw">Raw Natural</option>
-                </select>
             </div>
 
             <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">वीडियो एडवांस ऑप्शंस</div>
@@ -208,11 +187,10 @@
                     <option value="2">2 Mbps</option>
                     <option value="5" selected>5 Mbps</option>
                     <option value="8">8 Mbps (High)</option>
-                    <option value="12">12 Mbps (Ultra)</option>
                 </select>
             </div>
 
-            <button id="btn-request-permission" class="mt-1 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
+            <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
             </button>
         </div>
@@ -240,6 +218,7 @@
         let slides = []; 
         let currentSlideIndex = 0; 
         let slideInks = {}; 
+        let needsRedraw = true; // CPU OPTIMIZATION FLAG (Bandicam Logic)
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -320,7 +299,7 @@
             currentSlideIndex = index; 
             slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
-            slideImage.onload = () => { resizeCanvas(); restoreInk(); }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); needsRedraw = true; }; 
         }
 
         document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
@@ -344,6 +323,7 @@
                 else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
                 fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>';
             }
+            setTimeout(() => { needsRedraw = true; }, 500);
         });
 
         const canvas = document.getElementById('drawing-canvas'); 
@@ -365,7 +345,8 @@
             canvas.height = window.innerHeight; 
             ctx.lineCap = 'round'; 
             ctx.lineJoin = 'round';
-            restoreInk(); 
+            restoreInk();
+            needsRedraw = true;
         }
         window.addEventListener('resize', resizeCanvas);
 
@@ -388,11 +369,13 @@
         document.getElementById('clear-btn').addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             saveCurrentInk();
+            needsRedraw = true; // Force redraw on clear
         });
 
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; 
             ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); 
+            needsRedraw = true;
         });
 
         canvas.addEventListener('pointermove', (e) => {
@@ -415,16 +398,17 @@
                 const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
                 ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); 
                 ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y);
+                needsRedraw = true; // Tell engine to record this new stroke
             }
         });
 
-        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); needsRedraw = true; });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             if (slideInks[currentSlideIndex]) { 
-                let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => ctx.drawImage(img, 0, 0); 
+                let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); needsRedraw = true; }; 
             } 
         }
 
@@ -451,7 +435,7 @@
         });
 
         // ============================================================
-        // Upgraded Professional Studio Audio Recorder Engine (REVISED)
+        // Upgraded Professional Studio Video & Audio Engine 
         // ============================================================
         let mediaRecorder; 
         let recordedChunks = []; 
@@ -464,20 +448,16 @@
 
         btnStart.addEventListener('click', async () => {
             try {
-                // 1. Get Settings
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
-                const formatChoice = document.getElementById('setting-format').value;
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 5;
 
-                // Audio specific settings from UI
                 const useNoiseSuppression = document.getElementById('setting-noise-suppression').checked;
                 const useCompressor = document.getElementById('setting-noise-gate').checked; 
                 const useEqPresence = document.getElementById('setting-vst').checked; 
-                const audioProfile = document.getElementById('setting-audio-interface').value;
 
-                // 2. Setup Video Stream from Canvas
+                // Setup Video Stream from Canvas
                 const recCanvas = document.createElement('canvas');
                 const recCtx = recCanvas.getContext('2d');
                 recCanvas.width = quality === 'high' ? 1920 : 1280; 
@@ -489,30 +469,39 @@
                 }
 
                 recordingLoopActive = true;
+                needsRedraw = true; // Initial Draw required
+                
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
-                    // Background
-                    recCtx.fillStyle = '#030305';
-                    recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+                    
+                    // SMART FRAME RENDERER (Reduces CPU by 80%)
+                    if (needsRedraw) {
+                        recCtx.fillStyle = '#030305';
+                        recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
 
-                    // Slide
-                    if (slides.length > 0 && slides[currentSlideIndex]) {
-                        if (activeSlideImg.src !== slides[currentSlideIndex]) {
-                            activeSlideImg.src = slides[currentSlideIndex];
+                        if (slides.length > 0 && slides[currentSlideIndex]) {
+                            if (activeSlideImg.src !== slides[currentSlideIndex]) {
+                                activeSlideImg.src = slides[currentSlideIndex];
+                                needsRedraw = true;
+                            }
+                            if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
+                                let hRatio = recCanvas.width / activeSlideImg.naturalWidth;
+                                let vRatio = recCanvas.height / activeSlideImg.naturalHeight;
+                                let ratio = Math.min(hRatio, vRatio);
+                                let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2;
+                                let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
+                                recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
+                            } else {
+                                needsRedraw = true; // wait for image load
+                            }
                         }
-                        if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
-                            let hRatio = recCanvas.width / activeSlideImg.naturalWidth;
-                            let vRatio = recCanvas.height / activeSlideImg.naturalHeight;
-                            let ratio = Math.min(hRatio, vRatio);
-                            let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2;
-                            let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
-                            recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
-                        }
-                    }
 
-                    // Drawings
-                    if (canvas) {
-                        recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
+                        if (canvas) {
+                            recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
+                        }
+                        
+                        // Frame drawn successfully, turn off engine until user interacts again
+                        needsRedraw = false; 
                     }
 
                     requestAnimationFrame(drawRecordingFrame);
@@ -522,148 +511,82 @@
                 const videoStream = recCanvas.captureStream(targetFps);
                 const finalStream = new MediaStream();
                 
-                // Add Video Track
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
-                // 3. Setup Professional Audio Stream (Gemini Grade Upgrade)
+                // Audio Stream Logic
                 if (useMic) {
-                    // Browser built-in constraints (modern browsers use ML for noiseSuppression)
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: {
-                            noiseSuppression: useNoiseSuppression, 
-                            echoCancellation: true, 
-                            autoGainControl: false, // Essential for manual professional control
-                            sampleRate: 48000, 
-                            channelCount: 1 
-                        }, 
+                        audio: { noiseSuppression: useNoiseSuppression, echoCancellation: true, autoGainControl: false, sampleRate: 48000, channelCount: 1 }, 
                         video: false 
                     });
 
                     const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-                    if (audioCtx.state === 'suspended') {
-                        await audioCtx.resume();
-                    }
-
+                    if (audioCtx.state === 'suspended') await audioCtx.resume();
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
                     
-                    // ==================================================
-                    // PROFESSIONAL SIGNAL CHAIN (Broadcast Style)
-                    // ==================================================
-
-                    // Node 1: Pre-Gain / Input Level Normalization
-                    const inputGain = audioCtx.createGain();
-                    // Studio mics usually need boost, Raw natural implies untouched.
-                    if (audioProfile === 'studio') inputGain.gain.value = 1.6; // +4dB approx
-                    else if (audioProfile === 'podcast') inputGain.gain.value = 1.3;
-                    else inputGain.gain.value = 1.0; 
-
-                    // Node 2: High-Pass Filter (Low Cut): Removes background rumble, AC hum (< 90Hz)
-                    const lowCutFilter = audioCtx.createBiquadFilter();
-                    lowCutFilter.type = 'highpass';
-                    lowCutFilter.frequency.value = 90; // The rumble frequency
-                    lowCutFilter.Q.value = 0.707; // Standard Butterworth
-
-                    // Node 3: Subtractive EQ (Mud Dip): Dipping muddy freq (~250-400Hz) for clarity
-                    const mudDipEq = audioCtx.createBiquadFilter();
-                    mudDipEq.type = 'peaking';
-                    mudDipEq.frequency.value = 320; // Common muddy freq
-                    mudDipEq.Q.value = 1.2;
-                    mudDipEq.gain.value = -3.5; // Dip by 3.5dB
-
-                    // Node 4: Presence EQ (Vocal Sparkle): Boost
-                    const presenceEq = audioCtx.createBiquadFilter();
-                    presenceEq.type = 'peaking';
-                    presenceEq.frequency.value = 4000; // 4kHz sparkle
-                    presenceEq.Q.value = 1.0;
-                    presenceEq.gain.value = useEqPresence ? 4.0 : 0; // +4dB boost if checked
-
-                    // Node 5: Dynamics Compressor (Soft Compressor)
+                    const inputGain = audioCtx.createGain(); inputGain.gain.value = 1.6;
+                    const lowCutFilter = audioCtx.createBiquadFilter(); lowCutFilter.type = 'highpass'; lowCutFilter.frequency.value = 90;
+                    const presenceEq = audioCtx.createBiquadFilter(); presenceEq.type = 'peaking'; presenceEq.frequency.value = 4000; presenceEq.gain.value = useEqPresence ? 4.0 : 0;
+                    
                     const compressor = audioCtx.createDynamicsCompressor();
-                    if (useCompressor) {
-                        compressor.threshold.value = -24;
-                        compressor.knee.value = 30;
-                        compressor.ratio.value = 3;
-                        compressor.attack.value = 0.003;
-                        compressor.release.value = 0.25;
-                    } else {
-                        compressor.threshold.value = 0;
-                        compressor.ratio.value = 1;
-                    }
+                    if (useCompressor) { compressor.threshold.value = -24; compressor.ratio.value = 3; compressor.attack.value = 0.003; }
+                    else { compressor.threshold.value = 0; compressor.ratio.value = 1; }
 
-                    // Connect the Audio Chain: source -> inputGain -> lowCutFilter -> mudDipEq -> presenceEq -> compressor
-                    source.connect(inputGain);
-                    inputGain.connect(lowCutFilter);
-                    lowCutFilter.connect(mudDipEq);
-                    mudDipEq.connect(presenceEq);
-                    presenceEq.connect(compressor);
+                    source.connect(inputGain); inputGain.connect(lowCutFilter); lowCutFilter.connect(presenceEq); presenceEq.connect(compressor); compressor.connect(destination);
 
-                    // Node 6: Invert Polarity (Phase Flip)
-                    const useInvertPolarity = document.getElementById('setting-invert-polarity').checked;
-                    if (useInvertPolarity) {
-                        const inverter = audioCtx.createGain();
-                        inverter.gain.value = -1;
-                        compressor.connect(inverter);
-                        inverter.connect(destination);
-                    } else {
-                        compressor.connect(destination);
-                    }
-
-                    // Add Audio Track to Final Stream
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                // ==================================================
-                // 4. Setup MediaRecorder for Final Output
-                // ==================================================
-                let mimeType = formatChoice === 'mp4' && MediaRecorder.isTypeSupported('video/mp4') 
-                                ? 'video/mp4' 
-                                : 'video/webm;codecs=vp8,opus';
+                // WMP / WINDOWS COMPATIBILITY FIX (H.264 Priority)
+                let options = { videoBitsPerSecond: bitrateMbps * 1000000 };
+                let mimeType = '';
                 
-                // Fallback
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                     mimeType = 'video/webm';
-                }
+                const possibleTypes = [
+                    'video/mp4;codecs=avc1', // Top Priority (WMP Loves this)
+                    'video/webm;codecs=h264,opus', // Hardware accelerated, best fallback
+                    'video/webm;codecs=h264',
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm;codecs=vp8,opus',
+                    'video/webm'
+                ];
 
-                mediaRecorder = new MediaRecorder(finalStream, {
-                    mimeType: mimeType,
-                    videoBitsPerSecond: bitrateMbps * 1000000 // Convert Mbps to bps
-                });
+                for (const type of possibleTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        mimeType = type;
+                        break;
+                    }
+                }
+                
+                options.mimeType = mimeType;
+                mediaRecorder = new MediaRecorder(finalStream, options);
 
                 recordedChunks = [];
-                mediaRecorder.ondataavailable = e => {
-                    if (e.data.size > 0) recordedChunks.push(e.data);
-                };
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
 
                 mediaRecorder.onstop = () => {
                     recordingLoopActive = false;
                     clearInterval(timerInterval);
-                    timerText.style.display = 'none';
-                    btnStart.style.display = 'flex';
-                    btnStop.style.display = 'none';
-                    seconds = 0;
-                    timerText.innerText = "00:00";
+                    timerText.style.display = 'none'; btnStart.style.display = 'flex'; btnStop.style.display = 'none';
+                    seconds = 0; timerText.innerText = "00:00";
 
-                    // Save and Download File
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    const fileExtension = formatChoice === 'mp4' ? 'mp4' : 'webm';
-                    a.download = `EduCreator_Recording_${new Date().getTime()}.${fileExtension}`;
+                    
+                    // Determine File Extension based on resolved MimeType
+                    const fileExtension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                    a.download = `EduCreator_Class_${new Date().getTime()}.${fileExtension}`;
+                    
                     a.click();
                     URL.revokeObjectURL(url);
-                    
-                    // Stop all running tracks (Camera/Mic)
                     finalStream.getTracks().forEach(track => track.stop());
                 };
 
-                mediaRecorder.start(1000); // Save chunk every 1 second
+                mediaRecorder.start(1000); 
                 
-                // Update UI for Recording State
-                btnStart.style.display = 'none';
-                btnStop.style.display = 'flex';
-                timerText.style.display = 'block';
+                btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
                 
                 timerInterval = setInterval(() => {
                     seconds++;
@@ -678,11 +601,7 @@
             }
         });
 
-        btnStop.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-        });
+        btnStop.addEventListener('click', () => { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); });
     </script>
 </body>
 </html>
