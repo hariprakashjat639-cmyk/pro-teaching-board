@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Optimized Edition</title>
+    <title>Pro EduCreator Studio - Low CPU Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -165,11 +165,11 @@
                 <input type="checkbox" id="setting-noise-suppression" checked>
             </div>
             <div class="rec-setting-item">
-                <span>Soft Compressor (No Cuts):</span>
+                <span>Soft Compressor:</span>
                 <input type="checkbox" id="setting-noise-gate" checked>
             </div>
             <div class="rec-setting-item">
-                <span>Vocal Presence EQ (+4dB):</span>
+                <span>Vocal Presence EQ:</span>
                 <input type="checkbox" id="setting-vst" checked>
             </div>
 
@@ -177,16 +177,16 @@
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
                 <select id="setting-fps">
-                    <option value="30" selected>30 FPS</option>
-                    <option value="60">60 FPS</option>
+                    <option value="15">15 FPS (Ultra Low CPU)</option>
+                    <option value="30" selected>30 FPS (Standard)</option>
                 </select>
             </div>
             <div class="rec-setting-item">
                 <span>बिटरेट (Bitrate Mbps):</span>
                 <select id="setting-bitrate">
-                    <option value="2">2 Mbps</option>
-                    <option value="5" selected>5 Mbps</option>
-                    <option value="8">8 Mbps (High)</option>
+                    <option value="1.5">1.5 Mbps (Small Size)</option>
+                    <option value="3" selected>3 Mbps (Balanced)</option>
+                    <option value="5">5 Mbps (High Quality)</option>
                 </select>
             </div>
 
@@ -218,7 +218,7 @@
         let slides = []; 
         let currentSlideIndex = 0; 
         let slideInks = {}; 
-        let needsRedraw = true; // CPU OPTIMIZATION FLAG (Bandicam Logic)
+        let screenDirty = true; // True Bandicam Engine: Only render when something changes
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -250,13 +250,13 @@
                             slides = [];
                             for (let i = 1; i <= pdf.numPages; i++) {
                                 const page = await pdf.getPage(i);
-                                const viewport = page.getViewport({ scale: 2.5 }); 
+                                const viewport = page.getViewport({ scale: 2.0 }); 
                                 const canvasTemp = document.createElement('canvas');
                                 canvasTemp.height = viewport.height; 
                                 canvasTemp.width = viewport.width;
                                 const contextTemp = canvasTemp.getContext('2d');
                                 await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
-                                slides.push(canvasTemp.toDataURL('image/png', 1.0));
+                                slides.push(canvasTemp.toDataURL('image/png', 0.9));
                             }
                             startApp();
                         } catch (err) {
@@ -266,7 +266,7 @@
                     };
                     fileReader.readAsArrayBuffer(firstFile);
                 } else if (fileName.endsWith('.ppt') || fileName.endsWith('.pptx')) {
-                    alert("कृपया .ppt फाइल को पहले PDF या Images (JPG/PNG) में सेव करके अपलोड करें!");
+                    alert("कृपया .ppt फाइल को पहले PDF या Images में सेव करें!");
                     resetUploadUI();
                 } else {
                     loadingText.innerText = "इमेज फाइलें लोड हो रही हैं...";
@@ -299,7 +299,7 @@
             currentSlideIndex = index; 
             slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
-            slideImage.onload = () => { resizeCanvas(); restoreInk(); needsRedraw = true; }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
         }
 
         document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
@@ -316,14 +316,12 @@
             let isFs = document.fullscreenElement || document.webkitFullscreenElement;
             if (!isFs) {
                 if (docEl.requestFullscreen) docEl.requestFullscreen().catch(err => {});
-                else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
                 fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>';
             } else {
                 if (document.exitFullscreen) document.exitFullscreen();
-                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
                 fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>';
             }
-            setTimeout(() => { needsRedraw = true; }, 500);
+            setTimeout(() => { screenDirty = true; }, 400);
         });
 
         const canvas = document.getElementById('drawing-canvas'); 
@@ -346,7 +344,7 @@
             ctx.lineCap = 'round'; 
             ctx.lineJoin = 'round';
             restoreInk();
-            needsRedraw = true;
+            screenDirty = true;
         }
         window.addEventListener('resize', resizeCanvas);
 
@@ -369,13 +367,13 @@
         document.getElementById('clear-btn').addEventListener('click', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             saveCurrentInk();
-            needsRedraw = true; // Force redraw on clear
+            screenDirty = true;
         });
 
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; 
             ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); 
-            needsRedraw = true;
+            screenDirty = true;
         });
 
         canvas.addEventListener('pointermove', (e) => {
@@ -388,7 +386,7 @@
             } else if (currentMode === 'highlighter') { 
                 ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; 
             } else if (currentMode === 'glow') { 
-                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 18; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 15; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; 
             } else { 
                 ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; 
             }
@@ -398,21 +396,20 @@
                 const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
                 ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); 
                 ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y);
-                needsRedraw = true; // Tell engine to record this new stroke
+                screenDirty = true; // Signal frame update
             }
         });
 
-        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); needsRedraw = true; });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             if (slideInks[currentSlideIndex]) { 
-                let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); needsRedraw = true; }; 
+                let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; 
             } 
         }
 
-        // Recorder Settings Popup Toggle & Permission Handler
         const btnSettings = document.getElementById('btn-settings');
         const recSettingsMenu = document.getElementById('rec-settings-menu');
         const btnRequestPermission = document.getElementById('btn-request-permission');
@@ -428,14 +425,14 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 stream.getTracks().forEach(track => track.stop());
-                alert("माइक्रोफोन की अनुमति सफलतापूर्वक मिल गई है!");
+                alert("माइक्रोफोन की अनुमति मिल गई है!");
             } catch (err) {
-                alert("माइक्रोफोन की अनुमति नहीं मिल सकी। कृपया ब्राउज़र सेटिंग्स चेक करें।");
+                alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
             }
         });
 
         // ============================================================
-        // Upgraded Professional Studio Video & Audio Engine 
+        // Bandicam-Style Ultra-Low CPU Recording Engine
         // ============================================================
         let mediaRecorder; 
         let recordedChunks = []; 
@@ -451,15 +448,14 @@
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
-                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 5;
+                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
 
                 const useNoiseSuppression = document.getElementById('setting-noise-suppression').checked;
                 const useCompressor = document.getElementById('setting-noise-gate').checked; 
                 const useEqPresence = document.getElementById('setting-vst').checked; 
 
-                // Setup Video Stream from Canvas
                 const recCanvas = document.createElement('canvas');
-                const recCtx = recCanvas.getContext('2d');
+                const recCtx = recCanvas.getContext('2d', { alpha: false }); // Disable alpha for max speed
                 recCanvas.width = quality === 'high' ? 1920 : 1280; 
                 recCanvas.height = quality === 'high' ? 1080 : 720;
 
@@ -469,20 +465,19 @@
                 }
 
                 recordingLoopActive = true;
-                needsRedraw = true; // Initial Draw required
+                screenDirty = true;
                 
+                // TRUE BANDICAM SMART RENDER LOOP (Skips idle frames completely)
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
                     
-                    // SMART FRAME RENDERER (Reduces CPU by 80%)
-                    if (needsRedraw) {
+                    if (screenDirty) {
                         recCtx.fillStyle = '#030305';
                         recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
 
                         if (slides.length > 0 && slides[currentSlideIndex]) {
                             if (activeSlideImg.src !== slides[currentSlideIndex]) {
                                 activeSlideImg.src = slides[currentSlideIndex];
-                                needsRedraw = true;
                             }
                             if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
                                 let hRatio = recCanvas.width / activeSlideImg.naturalWidth;
@@ -491,8 +486,6 @@
                                 let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2;
                                 let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
                                 recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
-                            } else {
-                                needsRedraw = true; // wait for image load
                             }
                         }
 
@@ -500,8 +493,7 @@
                             recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         }
                         
-                        // Frame drawn successfully, turn off engine until user interacts again
-                        needsRedraw = false; 
+                        screenDirty = false; // Stop redrawing until next event
                     }
 
                     requestAnimationFrame(drawRecordingFrame);
@@ -510,13 +502,11 @@
 
                 const videoStream = recCanvas.captureStream(targetFps);
                 const finalStream = new MediaStream();
-                
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
-                // Audio Stream Logic
                 if (useMic) {
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: useNoiseSuppression, echoCancellation: true, autoGainControl: false, sampleRate: 48000, channelCount: 1 }, 
+                        audio: { noiseSuppression: useNoiseSuppression, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
                         video: false 
                     });
 
@@ -525,41 +515,30 @@
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
                     
-                    const inputGain = audioCtx.createGain(); inputGain.gain.value = 1.6;
+                    const inputGain = audioCtx.createGain(); inputGain.gain.value = 1.5;
                     const lowCutFilter = audioCtx.createBiquadFilter(); lowCutFilter.type = 'highpass'; lowCutFilter.frequency.value = 90;
                     const presenceEq = audioCtx.createBiquadFilter(); presenceEq.type = 'peaking'; presenceEq.frequency.value = 4000; presenceEq.gain.value = useEqPresence ? 4.0 : 0;
                     
                     const compressor = audioCtx.createDynamicsCompressor();
-                    if (useCompressor) { compressor.threshold.value = -24; compressor.ratio.value = 3; compressor.attack.value = 0.003; }
+                    if (useCompressor) { compressor.threshold.value = -24; compressor.ratio.value = 3; }
                     else { compressor.threshold.value = 0; compressor.ratio.value = 1; }
 
                     source.connect(inputGain); inputGain.connect(lowCutFilter); lowCutFilter.connect(presenceEq); presenceEq.connect(compressor); compressor.connect(destination);
-
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                // WMP / WINDOWS COMPATIBILITY FIX (H.264 Priority)
-                let options = { videoBitsPerSecond: bitrateMbps * 1000000 };
-                let mimeType = '';
-                
-                const possibleTypes = [
-                    'video/mp4;codecs=avc1', // Top Priority (WMP Loves this)
-                    'video/webm;codecs=h264,opus', // Hardware accelerated, best fallback
-                    'video/webm;codecs=h264',
-                    'video/webm;codecs=vp9,opus',
-                    'video/webm;codecs=vp8,opus',
-                    'video/webm'
-                ];
-
-                for (const type of possibleTypes) {
-                    if (MediaRecorder.isTypeSupported(type)) {
-                        mimeType = type;
-                        break;
-                    }
+                // WMP FIX: Force MP4/H264 format compatibility container
+                let mimeType = 'video/webm;codecs=h264,opus';
+                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
+                    mimeType = 'video/mp4;codecs=avc1';
+                } else if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm';
                 }
-                
-                options.mimeType = mimeType;
-                mediaRecorder = new MediaRecorder(finalStream, options);
+
+                mediaRecorder = new MediaRecorder(finalStream, {
+                    mimeType: mimeType,
+                    videoBitsPerSecond: bitrateMbps * 1000000
+                });
 
                 recordedChunks = [];
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
@@ -575,17 +554,14 @@
                     const a = document.createElement('a');
                     a.href = url;
                     
-                    // Determine File Extension based on resolved MimeType
-                    const fileExtension = mimeType.includes('mp4') ? 'mp4' : 'webm';
-                    a.download = `EduCreator_Class_${new Date().getTime()}.${fileExtension}`;
-                    
+                    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                    a.download = `EduCreator_Recording_${new Date().getTime()}.${ext}`;
                     a.click();
                     URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
                 };
 
                 mediaRecorder.start(1000); 
-                
                 btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
                 
                 timerInterval = setInterval(() => {
@@ -596,7 +572,7 @@
                 }, 1000);
 
             } catch (err) {
-                alert("रिकॉर्डिंग शुरू करने में त्रुटि: " + err.message);
+                alert("रिकॉर्डिंग में एरर: " + err.message);
                 recordingLoopActive = false;
             }
         });
