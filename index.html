@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Original Quality PPT Show</title>
+    <title>Pro EduCreator Studio - 100% Original PPT Show</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -17,7 +17,7 @@
         * { box-sizing: border-box; }
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #000000; color: white; 
+            overflow: hidden; background-color: #050508; color: white; 
             user-select: none; touch-action: none; cursor: default; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
@@ -28,10 +28,10 @@
             align-items: center; background: #000000; overflow: hidden;
         }
 
-        /* Original High-Quality Full Size Container (No fixed 960x540 restriction) */
+        /* 100% Original Size Container */
         #pptx-viewer-container { 
             width: 100vw; height: 100vh; background: #000000; position: relative; 
-            overflow: hidden; display: flex; justify-content: center; align-items: center;
+            overflow: auto; display: flex; justify-content: center; align-items: center;
         }
 
         .slide-page { 
@@ -41,7 +41,6 @@
         }
         .slide-page.active { display: flex; }
         
-        /* Ensure inner PPT/Image elements take high resolution scale properly */
         .slide-page > div {
             width: 100% !important;
             height: 100% !important;
@@ -57,7 +56,7 @@
         }
         
         #drawing-canvas { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100vw; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             z-index: 10; cursor: default; pointer-events: none;
         }
         
@@ -144,14 +143,14 @@
 
     <div id="loading-screen">
         <div class="spinner mb-3"></div>
-        <h2 id="loading-text" class="text-sm font-medium text-white">हाई-क्वालिटी PPTX लोड हो रही है...</h2>
+        <h2 id="loading-text" class="text-sm font-medium text-white">100% ओरिजिनल क्वालिटी PPT लोड हो रही है...</h2>
     </div>
 
     <div id="presentation-area">
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-5xl mb-3 text-[#ff453a]"></i>
             <h2 class="text-lg font-bold mb-1 text-white">अपनी PPTX या फाइल चुनें</h2>
-            <p class="text-xs text-gray-400 mb-4">फुल ओरिजिनल/4K क्वालिटी PPT शो व्यूअर</p>
+            <p class="text-xs text-gray-400 mb-4">100% ओरिजिनल साइज़ और पिक्सल क्वालिटी शो व्यूअर</p>
             
             <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
                 <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (.pptx / .pdf)
@@ -184,7 +183,7 @@
             <div class="rec-setting-item">
                 <span>वीडियो क्वालिटी:</span>
                 <select id="setting-quality">
-                    <option value="high" selected>1920x1080 / 4K UHD</option>
+                    <option value="high" selected>1920x1080 / Original UHD</option>
                     <option value="medium">720p (HD)</option>
                 </select>
             </div>
@@ -224,7 +223,7 @@
                 <select id="setting-bitrate">
                     <option value="3">3.0 Mbps</option>
                     <option value="8" selected>8.0 Mbps (High Quality)</option>
-                    <option value="15">15.0 Mbps (4K Max)</option>
+                    <option value="15">15.0 Mbps (Original Max)</option>
                 </select>
             </div>
 
@@ -287,20 +286,23 @@
                     const ext = fileName.split('.').pop();
 
                     if (ext === 'pdf' || file.type === 'application/pdf') {
-                        loadingText.innerText = "PDF को हाई-क्वालिटी स्लाइड्स में कंवर्ट किया जा रहा है...";
+                        loadingText.innerText = "PDF को 100% ओरिजिनल क्वालिटी स्लाइड्स में कंवर्ट किया जा रहा है...";
                         await convertPdfToSlides(file);
                     } else if (ext === 'pptx' || ext === 'ppt') {
-                        loadingText.innerText = "PPTX फाइल को बिना साइज़ बदले ओरिजिनल लेआउट में प्रोसेस किया जा रहा है...";
+                        loadingText.innerText = "PPTX फाइल को बिना किसी बदलाव के ओरिजिनल साइज़ में प्रोसेस किया जा रहा है...";
                         const arrayBuffer = await file.arrayBuffer();
+                        
+                        // 100% Original PPT Render Configuration (No forced resize/scaling)
                         const parsedSlides = await pptxToHtml(arrayBuffer, {
                             scaleToFit: false,
                             letterbox: false
                         });
+                        
                         if (parsedSlides && parsedSlides.length > 0) {
                             slidesArrayHtml.push(...parsedSlides);
                         }
                     } else if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext) || file.type.startsWith('image/')) {
-                        loadingText.innerText = "इमेज को फुल ओरिजिनल क्वालिटी में लोड किया जा रहा है...";
+                        loadingText.innerText = "इमेज को 100% ओरिजिनल क्वालिटी में लोड किया जा रहा है...";
                         const imgUrl = URL.createObjectURL(file);
                         slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#000;"><img src="${imgUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
                     }
@@ -332,7 +334,7 @@
                         
                         for (let i = 1; i <= pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
-                            const viewport = page.getViewport({ scale: 3.0 }); // High scale for crisp text/4K quality
+                            const viewport = page.getViewport({ scale: 3.5 }); // Maximum crisp details for original clarity
                             const canvasTemp = document.createElement('canvas');
                             canvasTemp.height = viewport.height; 
                             canvasTemp.width = viewport.width;
@@ -416,7 +418,6 @@
         const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
 
         function resizeCanvas() { 
-            const rect = pptxViewerContainer.getBoundingClientRect();
             canvas.width = window.innerWidth; 
             canvas.height = window.innerHeight;
             canvas.style.width = window.innerWidth + 'px';
@@ -597,7 +598,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); 
                     a.href = url;
-                    a.download = `Original_Quality_PPT_${new Date().getTime()}.${fileExtension}`;
+                    a.download = `Original_Size_PPT_${new Date().getTime()}.${fileExtension}`;
                     a.click(); 
                     URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
