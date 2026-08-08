@@ -143,7 +143,6 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
-        <!-- Popup Menu for Settings & Permissions -->
         <div id="rec-settings-menu">
             <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स व अनुमतियाँ</div>
             <div class="rec-setting-item">
@@ -158,7 +157,6 @@
                 </select>
             </div>
             
-            <!-- Professional Studio Audio Custom Options -->
             <div class="text-[10px] font-bold text-blue-400 border-t border-white/10 pt-1 mt-1">स्टुडियो प्रो ऑडियो इंजन</div>
             <div class="rec-setting-item">
                 <span>AI Noise Suppression:</span>
@@ -218,7 +216,7 @@
         let slides = []; 
         let currentSlideIndex = 0; 
         let slideInks = {}; 
-        let screenDirty = true; // True Bandicam Engine: Only render when something changes
+        let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -396,7 +394,7 @@
                 const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
                 ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); 
                 ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y);
-                screenDirty = true; // Signal frame update
+                screenDirty = true;
             }
         });
 
@@ -432,7 +430,7 @@
         });
 
         // ============================================================
-        // Bandicam-Style Ultra-Low CPU Recording Engine
+        // Bandicam-Style Ultra-Low CPU Recording Engine (Full Complete)
         // ============================================================
         let mediaRecorder; 
         let recordedChunks = []; 
@@ -455,7 +453,7 @@
                 const useEqPresence = document.getElementById('setting-vst').checked; 
 
                 const recCanvas = document.createElement('canvas');
-                const recCtx = recCanvas.getContext('2d', { alpha: false }); // Disable alpha for max speed
+                const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; 
                 recCanvas.height = quality === 'high' ? 1080 : 720;
 
@@ -467,7 +465,6 @@
                 recordingLoopActive = true;
                 screenDirty = true;
                 
-                // TRUE BANDICAM SMART RENDER LOOP (Skips idle frames completely)
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
                     
@@ -493,7 +490,7 @@
                             recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         }
                         
-                        screenDirty = false; // Stop redrawing until next event
+                        screenDirty = false;
                     }
 
                     requestAnimationFrame(drawRecordingFrame);
@@ -527,7 +524,6 @@
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                // WMP FIX: Force MP4/H264 format compatibility container
                 let mimeType = 'video/webm;codecs=h264,opus';
                 if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
                     mimeType = 'video/mp4;codecs=avc1';
@@ -546,8 +542,11 @@
                 mediaRecorder.onstop = () => {
                     recordingLoopActive = false;
                     clearInterval(timerInterval);
-                    timerText.style.display = 'none'; btnStart.style.display = 'flex'; btnStop.style.display = 'none';
-                    seconds = 0; timerText.innerText = "00:00";
+                    timerText.style.display = 'none'; 
+                    btnStart.style.display = 'flex'; 
+                    btnStop.style.display = 'none';
+                    seconds = 0; 
+                    timerText.innerText = "00:00";
 
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
@@ -562,7 +561,9 @@
                 };
 
                 mediaRecorder.start(1000); 
-                btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
+                btnStart.style.display = 'none'; 
+                btnStop.style.display = 'flex'; 
+                timerText.style.display = 'block';
                 
                 timerInterval = setInterval(() => {
                     seconds++;
@@ -577,7 +578,11 @@
             }
         });
 
-        btnStop.addEventListener('click', () => { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); });
+        btnStop.addEventListener('click', () => { 
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop(); 
+            }
+        });
     </script>
 </body>
 </html>
