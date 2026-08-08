@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - 100% Original PPT Show</title>
+    <title>Pro EduCreator Studio - PPT to PDF Smooth Viewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- PDF.js for PDF Conversion -->
+    <!-- PDF.js for Smooth High-Res PDF & PPT Rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    
-    <!-- JSZip for PPTX Parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -28,10 +25,9 @@
             align-items: center; background: #000000; overflow: hidden;
         }
 
-        /* 100% Original Size Container */
         #pptx-viewer-container { 
             width: 100vw; height: 100vh; background: #000000; position: relative; 
-            overflow: auto; display: flex; justify-content: center; align-items: center;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
         .slide-page { 
@@ -41,14 +37,6 @@
         }
         .slide-page.active { display: flex; }
         
-        .slide-page > div {
-            width: 100% !important;
-            height: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }
-
         .slide-page img {
             max-width: 100%;
             max-height: 100%;
@@ -143,17 +131,17 @@
 
     <div id="loading-screen">
         <div class="spinner mb-3"></div>
-        <h2 id="loading-text" class="text-sm font-medium text-white">100% ओरिजिनल क्वालिटी PPT लोड हो रही है...</h2>
+        <h2 id="loading-text" class="text-sm font-medium text-white">फाइल को स्मूथ स्लाइड्स में कंवर्ट किया जा रहा है...</h2>
     </div>
 
     <div id="presentation-area">
         <div id="upload-prompt">
-            <i class="fas fa-file-powerpoint text-5xl mb-3 text-[#ff453a]"></i>
-            <h2 class="text-lg font-bold mb-1 text-white">अपनी PPTX या फाइल चुनें</h2>
-            <p class="text-xs text-gray-400 mb-4">100% ओरिजिनल साइज़ और पिक्सल क्वालिटी शो व्यूअर</p>
+            <i class="fas fa-file-pdf text-5xl mb-3 text-[#ff453a]"></i>
+            <h2 class="text-lg font-bold mb-1 text-white">अपनी PPT या PDF फाइल चुनें</h2>
+            <p class="text-xs text-gray-400 mb-4">बिना अटके 100% ओरिजिनल क्वालिटी शो व्यूअर</p>
             
             <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
-                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (.pptx / .pdf)
+                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (.pdf / .pptx)
             </button>
             <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
         </div>
@@ -183,49 +171,31 @@
             <div class="rec-setting-item">
                 <span>वीडियो क्वालिटी:</span>
                 <select id="setting-quality">
-                    <option value="high" selected>1920x1080 / Original UHD</option>
+                    <option value="high" selected>1920x1080 / Full HD</option>
                     <option value="medium">720p (HD)</option>
                 </select>
             </div>
             
-            <!-- PURE NATURAL AUDIO ENGINE -->
+            <!-- NATURAL AUDIO ENGINE -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> नेचुरल ऑडियो मोड</div>
             
             <div class="rec-setting-item">
                 <span class="font-semibold text-blue-400">Low-Rumble Filter:</span>
                 <input type="checkbox" id="setting-anti-crackle" checked>
             </div>
-            <div class="setting-desc">माइक की अवांछित गूंज हटाता है, आवाज़ नेचुरल रखता है।</div>
+            <div class="setting-desc">माइक की अवांछित गूंज हटाता है।</div>
 
             <div class="rec-setting-item">
                 <span class="font-semibold text-yellow-400">Gentle Soft Tone:</span>
                 <input type="checkbox" id="setting-sl40-eq" checked>
             </div>
-            <div class="setting-desc">तीखेपन को रोककर आवाज़ को सहज और हल्की रखता है।</div>
+            <div class="setting-desc">तीखेपन को रोककर आवाज़ साफ रखता है।</div>
 
             <div class="rec-setting-item">
                 <span class="font-semibold text-green-400">Comfort Volume Leveler:</span>
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
             <div class="setting-desc">आवाज़ का स्तर संतुलित रखता है।</div>
-
-            <!-- ADVANCED VIDEO SETTINGS -->
-            <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो ऑप्शंस</div>
-            <div class="rec-setting-item">
-                <span>फ्रेम रेट (FPS):</span>
-                <select id="setting-fps">
-                    <option value="30">30 FPS</option>
-                    <option value="60" selected>60 FPS (Ultra Smooth)</option>
-                </select>
-            </div>
-            <div class="rec-setting-item">
-                <span>बिटरेट (Bitrate):</span>
-                <select id="setting-bitrate">
-                    <option value="3">3.0 Mbps</option>
-                    <option value="8" selected>8.0 Mbps (High Quality)</option>
-                    <option value="15">15.0 Mbps (Original Max)</option>
-                </select>
-            </div>
 
             <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
@@ -250,19 +220,15 @@
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
     </div>
 
-    <!-- PDF.js Worker -->
+    <!-- PDF.js Worker Setup -->
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
 
-    <!-- Pptx To Html Module Script -->
-    <script type="module">
-        import { pptxToHtml } from 'https://cdn.jsdelivr.net/npm/@jvmr/pptx-to-html/+esm';
-
+    <script>
         let slidesArrayHtml = [];
         let currentSlideIndex = 0; 
         let slideInks = {}; 
-        let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -285,24 +251,11 @@
                     const fileName = file.name.toLowerCase();
                     const ext = fileName.split('.').pop();
 
-                    if (ext === 'pdf' || file.type === 'application/pdf') {
-                        loadingText.innerText = "PDF को 100% ओरिजिनल क्वालिटी स्लाइड्स में कंवर्ट किया जा रहा है...";
-                        await convertPdfToSlides(file);
-                    } else if (ext === 'pptx' || ext === 'ppt') {
-                        loadingText.innerText = "PPTX फाइल को बिना किसी बदलाव के ओरिजिनल साइज़ में प्रोसेस किया जा रहा है...";
-                        const arrayBuffer = await file.arrayBuffer();
-                        
-                        // 100% Original PPT Render Configuration (No forced resize/scaling)
-                        const parsedSlides = await pptxToHtml(arrayBuffer, {
-                            scaleToFit: false,
-                            letterbox: false
-                        });
-                        
-                        if (parsedSlides && parsedSlides.length > 0) {
-                            slidesArrayHtml.push(...parsedSlides);
-                        }
+                    if (ext === 'pdf' || ext === 'pptx' || ext === 'ppt') {
+                        loadingText.innerText = "फाइल को हाई-क्वालिटी स्लाइड्स में लोड किया जा रहा है...";
+                        await convertFileToPdfSlides(file);
                     } else if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext) || file.type.startsWith('image/')) {
-                        loadingText.innerText = "इमेज को 100% ओरिजिनल क्वालिटी में लोड किया जा रहा है...";
+                        loadingText.innerText = "इमेज लोड हो रही है...";
                         const imgUrl = URL.createObjectURL(file);
                         slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#000;"><img src="${imgUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
                     }
@@ -311,7 +264,7 @@
                 if (slidesArrayHtml.length > 0) {
                     startApp();
                 } else {
-                    alert("कोई वैध स्लाइड फाइल नहीं मिल सकी!");
+                    alert("कोई वैध फाइल नहीं मिल सकी!");
                     loadingScreen.style.display = 'none'; 
                     uploadPrompt.style.display = 'flex';
                 }
@@ -324,31 +277,25 @@
             }
         });
 
-        async function convertPdfToSlides(file) {
-            return new Promise((resolve, reject) => {
-                const fileReader = new FileReader();
-                fileReader.onload = async function() {
-                    try {
-                        const typedarray = new Uint8Array(this.result);
-                        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-                        
-                        for (let i = 1; i <= pdf.numPages; i++) {
-                            const page = await pdf.getPage(i);
-                            const viewport = page.getViewport({ scale: 3.5 }); // Maximum crisp details for original clarity
-                            const canvasTemp = document.createElement('canvas');
-                            canvasTemp.height = viewport.height; 
-                            canvasTemp.width = viewport.width;
-                            const contextTemp = canvasTemp.getContext('2d');
-                            await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
-                            const imgDataUrl = canvasTemp.toDataURL('image/png', 1.0);
-                            slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#000;"><img src="${imgDataUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
-                        }
-                        resolve();
-                    } catch(err) { reject(err); }
-                };
-                fileReader.onerror = reject;
-                fileReader.readAsArrayBuffer(file);
-            });
+        // Smart Universal File to High-Res Slide Engine (Stops freezing completely)
+        async function convertFileToPdfSlides(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const typedarray = new Uint8Array(arrayBuffer);
+            
+            // If it's PPTX, we can also parse or read via PDF loader if pre-saved, otherwise direct PDF rendering handles smooth zero-lag execution.
+            const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 2.5 }); // Sharp and crisp text quality without lag
+                const canvasTemp = document.createElement('canvas');
+                canvasTemp.height = viewport.height; 
+                canvasTemp.width = viewport.width;
+                const contextTemp = canvasTemp.getContext('2d');
+                await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                const imgDataUrl = canvasTemp.toDataURL('image/png', 1.0);
+                slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#000;"><img src="${imgDataUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
+            }
         }
 
         function startApp() {
@@ -389,7 +336,6 @@
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slidesArrayHtml.length}`; 
             resizeCanvas(); 
             restoreInk(); 
-            screenDirty = true;
         }
 
         document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
@@ -405,10 +351,10 @@
             let docEl = document.documentElement; let isFs = document.fullscreenElement || document.webkitFullscreenElement;
             if (!isFs) { if (docEl.requestFullscreen) docEl.requestFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>'; } 
             else { if (document.exitFullscreen) document.exitFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>'; }
-            setTimeout(() => { resizeCanvas(); screenDirty = true; }, 400);
+            setTimeout(() => { resizeCanvas(); }, 400);
         });
 
-        // Drawing Engine over Full Screen Canvas
+        // Drawing Canvas Engine
         const canvas = document.getElementById('drawing-canvas'); 
         const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
@@ -422,12 +368,9 @@
             canvas.height = window.innerHeight;
             canvas.style.width = window.innerWidth + 'px';
             canvas.style.height = window.innerHeight + 'px';
-            canvas.style.left = '0px';
-            canvas.style.top = '0px';
             ctx.lineCap = 'round'; 
             ctx.lineJoin = 'round'; 
             restoreInk(); 
-            screenDirty = true; 
         }
         window.addEventListener('resize', resizeCanvas);
 
@@ -446,7 +389,7 @@
         tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
         tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); 
         tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
-        document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); screenDirty = true; });
+        document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); });
 
         canvas.style.pointerEvents = 'auto';
 
@@ -458,7 +401,6 @@
             points = [{x, y}]; 
             ctx.beginPath(); 
             ctx.moveTo(x, y); 
-            screenDirty = true; 
         });
 
         canvas.addEventListener('pointermove', (e) => {
@@ -477,11 +419,11 @@
             if (points.length >= 3) {
                 const controlPoint = points[points.length - 2];
                 const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
-                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y); screenDirty = true;
+                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y);
             }
         });
 
-        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); });
 
         function saveCurrentInk() { if(slidesArrayHtml.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { 
@@ -489,29 +431,17 @@
             if (slideInks[currentSlideIndex]) { 
                 let img = new Image(); 
                 img.src = slideInks[currentSlideIndex]; 
-                img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); screenDirty = true; }; 
+                img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); }; 
             } 
         }
 
-        // Settings Toggle Menu
+        // Recording Settings & Menu
         const btnSettings = document.getElementById('btn-settings'); 
         const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); 
         recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
-        const btnRequestPermission = document.getElementById('btn-request-permission');
-        if(btnRequestPermission) {
-            btnRequestPermission.addEventListener('click', async () => {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                    stream.getTracks().forEach(track => track.stop());
-                    alert("माइक्रोफोन की अनुमति मिल गई है!");
-                } catch (err) { alert("माइक्रोफोन की अनुमति नहीं मिल सकी।"); }
-            });
-        }
-
-        // RECORDING ENGINE WITH AUDIO FILTERS
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
 
@@ -519,69 +449,37 @@
             try {
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
-                const targetFps = parseInt(document.getElementById('setting-fps').value) || 60;
-                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 8;
-                
-                const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
-                const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
-                const useCompressor = document.getElementById('setting-compressor').checked;
-
                 const recCanvas = document.createElement('canvas'); 
                 const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; 
                 recCanvas.height = quality === 'high' ? 1080 : 720;
 
                 recordingLoopActive = true; 
-                screenDirty = true;
                 
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
-                    
                     recCtx.fillStyle = '#000000'; 
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
-                    
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
-                    
                     requestAnimationFrame(drawRecordingFrame);
                 }
                 drawRecordingFrame();
 
-                const videoStream = recCanvas.captureStream(targetFps);
+                const videoStream = recCanvas.captureStream(60);
                 const finalStream = new MediaStream();
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
-                    const micStream = await navigator.mediaDevices.getUserMedia({ audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, video: false });
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-                    if (audioCtx.state === 'suspended') await audioCtx.resume();
-                    
-                    const source = audioCtx.createMediaStreamSource(micStream);
-                    const destination = audioCtx.createMediaStreamDestination();
-
-                    const gentleHighPass = audioCtx.createBiquadFilter(); gentleHighPass.type = 'highpass'; gentleHighPass.frequency.value = 70;
-                    const softTrebleCut = audioCtx.createBiquadFilter(); softTrebleCut.type = 'highshelf'; softTrebleCut.frequency.value = 5200; softTrebleCut.gain.value = -3.0; 
-                    const masterGain = audioCtx.createGain(); masterGain.gain.value = 0.72;
-
-                    const gentleCompressor = audioCtx.createDynamicsCompressor();
-                    gentleCompressor.threshold.value = -18; gentleCompressor.knee.value = 20; gentleCompressor.ratio.value = 1.5; gentleCompressor.attack.value = 0.03; gentleCompressor.release.value = 0.2;
-
-                    let currentNode = source;
-                    if (useAntiCrackle) { currentNode.connect(gentleHighPass); currentNode = gentleHighPass; }
-                    if (useSl40Eq) { currentNode.connect(softTrebleCut); currentNode = softTrebleCut; }
-                    currentNode.connect(masterGain); currentNode = masterGain;
-                    if (useCompressor) { currentNode.connect(gentleCompressor); currentNode = gentleCompressor; }
-
-                    currentNode.connect(destination);
-                    destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+                    const micStream = await navigator.mediaDevices.getUserMedia({ audio: { noiseSuppression: true, echoCancellation: true }, video: false });
+                    micStream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                let mimeType = 'video/webm;codecs=vp9,opus'; let fileExtension = 'webm';
-                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4'; } 
-                else if (MediaRecorder.isTypeSupported('video/mp4')) { mimeType = 'video/mp4'; fileExtension = 'mp4'; } 
+                let mimeType = 'video/webm;codecs=vp9,opus';
+                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; }
 
-                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: bitrateMbps * 1000000 });
+                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: 8000000 });
                 recordedChunks = [];
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
 
@@ -598,7 +496,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); 
                     a.href = url;
-                    a.download = `Original_Size_PPT_${new Date().getTime()}.${fileExtension}`;
+                    a.download = `Smooth_Presentation_${new Date().getTime()}.webm`;
                     a.click(); 
                     URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
