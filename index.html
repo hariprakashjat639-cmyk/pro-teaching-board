@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Low CPU Edition</title>
+    <title>Pro EduCreator Studio - Master Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -430,7 +430,7 @@
         });
 
         // ============================================================
-        // Bandicam-Style Ultra-Low CPU Recording Engine (Full Complete)
+        // Bandicam-Style Low CPU Recording Engine (Stable WebM format)
         // ============================================================
         let mediaRecorder; 
         let recordedChunks = []; 
@@ -524,10 +524,9 @@
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                let mimeType = 'video/webm;codecs=h264,opus';
-                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
-                    mimeType = 'video/mp4;codecs=avc1';
-                } else if (!MediaRecorder.isTypeSupported(mimeType)) {
+                // Stable Codec: Using standard webm/vp9/opus for absolute playback reliability
+                let mimeType = 'video/webm;codecs=vp9,opus';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
                     mimeType = 'video/webm';
                 }
 
@@ -552,9 +551,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    
-                    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-                    a.download = `EduCreator_Recording_${new Date().getTime()}.${ext}`;
+                    a.download = `EduCreator_Recording_${new Date().getTime()}.webm`;
                     a.click();
                     URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
