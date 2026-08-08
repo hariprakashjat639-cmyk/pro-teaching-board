@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - HD PPT Edition</title>
+    <title>Pro EduCreator Studio - Direct HD Image PPT Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- PDF.js for PDF Conversion -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     
-    <!-- JSZip & PPTX Processing Engine -->
+    <!-- JSZip for PPTX Parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
@@ -122,14 +122,14 @@
 
     <div id="loading-screen">
         <div class="spinner mb-3"></div>
-        <h2 id="loading-text" class="text-sm font-medium text-white">PPTX फाइल HD स्लाइड्स में कंवर्ट हो रही है...</h2>
+        <h2 id="loading-text" class="text-sm font-medium text-white">PPTX को High-Quality HD Images में बदला जा रहा है...</h2>
     </div>
 
     <div id="presentation-area">
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-5xl mb-3 text-[#ff453a]"></i>
             <h2 class="text-lg font-bold mb-1 text-white">PPT, PDF या Images अपलोड करें</h2>
-            <p class="text-xs text-gray-400 mb-4">आपकी PPTX फाइल हाई-क्वालिटी स्लाइड्स में बदल जाएगी</p>
+            <p class="text-xs text-gray-400 mb-4">आपकी PPTX सीधे शार्प हाई-क्वालिटी इमेजेस में कन्वर्ट हो जाएगी</p>
             
             <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
                 <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (PPT / PDF / Images)
@@ -255,8 +255,8 @@
                         loadingText.innerText = "PDF को HD Slides में कंवर्ट किया जा रहा है...";
                         await convertPdfToSlides(file);
                     } else if (ext === 'pptx' || ext === 'ppt') {
-                        loadingText.innerText = "PPTX की प्रत्येक स्लाइड को High-Quality में Render किया जा रहा है...";
-                        await processPPTXFile(file);
+                        loadingText.innerText = "PPTX की स्लाइड्स को High-Quality Images में कन्वर्ट किया जा रहा है...";
+                        await processPPTXAsImages(file);
                     } else if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext) || file.type.startsWith('image/')) {
                         loadingText.innerText = "इमेज को स्लाइड में लोड किया जा रहा है...";
                         const imgUrl = URL.createObjectURL(file);
@@ -289,7 +289,7 @@
                         
                         for (let i = 1; i <= pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
-                            const viewport = page.getViewport({ scale: 2.5 }); // Ultra Sharp Scale
+                            const viewport = page.getViewport({ scale: 2.5 });
                             const canvasTemp = document.createElement('canvas');
                             canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
                             const contextTemp = canvasTemp.getContext('2d');
@@ -304,24 +304,23 @@
             });
         }
 
-        // 2. ADVANCED PPTX HIGH-RES ENGINE (FULL TEXT & GRAPHICS CONVERT)
-        async function processPPTXFile(file) {
+        // 2. DIRECT PPTX TO HIGH-QUALITY IMAGE SLIDES ENGINE
+        async function processPPTXAsImages(file) {
             const zip = new JSZip();
             const zipContent = await zip.loadAsync(file);
 
-            // Extract embedded images first
-            let extractedMedia = {};
+            let mediaMap = {};
             const mediaFolder = zipContent.folder("ppt/media");
             if (mediaFolder) {
                 for (let fileName in mediaFolder.files) {
                     if (!mediaFolder.files[fileName].dir) {
                         const blob = await mediaFolder.files[fileName].async("blob");
-                        extractedMedia[fileName.replace("ppt/media/", "")] = URL.createObjectURL(blob);
+                        let cleanName = fileName.replace("ppt/media/", "");
+                        mediaMap[cleanName] = URL.createObjectURL(blob);
                     }
                 }
             }
 
-            // Slide XML Files sorting
             const slideFiles = Object.keys(zipContent.files).filter(fn => 
                 fn.startsWith("ppt/slides/slide") && fn.endsWith(".xml")
             ).sort((a,b) => {
@@ -331,82 +330,80 @@
             });
 
             if (slideFiles.length === 0) {
-                // Fallback to media images if slides XML empty
-                const mediaKeys = Object.keys(extractedMedia);
-                if (mediaKeys.length > 0) {
-                    mediaKeys.forEach(k => slides.push(extractedMedia[k]));
+                let allMediaKeys = Object.keys(mediaMap);
+                if (allMediaKeys.length > 0) {
+                    allMediaKeys.forEach(k => slides.push(mediaMap[k]));
                     return;
                 }
-                throw new Error("PPTX के अंदर कोई स्लाइड डेटा नहीं मिला।");
+                throw new Error("PPTX के अंदर कोई स्लाइड या इमेज नहीं मिली।");
             }
 
             const parser = new DOMParser();
 
             for (let i = 0; i < slideFiles.length; i++) {
-                const xmlText = await zipContent.files[slideFiles[i]].async("string");
-                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                const slideNum = i + 1;
+                const relsFileName = `ppt/slides/_rels/slide${slideNum}.xml.rels`;
+                let slideImageUrls = [];
 
-                // Render Slide to Canvas
+                if (zipContent.files[relsFileName]) {
+                    const relsText = await zipContent.files[relsFileName].async("string");
+                    const relsDoc = parser.parseFromString(relsText, "text/xml");
+                    const relationships = relsDoc.getElementsByTagName("Relationship");
+                    for (let r = 0; r < relationships.length; r++) {
+                        let target = relationships[r].getAttribute("Target");
+                        if (target && (target.includes("media/") || target.endsWith(".png") || target.endsWith(".jpeg") || target.endsWith(".jpg") || target.endsWith(".emf") || target.endsWith(".wmf"))) {
+                            let mediaName = target.split("/").pop();
+                            if (mediaMap[mediaName]) {
+                                slideImageUrls.push(mediaMap[mediaName]);
+                            }
+                        }
+                    }
+                }
+
                 const canvasTemp = document.createElement('canvas');
                 canvasTemp.width = 1920; 
                 canvasTemp.height = 1080;
                 const ctxTemp = canvasTemp.getContext('2d');
 
-                // White Presentation Background
                 ctxTemp.fillStyle = "#ffffff";
                 ctxTemp.fillRect(0, 0, canvasTemp.width, canvasTemp.height);
 
-                // Read Slide Text Content
-                const textNodes = xmlDoc.getElementsByTagName("a:t");
-                let slideTexts = [];
-                for (let t = 0; t < textNodes.length; t++) {
-                    if (textNodes[t].textContent.trim()) {
-                        slideTexts.push(textNodes[t].textContent.trim());
+                if (slideImageUrls.length > 0) {
+                    for (let imgUrl of slideImageUrls) {
+                        await new Promise((resolveImg) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                let ratio = Math.min((canvasTemp.width * 0.95) / img.width, (canvasTemp.height * 0.95) / img.height);
+                                let cx = (canvasTemp.width - img.width * ratio) / 2;
+                                let cy = (canvasTemp.height - img.height * ratio) / 2;
+                                ctxTemp.drawImage(img, cx, cy, img.width * ratio, img.height * ratio);
+                                resolveImg();
+                            };
+                            img.onerror = resolveImg;
+                            img.src = imgUrl;
+                        });
                     }
-                }
-
-                // Render Background Graphics / Images if attached
-                const mediaKeys = Object.keys(extractedMedia);
-                if (mediaKeys[i]) {
-                    await new Promise((res) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            let ratio = Math.min(canvasTemp.width / img.width, canvasTemp.height / img.height);
-                            let cx = (canvasTemp.width - img.width * ratio) / 2;
-                            let cy = (canvasTemp.height - img.height * ratio) / 2;
-                            ctxTemp.drawImage(img, cx, cy, img.width * ratio, img.height * ratio);
-                            res();
-                        };
-                        img.onerror = res;
-                        img.src = extractedMedia[mediaKeys[i]];
-                    });
-                }
-
-                // Render Slide Text Lines
-                if (slideTexts.length > 0) {
-                    ctxTemp.fillStyle = "#1e293b";
-                    let startY = 180;
-                    
-                    // Draw Title/Body Text
-                    slideTexts.forEach((txt, idx) => {
-                        if (idx === 0) {
-                            ctxTemp.font = "bold 52px -apple-system, sans-serif";
-                            ctxTemp.fillStyle = "#0f172a";
-                            ctxTemp.fillText(txt.substring(0, 70), 120, startY);
-                            startY += 90;
-                        } else {
-                            ctxTemp.font = "32px -apple-system, sans-serif";
-                            ctxTemp.fillStyle = "#334155";
-                            ctxTemp.fillText("• " + txt.substring(0, 90), 140, startY);
-                            startY += 60;
-                        }
-                    });
-                } else if (!mediaKeys[i]) {
-                    // Blank slide placeholder
-                    ctxTemp.fillStyle = "#64748b";
-                    ctxTemp.font = "bold 40px sans-serif";
-                    ctxTemp.textAlign = "center";
-                    ctxTemp.fillText(`Slide ${i + 1}`, canvasTemp.width / 2, canvasTemp.height / 2);
+                } else {
+                    let allMediaKeys = Object.keys(mediaMap);
+                    if (allMediaKeys[i] && mediaMap[allMediaKeys[i]]) {
+                        await new Promise((resolveImg) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                let ratio = Math.min(canvasTemp.width / img.width, canvasTemp.height / img.height);
+                                let cx = (canvasTemp.width - img.width * ratio) / 2;
+                                let cy = (canvasTemp.height - img.height * ratio) / 2;
+                                ctxTemp.drawImage(img, cx, cy, img.width * ratio, img.height * ratio);
+                                resolveImg();
+                            };
+                            img.onerror = resolveImg;
+                            img.src = mediaMap[allMediaKeys[i]];
+                        });
+                    } else {
+                        ctxTemp.fillStyle = "#1e293b";
+                        ctxTemp.font = "bold 50px sans-serif";
+                        ctxTemp.textAlign = "center";
+                        ctxTemp.fillText(`Slide ${slideNum} (HD Render)`, canvasTemp.width / 2, canvasTemp.height / 2);
+                    }
                 }
 
                 slides.push(canvasTemp.toDataURL('image/png', 1.0));
