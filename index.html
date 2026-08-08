@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - All-in-One PPT Show</title>
+    <title>Pro EduCreator Studio - Original Quality PPT Show</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -17,7 +17,7 @@
         * { box-sizing: border-box; }
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #0b0b0e; color: white; 
+            overflow: hidden; background-color: #000000; color: white; 
             user-select: none; touch-action: none; cursor: default; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
         }
@@ -25,28 +25,39 @@
         #presentation-area { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             display: flex; justify-content: center; 
-            align-items: center; background: #030305; overflow: hidden;
+            align-items: center; background: #000000; overflow: hidden;
         }
 
-        /* All-in-One PPT Show Container - Dynamic Scale Wrapper */
+        /* Original High-Quality Full Size Container (No fixed 960x540 restriction) */
         #pptx-viewer-container { 
-            width: 1280px; height: 720px; 
-            transform-origin: center center;
-            position: relative; 
-            overflow: hidden; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
-            background: #ffffff;
-            display: flex; justify-content: center; align-items: center;
+            width: 100vw; height: 100vh; background: #000000; position: relative; 
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
         .slide-page { 
             position: absolute; width: 100%; height: 100%; display: none; 
             box-sizing: border-box; top: 0; left: 0;
-            background: #ffffff;
+            display: flex; justify-content: center; align-items: center;
         }
-        .slide-page.active { display: flex; align-items: center; justify-content: center; }
+        .slide-page.active { display: flex; }
+        
+        /* Ensure inner PPT/Image elements take high resolution scale properly */
+        .slide-page > div {
+            width: 100% !important;
+            height: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        .slide-page img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
         
         #drawing-canvas { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100vw; 
             z-index: 10; cursor: default; pointer-events: none;
         }
         
@@ -59,11 +70,11 @@
         }
 
         .ipad-dock { 
-            position: absolute; bottom: 12px; left: 15px; z-index: 100; 
+            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 100; 
             display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
             padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
-            align-items: center; max-width: 85vw; overflow-x: auto;
+            align-items: center; max-width: 95vw; overflow-x: auto;
         }
         
         .dock-btn { 
@@ -133,14 +144,14 @@
 
     <div id="loading-screen">
         <div class="spinner mb-3"></div>
-        <h2 id="loading-text" class="text-sm font-medium text-white">All-in-One PPT Show लोड हो रहा है...</h2>
+        <h2 id="loading-text" class="text-sm font-medium text-white">हाई-क्वालिटी PPTX लोड हो रही है...</h2>
     </div>
 
     <div id="presentation-area">
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-5xl mb-3 text-[#ff453a]"></i>
             <h2 class="text-lg font-bold mb-1 text-white">अपनी PPTX या फाइल चुनें</h2>
-            <p class="text-xs text-gray-400 mb-4">ऑटो-स्केल ऑल-इन-वन PPT शो व्यूअर</p>
+            <p class="text-xs text-gray-400 mb-4">फुल ओरिजिनल/4K क्वालिटी PPT शो व्यूअर</p>
             
             <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
                 <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (.pptx / .pdf)
@@ -150,8 +161,9 @@
 
         <div id="pptx-viewer-container">
             <!-- Slides render dynamically here -->
-            <canvas id="drawing-canvas"></canvas>
         </div>
+
+        <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
         <button class="side-nav-btn" id="right-nav"><i class="fas fa-chevron-right"></i></button>
@@ -172,8 +184,8 @@
             <div class="rec-setting-item">
                 <span>वीडियो क्वालिटी:</span>
                 <select id="setting-quality">
-                    <option value="high">1080p (FHD)</option>
-                    <option value="medium" selected>720p (HD)</option>
+                    <option value="high" selected>1920x1080 / 4K UHD</option>
+                    <option value="medium">720p (HD)</option>
                 </select>
             </div>
             
@@ -203,17 +215,16 @@
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
                 <select id="setting-fps">
-                    <option value="15">15 FPS</option>
-                    <option value="30" selected>30 FPS</option>
-                    <option value="60">60 FPS</option>
+                    <option value="30">30 FPS</option>
+                    <option value="60" selected>60 FPS (Ultra Smooth)</option>
                 </select>
             </div>
             <div class="rec-setting-item">
                 <span>बिटरेट (Bitrate):</span>
                 <select id="setting-bitrate">
-                    <option value="1.5">1.5 Mbps</option>
-                    <option value="3" selected>3.0 Mbps</option>
-                    <option value="5">5.0 Mbps</option>
+                    <option value="3">3.0 Mbps</option>
+                    <option value="8" selected>8.0 Mbps (High Quality)</option>
+                    <option value="15">15.0 Mbps (4K Max)</option>
                 </select>
             </div>
 
@@ -276,22 +287,20 @@
                     const ext = fileName.split('.').pop();
 
                     if (ext === 'pdf' || file.type === 'application/pdf') {
-                        loadingText.innerText = "PDF को स्लाइड्स में कंवर्ट किया जा रहा है...";
+                        loadingText.innerText = "PDF को हाई-क्वालिटी स्लाइड्स में कंवर्ट किया जा रहा है...";
                         await convertPdfToSlides(file);
                     } else if (ext === 'pptx' || ext === 'ppt') {
-                        loadingText.innerText = "All-in-One PPTX शो लोड किया जा रहा है...";
+                        loadingText.innerText = "PPTX फाइल को बिना साइज़ बदले ओरिजिनल लेआउट में प्रोसेस किया जा रहा है...";
                         const arrayBuffer = await file.arrayBuffer();
                         const parsedSlides = await pptxToHtml(arrayBuffer, {
-                            width: 1280,
-                            height: 720,
-                            scaleToFit: true,
-                            letterbox: true
+                            scaleToFit: false,
+                            letterbox: false
                         });
                         if (parsedSlides && parsedSlides.length > 0) {
                             slidesArrayHtml.push(...parsedSlides);
                         }
                     } else if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext) || file.type.startsWith('image/')) {
-                        loadingText.innerText = "इमेज को फ्रेम में लोड किया जा रहा है...";
+                        loadingText.innerText = "इमेज को फुल ओरिजिनल क्वालिटी में लोड किया जा रहा है...";
                         const imgUrl = URL.createObjectURL(file);
                         slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#000;"><img src="${imgUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
                     }
@@ -313,7 +322,6 @@
             }
         });
 
-        // PDF TO SLIDES CONVERTER
         async function convertPdfToSlides(file) {
             return new Promise((resolve, reject) => {
                 const fileReader = new FileReader();
@@ -324,14 +332,14 @@
                         
                         for (let i = 1; i <= pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
-                            const viewport = page.getViewport({ scale: 2.0 });
+                            const viewport = page.getViewport({ scale: 3.0 }); // High scale for crisp text/4K quality
                             const canvasTemp = document.createElement('canvas');
                             canvasTemp.height = viewport.height; 
                             canvasTemp.width = viewport.width;
                             const contextTemp = canvasTemp.getContext('2d');
                             await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
                             const imgDataUrl = canvasTemp.toDataURL('image/png', 1.0);
-                            slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#fff;"><img src="${imgDataUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
+                            slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#000;"><img src="${imgDataUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
                         }
                         resolve();
                     } catch(err) { reject(err); }
@@ -351,19 +359,15 @@
             
             renderViewerDOM();
             loadSlide(0);
-            updateScale();
         }
 
         function renderViewerDOM() {
-            // Remove old slide-page elements if any, keep canvas
-            const existingPages = pptxViewerContainer.querySelectorAll('.slide-page');
-            existingPages.forEach(p => p.remove());
-
+            pptxViewerContainer.innerHTML = '';
             slidesArrayHtml.forEach((slideHtml, index) => {
                 const div = document.createElement('div');
                 div.className = `slide-page ${index === 0 ? 'active' : ''}`;
                 div.innerHTML = slideHtml;
-                pptxViewerContainer.insertBefore(div, document.getElementById('drawing-canvas'));
+                pptxViewerContainer.appendChild(div);
             });
         }
 
@@ -394,35 +398,15 @@
             else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); }
         });
 
-        // ALL-IN-ONE DYNAMIC AUTO-SCALE LOGIC
-        function updateScale() {
-            const container = document.getElementById('pptx-viewer-container');
-            const windowW = window.innerWidth;
-            const windowH = window.innerHeight;
-            
-            // Base resolution 1280x720
-            const baseW = 1280;
-            const baseH = 720;
-
-            const scaleX = windowW / baseW;
-            const scaleY = windowH / baseH;
-            let scale = Math.min(scaleX, scaleY) * 0.92; // 92% margin fit
-            if (scale > 1.2) scale = 1.2;
-
-            container.style.transform = `scale(${scale})`;
-            resizeCanvas();
-        }
-        window.addEventListener('resize', updateScale);
-
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         fullscreenBtn.addEventListener('click', () => {
             let docEl = document.documentElement; let isFs = document.fullscreenElement || document.webkitFullscreenElement;
             if (!isFs) { if (docEl.requestFullscreen) docEl.requestFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>'; } 
             else { if (document.exitFullscreen) document.exitFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>'; }
-            setTimeout(() => { updateScale(); screenDirty = true; }, 400);
+            setTimeout(() => { resizeCanvas(); screenDirty = true; }, 400);
         });
 
-        // Drawing Engine over Canvas
+        // Drawing Engine over Full Screen Canvas
         const canvas = document.getElementById('drawing-canvas'); 
         const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
@@ -432,15 +416,19 @@
         const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
 
         function resizeCanvas() { 
-            canvas.width = 1280; 
-            canvas.height = 720;
-            canvas.style.width = '100%';
-            canvas.style.height = '100%';
+            const rect = pptxViewerContainer.getBoundingClientRect();
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            canvas.style.left = '0px';
+            canvas.style.top = '0px';
             ctx.lineCap = 'round'; 
             ctx.lineJoin = 'round'; 
             restoreInk(); 
             screenDirty = true; 
         }
+        window.addEventListener('resize', resizeCanvas);
 
         function setActiveTool(mode) {
             currentMode = mode; 
@@ -464,10 +452,8 @@
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; 
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
             points = [{x, y}]; 
             ctx.beginPath(); 
             ctx.moveTo(x, y); 
@@ -477,10 +463,8 @@
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return; 
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
             points.push({x, y}); 
             let baseSize = parseInt(sizeSlider.value);
             
@@ -534,8 +518,8 @@
             try {
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
-                const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
-                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
+                const targetFps = parseInt(document.getElementById('setting-fps').value) || 60;
+                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 8;
                 
                 const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
@@ -552,15 +536,9 @@
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
                     
-                    recCtx.fillStyle = '#ffffff'; 
+                    recCtx.fillStyle = '#000000'; 
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
                     
-                    // Render current active slide page background if any
-                    const activeSlideEl = document.querySelector('.slide-page.active');
-                    if (activeSlideEl) {
-                        // Draw active slide elements or snapshot
-                    }
-
                     if (canvas) {
                         recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                     }
@@ -619,7 +597,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); 
                     a.href = url;
-                    a.download = `AllInOne_PPT_Show_${new Date().getTime()}.${fileExtension}`;
+                    a.download = `Original_Quality_PPT_${new Date().getTime()}.${fileExtension}`;
                     a.click(); 
                     URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
