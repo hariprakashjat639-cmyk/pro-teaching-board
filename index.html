@@ -159,6 +159,14 @@
             
             <!-- AUDACITY PRO AUDIO ENGINE -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> स्मार्ट ऑडियो इंजन</div>
+            
+            <!-- NEW UPGRADE: ANTI-CRACKLE / MIC HANDLING FILTER -->
+            <div class="rec-setting-item">
+                <span class="font-semibold text-red-400">Anti-Crackle (खर्र-खर्र Cut):</span>
+                <input type="checkbox" id="setting-anti-crackle" checked>
+            </div>
+            <div class="setting-desc">माइक/मोबाइल हिलने पर कटी-फटी व घर्षण की आवाज़ हटाता है।</div>
+
             <div class="rec-setting-item">
                 <span class="font-semibold">Noise Attenuator (-9dB):</span>
                 <input type="checkbox" id="setting-ai-noise" checked>
@@ -361,7 +369,7 @@
         }
 
         // ============================================================
-        // RECORDING ENGINE (UPDATED AUDIO ATTENUATION & VOICE FOCUS)
+        // RECORDING ENGINE (UPDATED WITH ANTI-CRACKLE KHARR-KHARR FILTER)
         // ============================================================
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
@@ -374,6 +382,7 @@
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
                 
+                const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
                 const useAiNoise = document.getElementById('setting-ai-noise').checked;
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
@@ -426,25 +435,30 @@
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
 
-                    // 1. LOW CUT FILTER: बहुत कम फ्रीक्वेंसी वाली बैकग्राउंड गूंज को 120Hz से नीचे दबाना
+                    // 1. LOW CUT FILTER: मोबाइल हिलाने पर होने वाले धक्कों (Thuds) को 150Hz से नीचे दबाना
                     const lowCutFilter = audioCtx.createBiquadFilter();
                     lowCutFilter.type = 'highpass';
-                    lowCutFilter.frequency.value = 120; 
+                    lowCutFilter.frequency.value = 150; 
 
-                    // 2. HUMAN VOICE FOCUS: इंसानी आवाज़ (2.5kHz) को स्पष्ट और फोकस में लाना
+                    // 2. ANTI-CRACKLE LOW-PASS FILTER (माइक रगड़ने/खर्र-खर्र को काटना)
+                    const antiCrackleFilter = audioCtx.createBiquadFilter();
+                    antiCrackleFilter.type = 'lowpass';
+                    antiCrackleFilter.frequency.value = 7500; // इंसानी आवाज़ से ऊपर की भौतिक घर्षण फ्रिक्वेंसी काटना
+
+                    // 3. HUMAN VOICE FOCUS: इंसानी आवाज़ (2.5kHz) को स्पष्ट और फोकस में लाना
                     const voiceFocusEQ = audioCtx.createBiquadFilter();
                     voiceFocusEQ.type = 'peaking';
                     voiceFocusEQ.frequency.value = 2500;
                     voiceFocusEQ.Q.value = 1.2;
                     voiceFocusEQ.gain.value = 3.5;
 
-                    // 3. NOISE ATTENUATOR: रोबोटिक/बैकग्राउंड नॉइज़ का वॉल्यूम दबाना (-9 dB)
+                    // 4. NOISE ATTENUATOR: रोबोटिक/बैकग्राउंड नॉइज़ का वॉल्यूम दबाना (-9 dB)
                     const noiseDampener = audioCtx.createBiquadFilter();
                     noiseDampener.type = 'highshelf';
                     noiseDampener.frequency.value = 5500;
                     noiseDampener.gain.value = -9.0;
 
-                    // 4. SOFT COMPRESSOR: बोलचाल को स्थिर रखना
+                    // 5. SOFT COMPRESSOR: बोलचाल और झटकों के वॉल्यूम को स्थिर रखना
                     const voiceCompressor = audioCtx.createDynamicsCompressor();
                     voiceCompressor.threshold.value = -22;
                     voiceCompressor.knee.value = 12;
@@ -456,6 +470,11 @@
                     let currentNode = source;
                     currentNode.connect(lowCutFilter);
                     currentNode = lowCutFilter;
+
+                    if (useAntiCrackle) {
+                        currentNode.connect(antiCrackleFilter);
+                        currentNode = antiCrackleFilter;
+                    }
 
                     if (useSl40Eq) {
                         currentNode.connect(voiceFocusEQ);
