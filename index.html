@@ -157,32 +157,26 @@
                 </select>
             </div>
             
-            <!-- AUDACITY PRO AUDIO ENGINE -->
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> स्मार्ट ऑडियो इंजन</div>
+            <!-- NATURAL STUDIO AUDIO ENGINE -->
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> नेचुरल स्टूडियो ऑडियो</div>
             
             <div class="rec-setting-item">
-                <span class="font-semibold text-red-400">Anti-Crackle (खर्र-खर्र Cut):</span>
+                <span class="font-semibold text-blue-400">Natural Mic Enhancer:</span>
                 <input type="checkbox" id="setting-anti-crackle" checked>
             </div>
-            <div class="setting-desc">माइक/मोबाइल हिलने पर कटी-फटी व घर्षण की आवाज़ हटाता है।</div>
+            <div class="setting-desc">नेचुरल क्लीयरिटी को बनाए रखकर अवांछित शोर हटाता है।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold">Noise Attenuator (-9dB):</span>
-                <input type="checkbox" id="setting-ai-noise" checked>
-            </div>
-            <div class="setting-desc">रोबोटिक/बैकग्राउंड शोर के डेसिबल को कम करता है।</div>
-
-            <div class="rec-setting-item">
-                <span class="font-semibold text-yellow-400">Warm Voice Softener:</span>
+                <span class="font-semibold text-yellow-400">Sweet Warm Voice:</span>
                 <input type="checkbox" id="setting-sl40-eq" checked>
             </div>
-            <div class="setting-desc">तीखेपन को घटाकर आवाज़ को सॉफ़्ट और कानों के लिए आरामदायक बनाता है।</div>
+            <div class="setting-desc">तीखेपन को ख़त्म करके कानों को बहुत प्रिय लगने वाली मीठी आवाज़ देता है।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-green-400">Pro Leveler & Limiter:</span>
+                <span class="font-semibold text-green-400">Smooth Leveler:</span>
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
-            <div class="setting-desc">ओवरऑल आवाज़ के लेवल को एकसमान (Comfortable Balanced Level) रखता है।</div>
+            <div class="setting-desc">आवाज़ के स्तर को आराम से संतुलित रखता है।</div>
 
             <!-- ADVANCED VIDEO SETTINGS -->
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
@@ -368,7 +362,7 @@
         }
 
         // ============================================================
-        // RECORDING ENGINE (BALANCED & SOFT AUDIO UPGRADE)
+        // NATURAL & SOOTHING AUDIO ENGINE (PURE & SOFT SOUND)
         // ============================================================
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
@@ -382,7 +376,6 @@
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
                 
                 const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
-                const useAiNoise = document.getElementById('setting-ai-noise').checked;
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
 
@@ -434,75 +427,57 @@
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
 
-                    // 1. LOW CUT FILTER: बेस और भारी आवाज़ का संतुलन (100Hz highpass)
-                    const lowCutFilter = audioCtx.createBiquadFilter();
-                    lowCutFilter.type = 'highpass';
-                    lowCutFilter.frequency.value = 100; 
+                    // 1. CLEAN HIGHPASS (केवल अवांछित घड़घड़ाहट/हवा हटाएगा - 80Hz)
+                    const cleanHighPass = audioCtx.createBiquadFilter();
+                    cleanHighPass.type = 'highpass';
+                    cleanHighPass.frequency.value = 80;
 
-                    // 2. ANTI-CRACKLE LOW-PASS FILTER (माइक रगड़ने की आवाज़ हटाना)
-                    const antiCrackleFilter = audioCtx.createBiquadFilter();
-                    antiCrackleFilter.type = 'lowpass';
-                    antiCrackleFilter.frequency.value = 6500; 
+                    // 2. WARM VOCAL BODY (आवाज़ में प्राकृतिक मिठास और गहराई लाने के लिए - 240Hz Boost)
+                    const warmVocalEQ = audioCtx.createBiquadFilter();
+                    warmVocalEQ.type = 'peaking';
+                    warmVocalEQ.frequency.value = 240;
+                    warmVocalEQ.Q.value = 0.7;
+                    warmVocalEQ.gain.value = 1.8; 
 
-                    // 3. WARM VOICE EQ: तीखेपन को हटाकर आवाज़ को सॉफ़्ट बनाना (1800Hz gentle body)
-                    const voiceSoftenerEQ = audioCtx.createBiquadFilter();
-                    voiceSoftenerEQ.type = 'peaking';
-                    voiceSoftenerEQ.frequency.value = 1800;
-                    voiceSoftenerEQ.Q.value = 0.8;
-                    voiceSoftenerEQ.gain.value = 1.5; // हल्का सा वार्म टोन
+                    // 3. SOFT DE-HARSHENER (चुभने वाले "स/श" और तीखे ट्रिबल को ख़त्म करना - 4800Hz Smooth Cut)
+                    const softDeHarsh = audioCtx.createBiquadFilter();
+                    softDeHarsh.type = 'highshelf';
+                    softDeHarsh.frequency.value = 4800;
+                    softDeHarsh.gain.value = -4.5; 
 
-                    // 4. DE-HARSHENER (HIGH-SHELF CUT): कानों में चुभने वाले तीखे ट्रिबल को कम करना
-                    const deHarshFilter = audioCtx.createBiquadFilter();
-                    deHarshFilter.type = 'highshelf';
-                    deHarshFilter.frequency.value = 3500;
-                    deHarshFilter.gain.value = -5.0; // तीखेपन में -5dB की कमी
+                    // 4. BALANCED MASTER VOLUME (आवाज़ के ओवरऑल लेवल को एकदम सही जगह लॉक करना)
+                    const masterGain = audioCtx.createGain();
+                    masterGain.gain.value = 0.85; 
 
-                    // 5. BACKGROUND NOISE ATTENUATOR: रोबोटिक/बैकग्राउंड साउंड का डेसिबल कम करना (-8 dB)
-                    const noiseDampener = audioCtx.createBiquadFilter();
-                    noiseDampener.type = 'highshelf';
-                    noiseDampener.frequency.value = 5000;
-                    noiseDampener.gain.value = -8.0;
+                    // 5. ULTRA-SMOOTH COMPRESSOR (बिना आवाज़ खराब किए लेवल एकसमान रखना)
+                    const softCompressor = audioCtx.createDynamicsCompressor();
+                    softCompressor.threshold.value = -16;
+                    softCompressor.knee.value = 15;
+                    softCompressor.ratio.value = 1.8;
+                    softCompressor.attack.value = 0.02;
+                    softCompressor.release.value = 0.2;
 
-                    // 6. MASTER GAIN LEVELER (वॉल्यूम को थोड़ा कम और बैलेंस्ड स्तर पर फिक्स करना)
-                    const masterVolumeGain = audioCtx.createGain();
-                    masterVolumeGain.gain.value = 0.82; // ओवरऑल वॉल्यूम 18% कम किया ताकि चुभे नहीं
-
-                    // 7. SMOOTH COMPRESSOR / LIMITER: पूरी आवाज़ को एक आरामदायक स्तर पर लॉक रखना
-                    const voiceCompressor = audioCtx.createDynamicsCompressor();
-                    voiceCompressor.threshold.value = -20;
-                    voiceCompressor.knee.value = 10;
-                    voiceCompressor.ratio.value = 2.5;
-                    voiceCompressor.attack.value = 0.015;
-                    voiceCompressor.release.value = 0.25;
-
-                    // ऑडियो फिल्टर चैन कनेक्ट करना
+                    // फ़िल्टर चैन जोड़ने का सही क्रम (बिना किसी रोबोटिक प्रभाव के)
                     let currentNode = source;
-                    currentNode.connect(lowCutFilter);
-                    currentNode = lowCutFilter;
-
+                    
                     if (useAntiCrackle) {
-                        currentNode.connect(antiCrackleFilter);
-                        currentNode = antiCrackleFilter;
+                        currentNode.connect(cleanHighPass);
+                        currentNode = cleanHighPass;
                     }
 
                     if (useSl40Eq) {
-                        currentNode.connect(voiceSoftenerEQ);
-                        currentNode = voiceSoftenerEQ;
-                        currentNode.connect(deHarshFilter);
-                        currentNode = deHarshFilter;
+                        currentNode.connect(warmVocalEQ);
+                        currentNode = warmVocalEQ;
+                        currentNode.connect(softDeHarsh);
+                        currentNode = softDeHarsh;
                     }
 
-                    if (useAiNoise) {
-                        currentNode.connect(noiseDampener);
-                        currentNode = noiseDampener;
-                    }
-
-                    currentNode.connect(masterVolumeGain);
-                    currentNode = masterVolumeGain;
+                    currentNode.connect(masterGain);
+                    currentNode = masterGain;
 
                     if (useCompressor) {
-                        currentNode.connect(voiceCompressor);
-                        currentNode = voiceCompressor;
+                        currentNode.connect(softCompressor);
+                        currentNode = softCompressor;
                     }
 
                     currentNode.connect(destination);
