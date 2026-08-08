@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Perfect 16:9 PPTX Edition</title>
+    <title>Pro EduCreator Studio - All-in-One PPT Show</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -28,19 +28,22 @@
             align-items: center; background: #030305; overflow: hidden;
         }
 
-        /* 16:9 Aspect Ratio PPTX Viewer Container */
+        /* All-in-One PPT Show Container - Dynamic Scale Wrapper */
         #pptx-viewer-container { 
-            width: 960px; height: 540px; max-width: 95vw; max-height: 80vh; 
-            aspect-ratio: 16 / 9; background: #ffffff; position: relative; 
+            width: 1280px; height: 720px; 
+            transform-origin: center center;
+            position: relative; 
             overflow: hidden; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
+            background: #ffffff;
             display: flex; justify-content: center; align-items: center;
         }
 
         .slide-page { 
             position: absolute; width: 100%; height: 100%; display: none; 
             box-sizing: border-box; top: 0; left: 0;
+            background: #ffffff;
         }
-        .slide-page.active { display: block; }
+        .slide-page.active { display: flex; align-items: center; justify-content: center; }
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -130,14 +133,14 @@
 
     <div id="loading-screen">
         <div class="spinner mb-3"></div>
-        <h2 id="loading-text" class="text-sm font-medium text-white">16:9 PPTX को सही लेआउट में लोड किया जा रहा है...</h2>
+        <h2 id="loading-text" class="text-sm font-medium text-white">All-in-One PPT Show लोड हो रहा है...</h2>
     </div>
 
     <div id="presentation-area">
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-5xl mb-3 text-[#ff453a]"></i>
-            <h2 class="text-lg font-bold mb-1 text-white">16:9 PPT, PDF या फाइल चुनें</h2>
-            <p class="text-xs text-gray-400 mb-4">आपकी PPTX फाइल 16:9 आस्पेक्ट रेशियो में सीधे रेंडर होगी</p>
+            <h2 class="text-lg font-bold mb-1 text-white">अपनी PPTX या फाइल चुनें</h2>
+            <p class="text-xs text-gray-400 mb-4">ऑटो-स्केल ऑल-इन-वन PPT शो व्यूअर</p>
             
             <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
                 <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (.pptx / .pdf)
@@ -147,9 +150,8 @@
 
         <div id="pptx-viewer-container">
             <!-- Slides render dynamically here -->
+            <canvas id="drawing-canvas"></canvas>
         </div>
-
-        <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
         <button class="side-nav-btn" id="right-nav"><i class="fas fa-chevron-right"></i></button>
@@ -274,14 +276,14 @@
                     const ext = fileName.split('.').pop();
 
                     if (ext === 'pdf' || file.type === 'application/pdf') {
-                        loadingText.innerText = "PDF को 16:9 स्लाइड्स में कंवर्ट किया जा रहा है...";
+                        loadingText.innerText = "PDF को स्लाइड्स में कंवर्ट किया जा रहा है...";
                         await convertPdfToSlides(file);
                     } else if (ext === 'pptx' || ext === 'ppt') {
-                        loadingText.innerText = "16:9 PPTX फाइल को सही लेआउट में प्रोसेस किया जा रहा है...";
+                        loadingText.innerText = "All-in-One PPTX शो लोड किया जा रहा है...";
                         const arrayBuffer = await file.arrayBuffer();
                         const parsedSlides = await pptxToHtml(arrayBuffer, {
-                            width: 960,
-                            height: 540,
+                            width: 1280,
+                            height: 720,
                             scaleToFit: true,
                             letterbox: true
                         });
@@ -289,7 +291,7 @@
                             slidesArrayHtml.push(...parsedSlides);
                         }
                     } else if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext) || file.type.startsWith('image/')) {
-                        loadingText.innerText = "इमेज को 16:9 फ्रेम में लोड किया जा रहा है...";
+                        loadingText.innerText = "इमेज को फ्रेम में लोड किया जा रहा है...";
                         const imgUrl = URL.createObjectURL(file);
                         slidesArrayHtml.push(`<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:#000;"><img src="${imgUrl}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>`);
                     }
@@ -311,7 +313,7 @@
             }
         });
 
-        // PDF TO 16:9 SLIDES CONVERTER
+        // PDF TO SLIDES CONVERTER
         async function convertPdfToSlides(file) {
             return new Promise((resolve, reject) => {
                 const fileReader = new FileReader();
@@ -349,15 +351,19 @@
             
             renderViewerDOM();
             loadSlide(0);
+            updateScale();
         }
 
         function renderViewerDOM() {
-            pptxViewerContainer.innerHTML = '';
+            // Remove old slide-page elements if any, keep canvas
+            const existingPages = pptxViewerContainer.querySelectorAll('.slide-page');
+            existingPages.forEach(p => p.remove());
+
             slidesArrayHtml.forEach((slideHtml, index) => {
                 const div = document.createElement('div');
                 div.className = `slide-page ${index === 0 ? 'active' : ''}`;
                 div.innerHTML = slideHtml;
-                pptxViewerContainer.appendChild(div);
+                pptxViewerContainer.insertBefore(div, document.getElementById('drawing-canvas'));
             });
         }
 
@@ -388,15 +394,35 @@
             else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); }
         });
 
+        // ALL-IN-ONE DYNAMIC AUTO-SCALE LOGIC
+        function updateScale() {
+            const container = document.getElementById('pptx-viewer-container');
+            const windowW = window.innerWidth;
+            const windowH = window.innerHeight;
+            
+            // Base resolution 1280x720
+            const baseW = 1280;
+            const baseH = 720;
+
+            const scaleX = windowW / baseW;
+            const scaleY = windowH / baseH;
+            let scale = Math.min(scaleX, scaleY) * 0.92; // 92% margin fit
+            if (scale > 1.2) scale = 1.2;
+
+            container.style.transform = `scale(${scale})`;
+            resizeCanvas();
+        }
+        window.addEventListener('resize', updateScale);
+
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         fullscreenBtn.addEventListener('click', () => {
             let docEl = document.documentElement; let isFs = document.fullscreenElement || document.webkitFullscreenElement;
             if (!isFs) { if (docEl.requestFullscreen) docEl.requestFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>'; } 
             else { if (document.exitFullscreen) document.exitFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>'; }
-            setTimeout(() => { resizeCanvas(); screenDirty = true; }, 400);
+            setTimeout(() => { updateScale(); screenDirty = true; }, 400);
         });
 
-        // Drawing Engine over 16:9 Canvas
+        // Drawing Engine over Canvas
         const canvas = document.getElementById('drawing-canvas'); 
         const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
@@ -406,19 +432,15 @@
         const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
 
         function resizeCanvas() { 
-            const rect = pptxViewerContainer.getBoundingClientRect();
-            canvas.width = rect.width; 
-            canvas.height = rect.height;
-            canvas.style.width = rect.width + 'px';
-            canvas.style.height = rect.height + 'px';
-            canvas.style.left = pptxViewerContainer.offsetLeft + 'px';
-            canvas.style.top = pptxViewerContainer.offsetTop + 'px';
+            canvas.width = 1280; 
+            canvas.height = 720;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
             ctx.lineCap = 'round'; 
             ctx.lineJoin = 'round'; 
             restoreInk(); 
             screenDirty = true; 
         }
-        window.addEventListener('resize', resizeCanvas);
 
         function setActiveTool(mode) {
             currentMode = mode; 
@@ -442,8 +464,10 @@
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; 
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
             points = [{x, y}]; 
             ctx.beginPath(); 
             ctx.moveTo(x, y); 
@@ -453,8 +477,10 @@
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return; 
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
             points.push({x, y}); 
             let baseSize = parseInt(sizeSlider.value);
             
@@ -526,15 +552,13 @@
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
                     
-                    recCtx.fillStyle = '#030305'; 
+                    recCtx.fillStyle = '#ffffff'; 
                     recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
                     
-                    // Draw current active slide page element screenshot or background
+                    // Render current active slide page background if any
                     const activeSlideEl = document.querySelector('.slide-page.active');
                     if (activeSlideEl) {
-                        // Render slide container dimensions to recCanvas
-                        recCtx.fillStyle = '#ffffff';
-                        recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+                        // Draw active slide elements or snapshot
                     }
 
                     if (canvas) {
@@ -595,7 +619,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); 
                     a.href = url;
-                    a.download = `Edu_Presentation_16x9_${new Date().getTime()}.${fileExtension}`;
+                    a.download = `AllInOne_PPT_Show_${new Date().getTime()}.${fileExtension}`;
                     a.click(); 
                     URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
