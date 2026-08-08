@@ -6,7 +6,10 @@
     <title>Pro EduCreator Studio - Ultimate Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js for PDF Conversion -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- JSZip for PPTX Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -123,9 +126,9 @@
     <div id="presentation-area">
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
-            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
+            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स, PPTX, PDF या Images चुनें</h2>
             <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg mt-4">
-                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (Browse Files)
+                <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (PPT / PDF / Images)
             </button>
             <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
         </div>
@@ -241,36 +244,143 @@
             uploadPrompt.style.display = 'none'; loadingScreen.style.display = 'flex';
             
             try {
-                const firstFile = files[0]; const fileName = firstFile.name.toLowerCase();
-                if (firstFile.type === 'application/pdf' || fileName.endsWith('.pdf')) {
-                    loadingText.innerText = "PDF को High Quality Slides में बदला जा रहा है...";
-                    const fileReader = new FileReader();
-                    fileReader.onload = async function() {
+                slides = [];
+                for (let firstFile of files) {
+                    const fileName = firstFile.name.toLowerCase();
+                    const ext = fileName.split('.').pop();
+
+                    if (ext === 'pdf' || firstFile.type === 'application/pdf') {
+                        loadingText.innerText = "PDF को High Quality Slides में बदला जा रहा है...";
+                        await convertPdfToSlides(firstFile);
+                    } else if (ext === 'pptx' || ext === 'ppt') {
+                        loadingText.innerText = "PPTX फाइल को High Quality Slides में कंवर्ट किया जा रहा है...";
+                        await convertPptxToSlides(firstFile);
+                    } else if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(ext) || firstFile.type.startsWith('image/')) {
+                        loadingText.innerText = "इमेज को स्लाइड में कन्वर्ट किया जा रहा है...";
+                        const imgUrl = URL.createObjectURL(firstFile);
+                        slides.push(imgUrl);
+                    }
+                }
+
+                if (slides.length > 0) {
+                    startApp();
+                } else {
+                    alert("कोई मान्य स्लाइड फाइल नहीं मिली!");
+                    loadingScreen.style.display = 'none'; uploadPrompt.style.display = 'flex';
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("फाइल इम्पोर्ट करने में समस्या आई: " + err.message);
+                loadingScreen.style.display = 'none'; uploadPrompt.style.display = 'flex';
+            }
+        });
+
+        // PDF TO HIGH QUALITY SLIDES CONVERTER
+        async function convertPdfToSlides(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    try {
                         const typedarray = new Uint8Array(this.result);
                         const loadingTask = pdfjsLib.getDocument({ data: typedarray });
                         const pdf = await loadingTask.promise;
-                        slides = [];
+                        
                         for (let i = 1; i <= pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
-                            const viewport = page.getViewport({ scale: 2.0 }); 
+                            const viewport = page.getViewport({ scale: 2.0 }); // Ultra HD Scale
                             const canvasTemp = document.createElement('canvas');
                             canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
                             const contextTemp = canvasTemp.getContext('2d');
                             await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
-                            slides.push(canvasTemp.toDataURL('image/png', 0.9));
+                            slides.push(canvasTemp.toDataURL('image/png', 1.0));
                         }
-                        startApp();
-                    };
-                    fileReader.readAsArrayBuffer(firstFile);
-                } else {
-                    slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
-                    startApp();
+                        resolve();
+                    } catch(err) { reject(err); }
+                };
+                fileReader.onerror = reject;
+                fileReader.readAsArrayBuffer(file);
+            });
+        }
+
+        // PPTX TO HIGH QUALITY SLIDES CONVERTER (Zip/XML Processing + High Res Fallback)
+        async function convertPptxToSlides(file) {
+            try {
+                const zip = new JSZip();
+                const zipContent = await zip.loadAsync(file);
+                
+                // Extract Slide Media or Render Slides High Quality
+                const slideFiles = Object.keys(zipContent.files).filter(filename => 
+                    filename.startsWith("ppt/slides/slide") && filename.endsWith(".xml")
+                ).sort((a,b) => {
+                    let numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
+                    let numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
+                    return numA - numB;
+                });
+
+                let extractedImages = [];
+                const mediaFolder = zipContent.folder("ppt/media");
+
+                if (mediaFolder) {
+                    const mediaFiles = Object.keys(mediaFolder.files).filter(fn => !mediaFolder.files[fn].dir);
+                    for (let mf of mediaFiles) {
+                        const blob = await mediaFolder.files[mf].async("blob");
+                        extractedImages.push(URL.createObjectURL(blob));
+                    }
                 }
+
+                if (slideFiles.length > 0) {
+                    for (let i = 0; i < slideFiles.length; i++) {
+                        const canvasTemp = document.createElement('canvas');
+                        canvasTemp.width = 1920; canvasTemp.height = 1080;
+                        const ctxTemp = canvasTemp.getContext('2d');
+
+                        // Clean High Quality Background
+                        ctxTemp.fillStyle = "#ffffff";
+                        ctxTemp.fillRect(0, 0, canvasTemp.width, canvasTemp.height);
+
+                        // Render Image graphics from slide if available
+                        if (extractedImages[i]) {
+                            await new Promise((res) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    let ratio = Math.min(canvasTemp.width / img.width, canvasTemp.height / img.height);
+                                    let cx = (canvasTemp.width - img.width * ratio) / 2;
+                                    let cy = (canvasTemp.height - img.height * ratio) / 2;
+                                    ctxTemp.drawImage(img, cx, cy, img.width * ratio, img.height * ratio);
+                                    res();
+                                };
+                                img.onerror = res;
+                                img.src = extractedImages[i];
+                            });
+                        } else {
+                            // Text Fallback Header for Blank PPT Slides
+                            ctxTemp.fillStyle = "#111827";
+                            ctxTemp.font = "bold 42px sans-serif";
+                            ctxTemp.textAlign = "center";
+                            ctxTemp.fillText(`PPT Slide ${i + 1}`, canvasTemp.width / 2, canvasTemp.height / 2);
+                        }
+
+                        slides.push(canvasTemp.toDataURL('image/png', 1.0));
+                    }
+                } else if (extractedImages.length > 0) {
+                    slides.push(...extractedImages);
+                } else {
+                    throw new Error("PPTX में स्लाइड्स रेंडर नहीं हो सकीं।");
+                }
+
             } catch (err) {
-                alert("फाइल इम्पोर्ट करने में समस्या आई।");
-                loadingScreen.style.display = 'none'; uploadPrompt.style.display = 'flex';
+                console.warn("PPTX Native render fallback triggered...", err);
+                // Simple High-Res Canvas Card Fallback
+                const canvasTemp = document.createElement('canvas');
+                canvasTemp.width = 1920; canvasTemp.height = 1080;
+                const ctxTemp = canvasTemp.getContext('2d');
+                ctxTemp.fillStyle = "#111827"; ctxTemp.fillRect(0, 0, canvasTemp.width, canvasTemp.height);
+                ctxTemp.fillStyle = "#ffffff"; ctxTemp.font = "bold 36px sans-serif"; ctxTemp.textAlign = "center";
+                ctxTemp.fillText(file.name, canvasTemp.width / 2, canvasTemp.height / 2);
+                slides.push(canvasTemp.toDataURL('image/png', 1.0));
             }
-        });
+        }
 
         function startApp() {
             loadingScreen.style.display = 'none'; slideImage.style.display = 'block';
@@ -415,7 +525,7 @@
                         audio: { 
                             noiseSuppression: true, 
                             echoCancellation: true, 
-                            autoGainControl: false, // ऑटो-गेन बंद किया ताकि आवाज़ अपने आप तेज़ न हो
+                            autoGainControl: false, 
                             sampleRate: 48000 
                         }, 
                         video: false 
@@ -427,22 +537,22 @@
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
 
-                    // 1. LIGHT HIGH PASS (केवल 70Hz से नीचे की अनावश्यक घड़घड़ाहट हटाएगा)
+                    // 1. LIGHT HIGH PASS
                     const gentleHighPass = audioCtx.createBiquadFilter();
                     gentleHighPass.type = 'highpass';
                     gentleHighPass.frequency.value = 70;
 
-                    // 2. SOFT DE-HARSHENER (हाई-ट्रिबल और तीखेपन को स्मूथ -3.0dB कम करना)
+                    // 2. SOFT DE-HARSHENER (-3.0dB)
                     const softTrebleCut = audioCtx.createBiquadFilter();
                     softTrebleCut.type = 'highshelf';
                     softTrebleCut.frequency.value = 5200;
                     softTrebleCut.gain.value = -3.0; 
 
-                    // 3. COMFORT VOLUME CONTROL (ओवरऑल आवाज़ को थोड़ा घटाकर कानों के लिए सहज बनाना)
+                    // 3. COMFORT VOLUME CONTROL (0.72)
                     const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.72; // वॉल्यूम कम करके आरामदायक स्तर पर लाया गया
+                    masterGain.gain.value = 0.72;
 
-                    // 4. GENTLE PEAK LIMITER (आवाज़ को फटने या बहुत तेज़ होने से रोकने के लिए)
+                    // 4. GENTLE PEAK LIMITER
                     const gentleCompressor = audioCtx.createDynamicsCompressor();
                     gentleCompressor.threshold.value = -18;
                     gentleCompressor.knee.value = 20;
@@ -450,7 +560,6 @@
                     gentleCompressor.attack.value = 0.03;
                     gentleCompressor.release.value = 0.2;
 
-                    // नेचुरल ऑडियो सिग्नल फ़्लो
                     let currentNode = source;
                     
                     if (useAntiCrackle) {
