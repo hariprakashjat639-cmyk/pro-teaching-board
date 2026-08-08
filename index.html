@@ -160,7 +160,6 @@
             <!-- AUDACITY PRO AUDIO ENGINE -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> स्मार्ट ऑडियो इंजन</div>
             
-            <!-- NEW UPGRADE: ANTI-CRACKLE / MIC HANDLING FILTER -->
             <div class="rec-setting-item">
                 <span class="font-semibold text-red-400">Anti-Crackle (खर्र-खर्र Cut):</span>
                 <input type="checkbox" id="setting-anti-crackle" checked>
@@ -174,16 +173,16 @@
             <div class="setting-desc">रोबोटिक/बैकग्राउंड शोर के डेसिबल को कम करता है।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-yellow-400">Human Voice Focus EQ:</span>
+                <span class="font-semibold text-yellow-400">Warm Voice Softener:</span>
                 <input type="checkbox" id="setting-sl40-eq" checked>
             </div>
-            <div class="setting-desc">इंसानी बोली की फ्रीक्वेंसी (2.5kHz) को स्पष्ट करता है।</div>
+            <div class="setting-desc">तीखेपन को घटाकर आवाज़ को सॉफ़्ट और कानों के लिए आरामदायक बनाता है।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-green-400">Pro Compressor:</span>
+                <span class="font-semibold text-green-400">Pro Leveler & Limiter:</span>
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
-            <div class="setting-desc">आवाज़ के स्तर को एकसमान (Steady) रखता है।</div>
+            <div class="setting-desc">ओवरऑल आवाज़ के लेवल को एकसमान (Comfortable Balanced Level) रखता है।</div>
 
             <!-- ADVANCED VIDEO SETTINGS -->
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
@@ -369,7 +368,7 @@
         }
 
         // ============================================================
-        // RECORDING ENGINE (UPDATED WITH ANTI-CRACKLE KHARR-KHARR FILTER)
+        // RECORDING ENGINE (BALANCED & SOFT AUDIO UPGRADE)
         // ============================================================
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
@@ -435,36 +434,46 @@
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
 
-                    // 1. LOW CUT FILTER: मोबाइल हिलाने पर होने वाले धक्कों (Thuds) को 150Hz से नीचे दबाना
+                    // 1. LOW CUT FILTER: बेस और भारी आवाज़ का संतुलन (100Hz highpass)
                     const lowCutFilter = audioCtx.createBiquadFilter();
                     lowCutFilter.type = 'highpass';
-                    lowCutFilter.frequency.value = 150; 
+                    lowCutFilter.frequency.value = 100; 
 
-                    // 2. ANTI-CRACKLE LOW-PASS FILTER (माइक रगड़ने/खर्र-खर्र को काटना)
+                    // 2. ANTI-CRACKLE LOW-PASS FILTER (माइक रगड़ने की आवाज़ हटाना)
                     const antiCrackleFilter = audioCtx.createBiquadFilter();
                     antiCrackleFilter.type = 'lowpass';
-                    antiCrackleFilter.frequency.value = 7500; // इंसानी आवाज़ से ऊपर की भौतिक घर्षण फ्रिक्वेंसी काटना
+                    antiCrackleFilter.frequency.value = 6500; 
 
-                    // 3. HUMAN VOICE FOCUS: इंसानी आवाज़ (2.5kHz) को स्पष्ट और फोकस में लाना
-                    const voiceFocusEQ = audioCtx.createBiquadFilter();
-                    voiceFocusEQ.type = 'peaking';
-                    voiceFocusEQ.frequency.value = 2500;
-                    voiceFocusEQ.Q.value = 1.2;
-                    voiceFocusEQ.gain.value = 3.5;
+                    // 3. WARM VOICE EQ: तीखेपन को हटाकर आवाज़ को सॉफ़्ट बनाना (1800Hz gentle body)
+                    const voiceSoftenerEQ = audioCtx.createBiquadFilter();
+                    voiceSoftenerEQ.type = 'peaking';
+                    voiceSoftenerEQ.frequency.value = 1800;
+                    voiceSoftenerEQ.Q.value = 0.8;
+                    voiceSoftenerEQ.gain.value = 1.5; // हल्का सा वार्म टोन
 
-                    // 4. NOISE ATTENUATOR: रोबोटिक/बैकग्राउंड नॉइज़ का वॉल्यूम दबाना (-9 dB)
+                    // 4. DE-HARSHENER (HIGH-SHELF CUT): कानों में चुभने वाले तीखे ट्रिबल को कम करना
+                    const deHarshFilter = audioCtx.createBiquadFilter();
+                    deHarshFilter.type = 'highshelf';
+                    deHarshFilter.frequency.value = 3500;
+                    deHarshFilter.gain.value = -5.0; // तीखेपन में -5dB की कमी
+
+                    // 5. BACKGROUND NOISE ATTENUATOR: रोबोटिक/बैकग्राउंड साउंड का डेसिबल कम करना (-8 dB)
                     const noiseDampener = audioCtx.createBiquadFilter();
                     noiseDampener.type = 'highshelf';
-                    noiseDampener.frequency.value = 5500;
-                    noiseDampener.gain.value = -9.0;
+                    noiseDampener.frequency.value = 5000;
+                    noiseDampener.gain.value = -8.0;
 
-                    // 5. SOFT COMPRESSOR: बोलचाल और झटकों के वॉल्यूम को स्थिर रखना
+                    // 6. MASTER GAIN LEVELER (वॉल्यूम को थोड़ा कम और बैलेंस्ड स्तर पर फिक्स करना)
+                    const masterVolumeGain = audioCtx.createGain();
+                    masterVolumeGain.gain.value = 0.82; // ओवरऑल वॉल्यूम 18% कम किया ताकि चुभे नहीं
+
+                    // 7. SMOOTH COMPRESSOR / LIMITER: पूरी आवाज़ को एक आरामदायक स्तर पर लॉक रखना
                     const voiceCompressor = audioCtx.createDynamicsCompressor();
-                    voiceCompressor.threshold.value = -22;
-                    voiceCompressor.knee.value = 12;
-                    voiceCompressor.ratio.value = 3;
-                    voiceCompressor.attack.value = 0.01;
-                    voiceCompressor.release.value = 0.2;
+                    voiceCompressor.threshold.value = -20;
+                    voiceCompressor.knee.value = 10;
+                    voiceCompressor.ratio.value = 2.5;
+                    voiceCompressor.attack.value = 0.015;
+                    voiceCompressor.release.value = 0.25;
 
                     // ऑडियो फिल्टर चैन कनेक्ट करना
                     let currentNode = source;
@@ -477,14 +486,19 @@
                     }
 
                     if (useSl40Eq) {
-                        currentNode.connect(voiceFocusEQ);
-                        currentNode = voiceFocusEQ;
+                        currentNode.connect(voiceSoftenerEQ);
+                        currentNode = voiceSoftenerEQ;
+                        currentNode.connect(deHarshFilter);
+                        currentNode = deHarshFilter;
                     }
 
                     if (useAiNoise) {
                         currentNode.connect(noiseDampener);
                         currentNode = noiseDampener;
                     }
+
+                    currentNode.connect(masterVolumeGain);
+                    currentNode = masterVolumeGain;
 
                     if (useCompressor) {
                         currentNode.connect(voiceCompressor);
