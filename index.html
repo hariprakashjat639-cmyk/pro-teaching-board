@@ -157,7 +157,7 @@
                 </select>
             </div>
             
-            <!-- NEW AUDACITY PRO AUDIO FEATURES -->
+            <!-- AUDACITY PRO AUDIO ENGINE -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> Audacity प्रो ऑडियो इंजन</div>
             <div class="rec-setting-item">
                 <span class="font-semibold">AI Noise Removal:</span>
@@ -183,7 +183,7 @@
             </div>
             <div class="setting-desc">ज़ोर से बोलने पर भी आवाज़ फटने (Distortion) नहीं देता।</div>
 
-            <!-- OLD VIDEO ADVANCED OPTIONS (Restored) -->
+            <!-- ADVANCED VIDEO SETTINGS -->
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
@@ -202,7 +202,7 @@
                 </select>
             </div>
 
-            <!-- OLD PERMISSION BUTTON (Restored) -->
+            <!-- MANUAL PERMISSION BUTTON -->
             <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
             </button>
@@ -352,7 +352,7 @@
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
-        // Restore Manual Permission Request
+        // Manual Permission Request
         const btnRequestPermission = document.getElementById('btn-request-permission');
         if(btnRequestPermission) {
             btnRequestPermission.addEventListener('click', async () => {
@@ -367,7 +367,7 @@
         }
 
         // ============================================================
-        // FULL RECORDING ENGINE (With FPS, Bitrate & Pro Audio)
+        // RECORDING ENGINE (With FPS, Bitrate & Pro Audio)
         // ============================================================
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
@@ -492,7 +492,11 @@
             }
         });
 
-        btnStop.addEventListener('click', () => { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); });
+        btnStop.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        });
     </script>
 </body>
 </html>
