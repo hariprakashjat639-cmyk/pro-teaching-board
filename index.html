@@ -289,17 +289,14 @@
                     pdf.addImage(imgDataUrl, 'JPEG', 0, 0, 1280, 720);
                 }
 
-                // Automatically Download Converted PDF and Load into App
                 const pdfBlob = pdf.output('blob');
                 const pdfUrl = URL.createObjectURL(pdfBlob);
                 
-                // Trigger download
                 const a = document.createElement('a');
                 a.href = pdfUrl;
                 a.download = `${file.name.replace(/\.[^/.]+$/, "")}_Converted.pdf`;
                 a.click();
 
-                // Also load directly into studio viewer as PDF
                 loadingText.innerText = "PDF स्लाइड्स लोड की जा रही हैं...";
                 const fileReader = new FileReader();
                 fileReader.onload = async function() {
@@ -320,7 +317,7 @@
                 };
                 fileReader.readAsArrayBuffer(pdfBlob);
 
-            } class="err" catch (err) {
+            } catch (err) {
                 alert("त्रुटि: " + err.message);
                 loadingScreen.style.display = 'none'; 
                 uploadPrompt.style.display = 'flex';
