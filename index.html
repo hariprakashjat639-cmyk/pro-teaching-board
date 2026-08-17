@@ -97,14 +97,14 @@
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
         #rec-settings-menu {
-            position: absolute; top: 45px; right: 0; width: 310px; max-height: 85vh; overflow-y: auto;
-            background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: absolute; top: 40px; right: 0; width: 320px; max-height: 80vh; overflow-y: auto;
+            background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
             backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
         }
-        .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; margin-bottom: 2px;}
-        .rec-setting-item select, .rec-setting-item input[type="checkbox"], .rec-setting-item input[type="range"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
-        .setting-desc { font-size: 9px; color: #888; margin-top: -4px; margin-bottom: 4px; line-height: 1.1; }
+        .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ddd; margin-bottom: 2px;}
+        .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px 6px; font-size: 10px; }
+        .setting-desc { font-size: 9px; color: #aaa; margin-top: -3px; margin-bottom: 4px; line-height: 1.2; }
 
         .timer-badge {
             background: rgba(20, 20, 25, 0.85); padding: 2px 6px; border-radius: 12px;
@@ -154,6 +154,7 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
+        <!-- RECORDING SETTINGS DROPDOWN MENU -->
         <div id="rec-settings-menu">
             <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स</div>
             <div class="rec-setting-item">
@@ -188,14 +189,14 @@
             </div>
             <div class="setting-desc">आवाज़ के वॉल्यूम को आरामदायक और सही स्तर पर लॉक रखता है।</div>
 
-            <!-- NEW MORE SETTINGS FOR XLR / PROFESSIONAL AUDIO -->
+            <!-- MORE SETTINGS (XLR STUDIO MODE) -->
             <div class="text-[11px] font-bold text-purple-400 border-t border-white/10 pt-2 mt-1 flex items-center justify-between">
                 <span><i class="fas fa-sliders mr-1"></i> More Settings (XLR Studio)</span>
-                <input type="checkbox" id="setting-more-toggle" checked title="Enable/Disable Advanced XLR Options">
+                <input type="checkbox" id="setting-more-toggle" checked title="Enable XLR Options">
             </div>
             <div class="setting-desc">XLR केबल माइक इंटरफ़ेस के लिए प्रोफेशनल्स जैसे डीप कस्टमाइज़ेशन।</div>
 
-            <div id="xlr-advanced-container" style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+            <div id="xlr-advanced-container" style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);">
                 <div class="rec-setting-item">
                     <span>सैंपल रेट (Sample Rate):</span>
                     <select id="setting-sample-rate">
@@ -237,7 +238,7 @@
                     </select>
                 </div>
             </div>
-            <!-- END OF NEW MORE SETTINGS -->
+            <!-- END OF MORE SETTINGS -->
 
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
@@ -263,6 +264,7 @@
         </div>
     </div>
 
+    <!-- FLOATING DOCK TOOLBAR -->
     <div class="ipad-dock" id="toolbar">
         <span id="slide-counter" class="text-white text-[9px] font-bold px-1 tracking-wider">1/1</span>
         <div class="dock-divider"></div>
@@ -803,9 +805,7 @@
 
                     let currentNode = source;
 
-                    // XLR / More settings nodes implementation
                     if (useMoreXlr) {
-                        // 1. Noise Gate simulation via DynamicsCompressor or custom filter
                         if (noiseGateVal !== 'off') {
                             const gateNode = audioCtx.createDynamicsCompressor();
                             gateNode.threshold.value = noiseGateVal === 'aggressive' ? -30 : -45;
@@ -815,7 +815,6 @@
                             currentNode = gateNode;
                         }
 
-                        // 2. De-Esser simulation (High-mid notch/shelf)
                         if (useDeEsser) {
                             const deEsserNode = audioCtx.createBiquadFilter();
                             deEsserNode.type = 'peaking';
@@ -826,17 +825,16 @@
                             currentNode = deEsserNode;
                         }
 
-                        // 3. Parametric EQ profiles
                         if (paramEqVal !== 'flat') {
                             const eqNode = audioCtx.createBiquadFilter();
                             if (paramEqVal === 'podcast') {
                                 eqNode.type = 'peaking';
-                                eqNode.frequency.value = 300; // Warmth
+                                eqNode.frequency.value = 300;
                                 eqNode.gain.value = 3.5;
                                 eqNode.Q.value = 1.0;
                             } else if (paramEqVal === 'crisp') {
                                 eqNode.type = 'highshelf';
-                                eqNode.frequency.value = 4000; // Brightness
+                                eqNode.frequency.value = 4000;
                                 eqNode.gain.value = 4.0;
                             }
                             currentNode.connect(eqNode);
@@ -844,7 +842,6 @@
                         }
                     }
 
-                    // Existing standard filters
                     const gentleHighPass = audioCtx.createBiquadFilter();
                     gentleHighPass.type = 'highpass';
                     gentleHighPass.frequency.value = 70;
