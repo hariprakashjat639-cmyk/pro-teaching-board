@@ -293,8 +293,12 @@
             }
         });
 
-        // POWERPOINT PPTX SLIDE SHOW RENDER ENGINE
+        // POWERPOINT PPTX SLIDE SHOW RENDER ENGINE (FIXED THEME COLORS)
         async function processPPTXFile(file) {
+            if (file.name.toLowerCase().endsWith('.ppt')) {
+                throw new Error("यह पुराना .ppt फॉर्मेट है। कृपया फाइल को .pptx या PDF में सेव करके अपलोड करें।");
+            }
+            
             const arrayBuffer = await file.arrayBuffer();
             const zip = new JSZip();
             const zipContent = await zip.loadAsync(arrayBuffer);
@@ -314,7 +318,7 @@
                     }
                 });
                 if (mediaFiles.length === 0) {
-                    throw new Error("PPTX फाइल में स्लाइड्स या मीडिया सामग्री नहीं मिली।");
+                    throw new Error("PPTX फाइल में स्लाइड्स या कंटेंट नहीं मिला।");
                 }
                 mediaFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
                 const mediaSlides = [];
@@ -343,13 +347,22 @@
                 slideCanvas.height = 720;
                 const ctx = slideCanvas.getContext('2d');
 
+                // Default White Background
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, 1280, 720);
 
+                // Safe Background Extraction (Fixed Scheme Colors)
                 const bgClr = xmlDoc.querySelector('bg srgbClr, bg solidFill srgbClr');
                 if (bgClr && bgClr.getAttribute('val')) {
                     ctx.fillStyle = '#' + bgClr.getAttribute('val');
                     ctx.fillRect(0, 0, 1280, 720);
+                } else {
+                    const schemeBg = xmlDoc.querySelector('bg schemeClr, bg solidFill schemeClr');
+                    if (schemeBg) {
+                        const val = schemeBg.getAttribute('val');
+                        if (val === 'bg1' || val === 'lt1') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1280, 720); }
+                        else if (val === 'tx1' || val === 'dk1') { ctx.fillStyle = '#0f0f0f'; ctx.fillRect(0, 0, 1280, 720); }
+                    }
                 }
 
                 const shapes = xmlDoc.getElementsByTagName('p:sp');
@@ -383,7 +396,7 @@
                         const textRuns = p.getElementsByTagName('a:r');
                         let pText = "";
                         let fontSize = 22;
-                        let textColor = '#000000';
+                        let textColor = '#000000'; // Default black text
 
                         for (let r of textRuns) {
                             const t = r.querySelector('t');
@@ -394,8 +407,19 @@
                             if (rPr) {
                                 const sz = rPr.getAttribute('sz');
                                 if (sz) fontSize = Math.max(14, Math.min(54, parseInt(sz, 10) / 100));
+                                
+                                // Text Color Support (Fixed Scheme Colors)
                                 const clr = rPr.querySelector('srgbClr');
-                                if (clr && clr.getAttribute('val')) textColor = '#' + clr.getAttribute('val');
+                                if (clr && clr.getAttribute('val')) {
+                                    textColor = '#' + clr.getAttribute('val');
+                                } else {
+                                    const schemeClr = rPr.querySelector('schemeClr');
+                                    if (schemeClr) {
+                                        let val = schemeClr.getAttribute('val');
+                                        if (val === 'tx1' || val === 'dk1') textColor = '#000000';
+                                        else if (val === 'bg1' || val === 'lt1') textColor = '#ffffff';
+                                    }
+                                }
                             }
                         }
 
@@ -430,10 +454,8 @@
                         }
                     }
                 }
-
                 pptSlides.push(slideCanvas.toDataURL('image/png', 0.95));
             }
-
             return pptSlides;
         }
 
@@ -546,7 +568,7 @@
             setTimeout(() => { screenDirty = true; }, 400);
         });
 
-        // Drawing Engine
+        // FULLY FIXED DRAWING ENGINE
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
@@ -567,100 +589,130 @@
         document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); screenDirty = true; });
 
         canvas.addEventListener('pointerdown', (e) => { isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); screenDirty = true; });
+        
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return; points.push({x: e.clientX, y: e.clientY}); let baseSize = parseInt(sizeSlider.value);
             
-            if (currentMode === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; } 
-            else if (currentMode === 'highlighter') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; } 
-            else if (currentMode === 'glow') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 15; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; } 
-            else { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; }
-
-            if (points.length >= 3) {
-                const controlPoint = points[points.length - 2];
-                const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
-                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y); screenDirty = true;
+            if (currentMode === 'eraser') { 
+                ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; 
+            } 
+            else if (currentMode === 'highlighter') { 
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; 
+            } 
+            else if (currentMode === 'glow') {
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 15; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor;
+            } 
+            else {
+                ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor;
             }
+            ctx.lineTo(e.clientX, e.clientY);
+            ctx.stroke();
+            screenDirty = true;
         });
-        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
-        function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
-        function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
+        canvas.addEventListener('pointerup', () => { if (isDrawing) { isDrawing = false; saveCurrentInk(); } });
+        canvas.addEventListener('pointerleave', () => { isDrawing = false; });
 
-        // SAVE PDF WITH DRAWN INKS FEATURE
-        const savePdfBtn = document.getElementById('save-pdf-btn');
-        savePdfBtn.addEventListener('click', async () => {
-            if (slides.length === 0) {
-                alert("कोई स्लाइड उपलब्ध नहीं है!");
-                return;
+        function saveCurrentInk() {
+            slideInks[currentSlideIndex] = canvas.toDataURL('image/png');
+        }
+        function restoreInk() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (slideInks[currentSlideIndex]) {
+                const img = new Image();
+                img.onload = () => { ctx.drawImage(img, 0, 0); };
+                img.src = slideInks[currentSlideIndex];
             }
+        }
 
-            saveCurrentInk();
-            loadingScreen.style.display = 'flex';
-            loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";
+        // FULL RECORDING ENGINE & SETTINGS
+        let mediaRecorder; let recordedChunks = []; let timerInterval; let startTime;
+        const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop');
+        const timerText = document.getElementById('timer-text'); const btnSettings = document.getElementById('btn-settings');
+        const recSettingsMenu = document.getElementById('rec-settings-menu');
 
+        btnSettings.addEventListener('click', () => { recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
+
+        document.getElementById('btn-request-permission').addEventListener('click', async () => {
+            try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); stream.getTracks().forEach(t => t.stop()); alert("माइक परमिशन मिल गई है!"); } 
+            catch (err) { alert("माइक परमिशन नहीं मिली। कृपया ब्राउज़र सेटिंग में अनुमति दें।"); }
+        });
+
+        btnStart.addEventListener('click', async () => {
             try {
-                const { jsPDF } = window.jspdf;
-                let pdf = null;
+                const fps = parseInt(document.getElementById('setting-fps').value);
+                const bps = parseFloat(document.getElementById('setting-bitrate').value) * 1000000;
+                const useMic = document.getElementById('setting-mic').checked;
 
-                for (let i = 0; i < slides.length; i++) {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = canvas.width || 1280;
-                    tempCanvas.height = canvas.height || 720;
-                    const tempCtx = tempCanvas.getContext('2d');
+                const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: fps } }, audio: true });
+                let finalStream = displayStream;
 
-                    tempCtx.fillStyle = '#030305';
-                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                if (useMic) {
+                    try {
+                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: document.getElementById('setting-anti-crackle').checked, autoGainControl: document.getElementById('setting-compressor').checked } });
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const dest = audioContext.createMediaStreamDestination();
+                        
+                        if (displayStream.getAudioTracks().length > 0) {
+                            audioContext.createMediaStreamSource(displayStream).connect(dest);
+                        }
+                        
+                        const micSource = audioContext.createMediaStreamSource(micStream);
+                        if (document.getElementById('setting-sl40-eq').checked) {
+                            const filter = audioContext.createBiquadFilter(); filter.type = 'highshelf'; filter.frequency.value = 4000; filter.gain.value = -4;
+                            micSource.connect(filter); filter.connect(dest);
+                        } else {
+                            micSource.connect(dest);
+                        }
 
-                    if (slides[i]) {
-                        await new Promise((resolve) => {
-                            const img = new Image();
-                            img.crossOrigin = "anonymous";
-                            img.onload = () => {
-                                let hRatio = tempCanvas.width / img.naturalWidth;
-                                let vRatio = tempCanvas.height / img.naturalHeight;
-                                let ratio = Math.min(hRatio, vRatio);
-                                let centerShiftX = (tempCanvas.width - img.naturalWidth * ratio) / 2;
-                                let centerShiftY = (tempCanvas.height - img.naturalHeight * ratio) / 2;
-                                tempCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, centerShiftX, centerShiftY, img.naturalWidth * ratio, img.naturalHeight * ratio);
-                                resolve();
-                            };
-                            img.onerror = resolve;
-                            img.src = slides[i];
-                        });
-                    }
-
-                    if (slideInks[i]) {
-                        await new Promise((resolve) => {
-                            const inkImg = new Image();
-                            inkImg.onload = () => {
-                                tempCtx.drawImage(inkImg, 0, 0);
-                                resolve();
-                            };
-                            inkImg.onerror = resolve;
-                            inkImg.src = slideInks[i];
-                        });
-                    }
-
-                    const imgData = tempCanvas.toDataURL('image/jpeg', 0.9);
-                    if (i === 0) {
-                        pdf = new jsPDF({
-                            orientation: 'landscape',
-                            unit: 'px',
-                            format: [tempCanvas.width, tempCanvas.height]
-                        });
-                        pdf.addImage(imgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
-                    } else {
-                        pdf.addPage([tempCanvas.width, tempCanvas.height], 'landscape');
-                        pdf.addImage(imgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
-                    }
+                        finalStream = new MediaStream([ ...displayStream.getVideoTracks(), ...dest.stream.getAudioTracks() ]);
+                    } catch (micErr) { console.warn("Mic not available", micErr); }
                 }
 
-                pdf.save(`Presentation_Notes_${Date.now()}.pdf`);
+                mediaRecorder = new MediaRecorder(finalStream, { mimeType: 'video/webm; codecs=vp8,opus', videoBitsPerSecond: bps });
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `Class_Recording_${new Date().getTime()}.webm`;
+                    document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                    
+                    recordedChunks = []; btnStart.style.display = 'flex'; btnStop.style.display = 'none'; timerText.style.display = 'none';
+                    clearInterval(timerInterval); finalStream.getTracks().forEach(t => t.stop());
+                };
+
+                mediaRecorder.start(1000); recordedChunks = [];
+                btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block'; recSettingsMenu.style.display = 'none';
+                
+                startTime = Date.now();
+                timerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    timerText.innerText = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`;
+                }, 1000);
+
+                displayStream.getVideoTracks()[0].onended = () => { if (mediaRecorder.state !== 'inactive') mediaRecorder.stop(); };
+            } catch (err) { alert("स्क्रीन रिकॉर्डिंग शुरू करने में समस्या: " + err.message); }
+        });
+
+        btnStop.addEventListener('click', () => { if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); });
+
+        // PDF SAVE ENGINE
+        document.getElementById('save-pdf-btn').addEventListener('click', () => {
+            if (slides.length === 0) return;
+            loadingScreen.style.display = 'flex'; loadingText.innerText = "PDF नोट्स तैयार किए जा रहे हैं...";
+            
+            setTimeout(() => {
+                try {
+                    const { jsPDF } = window.jspdf; const pdf = new jsPDF('landscape', 'pt', [1280, 720]);
+                    for (let i = 0; i < slides.length; i++) {
+                        if (i > 0) pdf.addPage();
+                        pdf.addImage(slides[i], 'PNG', 0, 0, 1280, 720);
+                        if (slideInks[i]) pdf.addImage(slideInks[i], 'PNG', 0, 0, 1280, 720);
+                    }
+                    pdf.save(`ClassNotes_${new Date().getTime()}.pdf`);
+                } catch (err) { alert("PDF सेव करने में त्रुटि: " + err.message); }
                 loadingScreen.style.display = 'none';
-            } catch (err) {
-                alert("PDF सेव करने में त्रुटि आई: " + err.message);
-                loadingScreen.style.display = 'none';
-            }
+            }, 500);
         });
     </script>
 </body>
