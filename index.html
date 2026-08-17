@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Ultimate Master Edition</title>
+    <title>Pro EduCreator Studio - Manual Audio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -45,7 +45,6 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 420px; width: 90%;
         }
 
-        /* Compact & Smaller iPad Dock */
         .ipad-dock { 
             position: absolute; bottom: 10px; left: 15px; z-index: 100; 
             display: none; flex-direction: row; gap: 3px; background: rgba(20, 20, 25, 0.85); 
@@ -154,7 +153,7 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
-        <!-- RECORDING SETTINGS DROPDOWN MENU -->
+        <!-- RECORDING SETTINGS & MANUAL AUDIO FILTERS MENU -->
         <div id="rec-settings-menu">
             <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स</div>
             <div class="rec-setting-item">
@@ -169,76 +168,36 @@
                 </select>
             </div>
             
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> नेचुरल ऑडियो मोड (Pro Clean)</div>
-            
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-sliders"></i> मैन्युअल ऑडियो फिल्टर्स (Manual FX)</div>
+            <div class="setting-desc">शुरुआत में सब कुछ ऑफ / नेचुरल रहेगा। जरूरत पड़ने पर अपनी पसंद के अनुसार टिक करें।</div>
+
+            <!-- Manual Filter 1: Natural Noise Gate -->
             <div class="rec-setting-item">
-                <span class="font-semibold text-blue-400">Low-Rumble Filter (हाई-पास):</span>
-                <input type="checkbox" id="setting-anti-crackle" checked>
+                <span class="font-semibold text-blue-400">Manual Noise Gate (शोर हटाएं):</span>
+                <input type="checkbox" id="setting-manual-noisegate">
             </div>
-            <div class="setting-desc">माइक हिलाने की गूंज और नीचे की बेस-हम (Low Rumble) को हटाता है।</div>
+            <div class="setting-desc">बैकग्राउंड की हल्की गूंज या पंखे की आवाज को ब्लॉक करता है।</div>
 
+            <!-- Manual Filter 2: High-Pass Rumble Filter -->
             <div class="rec-setting-item">
-                <span class="font-semibold text-yellow-400">Gentle Soft Tone (Treble कट):</span>
-                <input type="checkbox" id="setting-sl40-eq" checked>
+                <span class="font-semibold text-yellow-400">High-Pass Filter (माइक थड हटाए):</span>
+                <input type="checkbox" id="setting-manual-highpass">
             </div>
-            <div class="setting-desc">तीखेपन को रोककर आवाज़ को कानों के लिए सहज और हल्की रखता है।</div>
+            <div class="setting-desc">माइक को छूने या हिलाने पर होने वाली भारी आवाज/थड़ को रोकता है।</div>
 
+            <!-- Manual Filter 3: Natural Vocal Warmth EQ -->
             <div class="rec-setting-item">
-                <span class="font-semibold text-green-400">Comfort Volume Leveler (कम्प्रेशर):</span>
-                <input type="checkbox" id="setting-compressor" checked>
+                <span class="font-semibold text-green-400">Natural Vocal Warmth (स्पष्टता):</span>
+                <input type="checkbox" id="setting-manual-eq">
             </div>
-            <div class="setting-desc">आवाज़ के वॉल्यूम को आरामदायक और सही स्तर पर लॉक रखता है।</div>
+            <div class="setting-desc">आवाज़ को बिना कृत्रिम बनाए साफ, नेचुरल और क्रिस्प रखता है।</div>
 
-            <!-- AUDACITY / PRO STUDIO FX OPTIONS -->
-            <div class="text-[11px] font-bold text-purple-400 border-t border-white/10 pt-2 mt-1 flex items-center justify-between">
-                <span><i class="fas fa-sliders mr-1"></i> Audacity Studio FX</span>
-                <input type="checkbox" id="setting-more-toggle" checked title="Enable Audacity FX">
+            <!-- Manual Filter 4: Volume Leveler / Compressor -->
+            <div class="rec-setting-item">
+                <span class="font-semibold text-purple-400">Volume Leveler (कम्प्रेशर):</span>
+                <input type="checkbox" id="setting-manual-compressor">
             </div>
-            <div class="setting-desc">बेस्ट माइक और स्टूडियो जैसी क्लीयरिटी के लिए एडवांस्ड टूल्स।</div>
-
-            <div id="xlr-advanced-container" style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);">
-                <div class="rec-setting-item">
-                    <span>Sample Rate (सैंपल रेट):</span>
-                    <select id="setting-sample-rate">
-                        <option value="44100">44.1 kHz (Standard)</option>
-                        <option value="48000" selected>48.0 kHz (Pro Studio)</option>
-                        <option value="96000">96.0 kHz (Ultra HD)</option>
-                    </select>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>Noise Gate (नॉइज़ रिमूवल):</span>
-                    <select id="setting-noise-gate">
-                        <option value="off">Off (Raw)</option>
-                        <option value="soft" selected>Soft (-45dB Clean)</option>
-                        <option value="aggressive">Aggressive (-30dB Strict)</option>
-                    </select>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>De-Esser (श/स की तीक्ष्णता कम):</span>
-                    <input type="checkbox" id="setting-de-esser" checked>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>Parametric EQ (वॉर्मथ & Mids):</span>
-                    <select id="setting-param-eq">
-                        <option value="flat">Flat (Natural)</option>
-                        <option value="podcast" selected>Podcast Broadcast (Warm)</option>
-                        <option value="crisp">Crisp & Clear (Bright)</option>
-                    </select>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>Preamp Gain Boost:</span>
-                    <select id="setting-preamp-gain">
-                        <option value="1">1.0x (Normal)</option>
-                        <option value="1.25" selected>1.25x (Balanced Boost)</option>
-                        <option value="1.5">1.5x (High Gain)</option>
-                    </select>
-                </div>
-            </div>
-            <!-- END OF AUDACITY FX -->
+            <div class="setting-desc">आवाज़ के उतार-चढ़ाव को संतुलित और एक समान रखता है।</div>
 
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
@@ -713,13 +672,6 @@
             }
         });
 
-        // Toggle More Settings view
-        const settingMoreToggle = document.getElementById('setting-more-toggle');
-        const xlrAdvancedContainer = document.getElementById('xlr-advanced-container');
-        settingMoreToggle.addEventListener('change', () => {
-            xlrAdvancedContainer.style.display = settingMoreToggle.checked ? 'flex' : 'none';
-        });
-
         const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
@@ -748,17 +700,11 @@
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
                 
-                const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
-                const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
-                const useCompressor = document.getElementById('setting-compressor').checked;
-
-                // Audacity FX Values
-                const useMoreAudacityFx = settingMoreToggle.checked;
-                const sampleRateVal = parseInt(document.getElementById('setting-sample-rate').value) || 48000;
-                const noiseGateVal = document.getElementById('setting-noise-gate').value;
-                const useDeEsser = document.getElementById('setting-de-esser').checked;
-                const paramEqVal = document.getElementById('setting-param-eq').value;
-                const preampGainVal = parseFloat(document.getElementById('setting-preamp-gain').value) || 1.25;
+                // Manual Filters State
+                const useManualNoiseGate = document.getElementById('setting-manual-noisegate').checked;
+                const useManualHighPass = document.getElementById('setting-manual-highpass').checked;
+                const useManualEq = document.getElementById('setting-manual-eq').checked;
+                const useManualCompressor = document.getElementById('setting-manual-compressor').checked;
 
                 const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
@@ -793,11 +739,11 @@
 
                 if (useMic) {
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: sampleRateVal }, 
+                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false }, 
                         video: false 
                     });
 
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: sampleRateVal });
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     if (audioCtx.state === 'suspended') await audioCtx.resume();
                     
                     const source = audioCtx.createMediaStreamSource(micStream);
@@ -805,73 +751,48 @@
 
                     let currentNode = source;
 
-                    if (useMoreAudacityFx) {
-                        // 1. Noise Gate (Audacity Noise Removal filter equivalent)
-                        if (noiseGateVal !== 'off') {
-                            const gateNode = audioCtx.createDynamicsCompressor();
-                            gateNode.threshold.value = noiseGateVal === 'aggressive' ? -30 : -45;
-                            gateNode.knee.value = 10;
-                            gateNode.ratio.value = 4;
-                            currentNode.connect(gateNode);
-                            currentNode = gateNode;
-                        }
-
-                        // 2. De-Esser (Reduce harsh 'S' and 'Sh' sounds)
-                        if (useDeEsser) {
-                            const deEsserNode = audioCtx.createBiquadFilter();
-                            deEsserNode.type = 'peaking';
-                            deEsserNode.frequency.value = 6500;
-                            deEsserNode.gain.value = -4.0;
-                            deEsserNode.Q.value = 2.0;
-                            currentNode.connect(deEsserNode);
-                            currentNode = deEsserNode;
-                        }
-
-                        // 3. Parametric EQ (Warmth & Mids adjustment)
-                        if (paramEqVal !== 'flat') {
-                            const eqNode = audioCtx.createBiquadFilter();
-                            if (paramEqVal === 'podcast') {
-                                eqNode.type = 'peaking';
-                                eqNode.frequency.value = 300;
-                                eqNode.gain.value = 3.5;
-                                eqNode.Q.value = 1.0;
-                            } else if (paramEqVal === 'crisp') {
-                                eqNode.type = 'highshelf';
-                                eqNode.frequency.value = 4000;
-                                eqNode.gain.value = 4.0;
-                            }
-                            currentNode.connect(eqNode);
-                            currentNode = eqNode;
-                        }
+                    // 1. Manual Noise Gate
+                    if (useManualNoiseGate) {
+                        const gateNode = audioCtx.createDynamicsCompressor();
+                        gateNode.threshold.value = -40;
+                        gateNode.knee.value = 10;
+                        gateNode.ratio.value = 4;
+                        currentNode.connect(gateNode);
+                        currentNode = gateNode;
                     }
 
-                    // 4. Low-Rumble Filter (High Pass to remove mic handling thuds)
-                    const gentleHighPass = audioCtx.createBiquadFilter();
-                    gentleHighPass.type = 'highpass';
-                    gentleHighPass.frequency.value = 70;
+                    // 2. Manual High-Pass Filter (Removes thuds & low rumble)
+                    if (useManualHighPass) {
+                        const highPass = audioCtx.createBiquadFilter();
+                        highPass.type = 'highpass';
+                        highPass.frequency.value = 80;
+                        currentNode.connect(highPass);
+                        currentNode = highPass;
+                    }
 
-                    // 5. Gentle Soft Tone (Reduce heavy/harsh bass frequencies)
-                    const softTrebleCut = audioCtx.createBiquadFilter();
-                    softTrebleCut.type = 'highshelf';
-                    softTrebleCut.frequency.value = 5200;
-                    softTrebleCut.gain.value = -3.0; 
+                    // 3. Manual Natural Vocal Warmth (EQ)
+                    if (useManualEq) {
+                        const eqNode = audioCtx.createBiquadFilter();
+                        eqNode.type = 'peaking';
+                        eqNode.frequency.value = 2500;
+                        eqNode.gain.value = 3.0;
+                        eqNode.Q.value = 1.0;
+                        currentNode.connect(eqNode);
+                        currentNode = eqNode;
+                    }
 
-                    // 6. Master Gain Boost (Preamp simulation)
-                    const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.72 * (useMoreAudacityFx ? preampGainVal : 1.0);
+                    // 4. Manual Volume Leveler (Compressor)
+                    if (useManualCompressor) {
+                        const compressor = audioCtx.createDynamicsCompressor();
+                        compressor.threshold.value = -20;
+                        compressor.knee.value = 15;
+                        compressor.ratio.value = 2;
+                        compressor.attack.value = 0.03;
+                        compressor.release.value = 0.25;
+                        currentNode.connect(compressor);
+                        currentNode = compressor;
+                    }
 
-                    // 7. Comfort Volume Leveler (Compressor)
-                    const gentleCompressor = audioCtx.createDynamicsCompressor();
-                    gentleCompressor.threshold.value = -18;
-                    gentleCompressor.knee.value = 20;
-                    gentleCompressor.ratio.value = 1.5;
-                    gentleCompressor.attack.value = 0.03;
-                    gentleCompressor.release.value = 0.2;
-
-                    if (useAntiCrackle) { currentNode.connect(gentleHighPass); currentNode = gentleHighPass; }
-                    if (useSl40Eq) { currentNode.connect(softTrebleCut); currentNode = softTrebleCut; }
-                    currentNode.connect(masterGain); currentNode = masterGain;
-                    if (useCompressor) { currentNode.connect(gentleCompressor); currentNode = gentleCompressor; }
                     currentNode.connect(destination);
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
