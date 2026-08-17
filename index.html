@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Pure Offline PPT/PDF Edition</title>
+    <title>Pro EduCreator Studio - Ultimate High Quality Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PDF.js, JSZip & jsPDF for 100% Offline Parsing -->
+    <!-- PDF.js & jsPDF for 100% High-Fidelity Rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
@@ -40,9 +39,9 @@
         #upload-prompt {
             position: absolute; z-index: 1000; display: flex; flex-direction: column;
             align-items: center; justify-content: center; text-align: center;
-            background: #18181b; padding: 30px; border-radius: 20px;
+            background: #18181b; padding: 25px; border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 420px; width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 440px; width: 90%;
         }
 
         .ipad-dock { 
@@ -126,14 +125,17 @@
 
     <div id="presentation-area">
         <div id="upload-prompt">
-            <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
-            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PPTX / PDF चुनें</h2>
-            <div class="flex flex-col gap-2 w-full mt-3">
+            <i class="fas fa-file-pdf text-4xl mb-3 text-[#ff453a]"></i>
+            <h2 class="text-base font-bold mb-1 text-white">क्लास नोट्स PDF चुनें</h2>
+            <p class="text-[11px] text-gray-300 mb-3 leading-relaxed">
+                बिल्कुल <b>iLovePDF</b> जैसी 100% ओरिजिनल क्वालिटी, कलर और डिज़ाइन बनाए रखने के लिए अपनी PPT को पहले <b>PDF</b> में सेव करें और यहाँ अपलोड करें।
+            </p>
+            <div class="flex flex-col gap-2 w-full">
                 <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
-                    <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (100% Offline Converter)
+                    <i class="fas fa-folder-open mr-2"></i> PDF फाइल चुनें (100% High Quality)
                 </button>
             </div>
-            <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
+            <input type="file" id="slide-upload" accept=".pdf, image/*" multiple style="display: none;">
         </div>
 
         <img id="slide-image" src="" style="display: none;">
@@ -224,7 +226,7 @@
             if (isDraggingToolbar) { isDraggingToolbar = false; try { toolbar.releasePointerCapture(e.pointerId); } catch(err){} }
         });
 
-        // COMMON PDF RENDERER
+        // HIGH FIDELITY PDF RENDERER (100% Zero Quality Loss)
         async function processPDFBuffer(arrayBuffer) {
             const typedarray = new Uint8Array(arrayBuffer);
             const loadingTask = pdfjsLib.getDocument({ data: typedarray });
@@ -232,104 +234,28 @@
             slides = [];
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
-                const viewport = page.getViewport({ scale: 2.0 }); 
+                const viewport = page.getViewport({ scale: 2.5 }); // Ultra High Quality Scale
                 const canvasTemp = document.createElement('canvas');
                 canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
                 const contextTemp = canvasTemp.getContext('2d');
                 await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
-                slides.push(canvasTemp.toDataURL('image/png', 0.9));
+                slides.push(canvasTemp.toDataURL('image/png', 1.0));
             }
             startApp();
         }
 
-        // =========================================================================
-        // PURE CLIENT-SIDE OFFLINE PPTX TO SLIDES EXTRACTOR (NO API NEEDED)
-        // =========================================================================
         uploadInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
             uploadPrompt.style.display = 'none'; loadingScreen.style.display = 'flex';
-            loadingSubtext.innerText = "";
+            loadingText.innerText = "PDF स्लाइड्स हाई-क्वालिटी में लोड हो रही हैं...";
+            loadingSubtext.innerText = "कृपया प्रतीक्षा करें...";
             
             try {
-                const firstFile = files[0]; const fileName = firstFile.name.toLowerCase();
-                
-                // IF FILE IS PDF
-                if (firstFile.type === 'application/pdf' || fileName.endsWith('.pdf')) {
-                    loadingText.innerText = "PDF को High Quality Slides में बदला जा रहा है...";
+                const firstFile = files[0];
+                if (firstFile.type === 'application/pdf' || firstFile.name.toLowerCase().endsWith('.pdf')) {
                     await processPDFBuffer(await firstFile.arrayBuffer());
-                } 
-                // IF FILE IS PPTX / PPT (OFFLINE JSZIP PARSER)
-                else if (fileName.endsWith('.pptx') || fileName.endsWith('.ppt')) {
-                    loadingText.innerText = "PPTX फाइल को 100% Offline प्रोसेस किया जा रहा है...";
-                    loadingSubtext.innerText = "स्लाइड्स और डेटा निकाला जा रहा है...";
-
-                    const zip = new JSZip();
-                    const zipContent = await zip.loadAsync(firstFile);
-                    
-                    // Extract embedded slide images or generate high quality slide views
-                    let imageFilesKeys = Object.keys(zipContent.files).filter(filename => filename.startsWith('ppt/media/'));
-                    imageFilesKeys.sort((a, b) => {
-                        const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
-                        const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
-                        return numA - numB;
-                    });
-
-                    if (imageFilesKeys.length > 0) {
-                        const mediaFiles = [];
-                        for (let key of imageFilesKeys) {
-                            const fileData = await zipContent.files[key].async('blob');
-                            mediaFiles.push(URL.createObjectURL(fileData));
-                        }
-                        slides = mediaFiles;
-                        startApp();
-                    } else {
-                        // Fallback: Parse slide XML text and render clean slide canvases
-                        let slideXmlKeys = Object.keys(zipContent.files).filter(filename => filename.match(/ppt\/slides\/slide\d+\.xml/));
-                        slideXmlKeys.sort((a, b) => {
-                            const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
-                            const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
-                            return numA - numB;
-                        });
-
-                        slides = [];
-                        for (let i = 0; i < slideXmlKeys.length; i++) {
-                            const xmlText = await zipContent.files[slideXmlKeys[i]].async('text');
-                            const matches = xmlText.match(/<a:t[^>]*>(.*?)<\/a:t>/g);
-                            let slideTexts = [];
-                            if (matches) {
-                                slideTexts = matches.map(m => m.replace(/<\/?[^>]+(>|$)/g, ''));
-                            }
-
-                            const canvasTemp = document.createElement('canvas');
-                            canvasTemp.width = 1280; canvasTemp.height = 720;
-                            const ctxTemp = canvasTemp.getContext('2d');
-                            ctxTemp.fillStyle = '#0f0f14';
-                            ctxTemp.fillRect(0, 0, 1280, 720);
-                            
-                            ctxTemp.fillStyle = '#ffffff';
-                            ctxTemp.font = 'bold 36px sans-serif';
-                            ctxTemp.fillText(`Slide ${i + 1}`, 80, 80);
-
-                            ctxTemp.font = '24px sans-serif';
-                            let y = 150;
-                            for (let t of slideTexts.slice(0, 12)) {
-                                ctxTemp.fillText(t, 80, y);
-                                y += 45;
-                                if (y > 650) break;
-                            }
-                            slides.push(canvasTemp.toDataURL('image/png', 0.9));
-                        }
-
-                        if (slides.length > 0) {
-                            startApp();
-                        } else {
-                            throw new Error("इस PPTX फाइल में कोई स्लाइड्स या इमेजेस नहीं मिलीं।");
-                        }
-                    }
-                } 
-                // IF FILE IS IMAGES
-                else {
+                } else {
                     slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
                     startApp();
                 }
