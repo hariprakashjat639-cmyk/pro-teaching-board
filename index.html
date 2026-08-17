@@ -69,7 +69,6 @@
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
-        /* साइड नेविगेशन बटन्स को छोटे और कॉम्पैक्ट किए गए हैं */
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
             width: 26px; height: 36px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
@@ -453,6 +452,7 @@
         });
 
         const hideUiBtn = document.getElementById('hide-ui-btn');
+        const eraserBtn = document.getElementById('eraser-btn'); // इरेज़र बटन का reference
         let isUiHidden = false;
         hideUiBtn.addEventListener('click', () => {
             isUiHidden = !isUiHidden;
@@ -465,7 +465,8 @@
                 rightNav.style.display = 'none';
                 recorderUi.style.display = 'none';
                 Array.from(toolbar.children).forEach(child => {
-                    if (child !== hideUiBtn && child.id !== 'slide-counter') {
+                    // अब इरेज़र बटन (eraser-btn), हाईड/शो बटन और स्लाइड काउंटर को छुपाया नहीं जाएगा, बाकी सब छुप जाएंगे
+                    if (child !== hideUiBtn && child.id !== 'slide-counter' && child !== eraserBtn) {
                         child.style.display = 'none';
                     }
                 });
@@ -489,7 +490,7 @@
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
-        const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
+        const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': eraserBtn };
 
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
