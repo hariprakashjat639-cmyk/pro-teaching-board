@@ -47,7 +47,7 @@
 
         .ipad-dock { 
             position: absolute; bottom: 12px; left: 15px; z-index: 100; 
-            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
+            display: flex; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
             padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
             align-items: center; max-width: 85vw; overflow-x: auto;
@@ -68,6 +68,9 @@
         
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
+
+        /* Toolbar Collapse Hidden Class */
+        .toolbar-hidden { display: none !important; }
 
         /* Translucent Side Nav Buttons */
         .side-nav-btn {
@@ -431,7 +434,7 @@
         function loadSlide(index) {
             saveCurrentInk(); 
             currentSlideIndex = index; 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // स्लाइड बदलते ही कैनवास तुरंत साफ़ करें ताकि इंक न फैले
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
             slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
             
@@ -481,7 +484,6 @@
             currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
             if(mode === 'highlighter') sizeSlider.value = 30; else if(mode === 'eraser') sizeSlider.value = 40; else sizeSlider.value = 6;
             
-            // यदि टूलबार कोलैप्स है, तो एक्टिव बदलने पर केवल नया एक्टिव टूल ही दिखे
             if (isToolbarCollapsed) {
                 updateToolbarCollapseView();
             }
@@ -512,7 +514,6 @@
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         
-        // इंक रीस्टोर करते वक्त स्ट्रेचिंग रोकने के लिए सही कैनवास dimensions पर स्केल किया गया है
         function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             if (slideInks[currentSlideIndex]) { 
@@ -525,7 +526,7 @@
             } 
         }
 
-        // TOOLBAR COLLAPSE / HIDE FEATURE (सिर्फ चालू टूल रखने का फीचर)
+        // TOOLBAR COLLAPSE / HIDE FEATURE (Fixed with CSS Class)
         let isToolbarCollapsed = false;
         const collapseBtn = document.getElementById('collapse-toolbar-btn');
 
@@ -535,14 +536,13 @@
                 if (child.id === 'slide-counter' || child.id === 'collapse-toolbar-btn' || child.id === 'save-pdf-btn') return;
                 
                 if (isToolbarCollapsed) {
-                    // यदि एक्टिव टूल है या स्लाइड काउंटर/कोलैप्स/सेव बटन है तो दिखेगा, बाकी सब छिप जाएंगे
-                    if (child.classList.contains('active') || child.id === 'pen-size') {
-                        child.style.display = 'flex';
+                    if (child.classList.contains('active') || child.id === 'pen-size' || child.classList.contains('color-picker-wrapper')) {
+                        child.classList.remove('toolbar-hidden');
                     } else {
-                        child.style.display = 'none';
+                        child.classList.add('toolbar-hidden');
                     }
                 } else {
-                    child.style.display = '';
+                    child.classList.remove('toolbar-hidden');
                 }
             });
         }
@@ -683,7 +683,6 @@
                         sourceNode = audioCtx.createMediaStreamSource(micStream);
                         let lastNode = sourceNode;
 
-                        // 1. Low-Rumble Filter (Highpass)
                         if (document.getElementById('setting-anti-crackle').checked) {
                             filterNode = audioCtx.createBiquadFilter();
                             filterNode.type = 'highpass';
@@ -692,7 +691,6 @@
                             lastNode = filterNode;
                         }
 
-                        // 2. Gentle Soft Tone (EQ Peaking)
                         if (document.getElementById('setting-sl40-eq').checked) {
                             eqNode = audioCtx.createBiquadFilter();
                             eqNode.type = 'peaking';
@@ -703,7 +701,6 @@
                             lastNode = eqNode;
                         }
 
-                        // 3. Comfort Volume Leveler (Compressor)
                         if (document.getElementById('setting-compressor').checked) {
                             compressorNode = audioCtx.createDynamicsCompressor();
                             compressorNode.threshold.value = -24;
