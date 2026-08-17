@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Ultimate Master Edition</title>
+    <title>Pro EduCreator Studio - Perfect Audio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -168,8 +168,14 @@
                 </select>
             </div>
             
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> क्रिस्टल क्लियर स्टूडियो ऑडियो मोड</div>
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> स्टूडियो ऑडियो फ़िल्टर पाइपलाइन</div>
             
+            <div class="rec-setting-item">
+                <span class="font-semibold text-green-400">Background Noise Expander:</span>
+                <input type="checkbox" id="setting-noise-gate" checked>
+            </div>
+            <div class="setting-desc">पंखे और बैकग्राउंड की फुसफुसाहट को पूरी तरह साफ़ करता है।</div>
+
             <div class="rec-setting-item">
                 <span class="font-semibold text-blue-400">Precision Low-Cut (80Hz):</span>
                 <input type="checkbox" id="setting-anti-crackle" checked>
@@ -183,49 +189,10 @@
             <div class="setting-desc">आवाज़ को खुलकर और स्पष्ट बनाता है ताकि गहराई बनी रहे।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-green-400">Broadcast Compressor:</span>
+                <span class="font-semibold text-purple-400">Broadcast Compressor:</span>
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
-            <div class="setting-desc">वॉल्यूम को संतुलित और आरामदायक स्तर पर रखता है।</div>
-
-            <!-- MORE SETTINGS (XLR STUDIO MODE) -->
-            <div class="text-[11px] font-bold text-purple-400 border-t border-white/10 pt-2 mt-1 flex items-center justify-between">
-                <span><i class="fas fa-sliders mr-1"></i> Pro Studio Options</span>
-                <input type="checkbox" id="setting-more-toggle" checked title="Enable Pro Options">
-            </div>
-            <div class="setting-desc">प्रोफेशनल पॉडकास्ट क्वालिटी के लिए उन्नत नियंत्रण।</div>
-
-            <div id="xlr-advanced-container" style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);">
-                <div class="rec-setting-item">
-                    <span>सैंपल रेट (Sample Rate):</span>
-                    <select id="setting-sample-rate">
-                        <option value="44100">44.1 kHz (Standard)</option>
-                        <option value="48000" selected>48.0 kHz (Pro Studio)</option>
-                    </select>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>Ambient Noise Reducer:</span>
-                    <select id="setting-noise-gate">
-                        <option value="off">Off (Raw)</option>
-                        <option value="smooth" selected>Smooth Background Cleaner</option>
-                    </select>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>Vocal Warmth Boost:</span>
-                    <input type="checkbox" id="setting-de-esser" checked>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>Studio Gain Level:</span>
-                    <select id="setting-preamp-gain">
-                        <option value="1">1.0x (Normal)</option>
-                        <option value="1.15" selected>1.15x (Clear Boost)</option>
-                    </select>
-                </div>
-            </div>
-            <!-- END OF MORE SETTINGS -->
+            <div class="setting-desc">वॉल्यूम को संतुलित और पॉडकास्ट स्तर पर रखता है।</div>
 
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
@@ -700,12 +667,6 @@
             }
         });
 
-        const settingMoreToggle = document.getElementById('setting-more-toggle');
-        const xlrAdvancedContainer = document.getElementById('xlr-advanced-container');
-        settingMoreToggle.addEventListener('change', () => {
-            xlrAdvancedContainer.style.display = settingMoreToggle.checked ? 'flex' : 'none';
-        });
-
         const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
@@ -734,15 +695,10 @@
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
                 
+                const useNoiseGate = document.getElementById('setting-noise-gate').checked;
                 const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
-
-                const useMoreXlr = settingMoreToggle.checked;
-                const sampleRateVal = parseInt(document.getElementById('setting-sample-rate').value) || 48000;
-                const noiseGateVal = document.getElementById('setting-noise-gate').value;
-                const useDeEsser = document.getElementById('setting-de-esser').checked;
-                const preampGainVal = parseFloat(document.getElementById('setting-preamp-gain').value) || 1.15;
 
                 const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
@@ -781,12 +737,12 @@
                             noiseSuppression: true, 
                             echoCancellation: true, 
                             autoGainControl: false, 
-                            sampleRate: sampleRateVal 
+                            sampleRate: 48000 
                         }, 
                         video: false 
                     });
 
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: sampleRateVal });
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
                     if (audioCtx.state === 'suspended') await audioCtx.resume();
                     
                     const source = audioCtx.createMediaStreamSource(micStream);
@@ -794,62 +750,61 @@
 
                     let currentNode = source;
 
-                    // 1. Smooth Background Expander (माइक्रोफोन बैकग्राउंड हम्म को साफ करने के लिए)
-                    if (noiseGateVal === 'smooth') {
-                        const smoothExpander = audioCtx.createDynamicsCompressor();
-                        smoothExpander.threshold.value = -42;
-                        smoothExpander.knee.value = 12;
-                        smoothExpander.ratio.value = 3.0;
-                        smoothExpander.attack.value = 0.003;
-                        smoothExpander.release.value = 0.2;
-                        currentNode.connect(smoothExpander);
-                        currentNode = smoothExpander;
+                    // 1. Background Noise Expander / Gate
+                    if (useNoiseGate) {
+                        const noiseGate = audioCtx.createDynamicsCompressor();
+                        noiseGate.threshold.value = -40;
+                        noiseGate.knee.value = 10;
+                        noiseGate.ratio.value = 4.0;
+                        noiseGate.attack.value = 0.002;
+                        noiseGate.release.value = 0.15;
+                        currentNode.connect(noiseGate);
+                        currentNode = noiseGate;
                     }
 
                     // 2. Precision Low-Cut High-Pass Filter (80Hz)
-                    if (useAntiCrackle || useMoreXlr) {
-                        const lowCutFilter = audioCtx.createBiquadFilter();
-                        lowCutFilter.type = 'highpass';
-                        lowCutFilter.frequency.value = 80;
-                        currentNode.connect(lowCutFilter);
-                        currentNode = lowCutFilter;
+                    if (useAntiCrackle) {
+                        const lowCut = audioCtx.createBiquadFilter();
+                        lowCut.type = 'highpass';
+                        lowCut.frequency.value = 80;
+                        currentNode.connect(lowCut);
+                        currentNode = lowCut;
                     }
 
-                    // 3. Vocal Presence Enhancer (2.2kHz पर क्रिस्पनेस)
-                    if (useSl40Eq || useMoreXlr) {
-                        const presenceFilter = audioCtx.createBiquadFilter();
-                        presenceFilter.type = 'peaking';
-                        presenceFilter.frequency.value = 2200;
-                        presenceFilter.gain.value = 3.5;
-                        presenceFilter.Q.value = 1.0;
-                        currentNode.connect(presenceFilter);
-                        currentNode = presenceFilter;
+                    // 3. Vocal Presence Enhancer (2.2kHz)
+                    if (useSl40Eq) {
+                        const presenceEQ = audioCtx.createBiquadFilter();
+                        presenceEQ.type = 'peaking';
+                        presenceEQ.frequency.value = 2200;
+                        presenceEQ.gain.value = 3.5;
+                        presenceEQ.Q.value = 1.0;
+                        currentNode.connect(presenceEQ);
+                        currentNode = presenceEQ;
                     }
 
-                    // 4. Vocal Warmth Boost (Low shelf)
-                    if (useDeEsser && useMoreXlr) {
-                        const warmthFilter = audioCtx.createBiquadFilter();
-                        warmthFilter.type = 'lowshelf';
-                        warmthFilter.frequency.value = 250;
-                        warmthFilter.gain.value = 2.0;
-                        currentNode.connect(warmthFilter);
-                        currentNode = warmthFilter;
+                    // 4. Vocal Warmth Boost (Low Shelf - 250Hz)
+                    const warmthEQ = audioCtx.createBiquadFilter();
+                    warmthEQ.type = 'lowshelf';
+                    warmthEQ.frequency.value = 250;
+                    warmthEQ.gain.value = 2.0;
+                    currentNode.connect(warmthEQ);
+                    currentNode = warmthEQ;
+
+                    // 5. Broadcast Compressor
+                    if (useCompressor) {
+                        const compressor = audioCtx.createDynamicsCompressor();
+                        compressor.threshold.value = -18;
+                        compressor.knee.value = 12;
+                        compressor.ratio.value = 3.0;
+                        compressor.attack.value = 0.005;
+                        compressor.release.value = 0.12;
+                        currentNode.connect(compressor);
+                        currentNode = compressor;
                     }
 
-                    // 5. Broadcast Compressor & Volume Master Gain
-                    if (useCompressor || useMoreXlr) {
-                        const broadcastCompressor = audioCtx.createDynamicsCompressor();
-                        broadcastCompressor.threshold.value = -20;
-                        broadcastCompressor.knee.value = 12;
-                        broadcastCompressor.ratio.value = 3.0;
-                        broadcastCompressor.attack.value = 0.005;
-                        broadcastCompressor.release.value = 0.12;
-                        currentNode.connect(broadcastCompressor);
-                        currentNode = broadcastCompressor;
-                    }
-
+                    // 6. Master Preamp Gain Boost
                     const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = useMoreXlr ? preampGainVal : 1.1;
+                    masterGain.gain.value = 1.15;
                     currentNode.connect(masterGain);
                     masterGain.connect(destination);
 
