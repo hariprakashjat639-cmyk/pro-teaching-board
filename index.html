@@ -69,15 +69,16 @@
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
+        /* साइड नेविगेशन बटन्स को छोटे और कॉम्पैक्ट किए गए हैं */
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
-            width: 36px; height: 50px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
+            width: 26px; height: 36px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
             color: white; display: none; justify-content: center; align-items: center; cursor: pointer;
-            backdrop-filter: blur(10px); transition: 0.2s; font-size: 14px;
+            backdrop-filter: blur(10px); transition: 0.2s; font-size: 11px;
         }
         .side-nav-btn:hover { background: rgba(10, 132, 255, 0.8); }
-        #left-nav { left: 0; border-radius: 0 8px 8px 0; }
-        #right-nav { right: 0; border-radius: 8px 0 0 8px; }
+        #left-nav { left: 0; border-radius: 0 6px 6px 0; }
+        #right-nav { right: 0; border-radius: 6px 0 0 6px; }
 
         .recorder-ui { 
             position: absolute; top: 12px; right: 12px; z-index: 100; 
@@ -167,7 +168,6 @@
                 </select>
             </div>
             
-            <!-- PURE NATURAL AUDIO ENGINE -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> नेचुरल ऑडियो मोड</div>
             
             <div class="rec-setting-item">
@@ -188,7 +188,6 @@
             </div>
             <div class="setting-desc">आवाज़ के वॉल्यूम को आरामदायक और सही स्तर पर लॉक रखता है।</div>
 
-            <!-- ADVANCED VIDEO SETTINGS -->
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
@@ -207,7 +206,6 @@
                 </select>
             </div>
 
-            <!-- MANUAL PERMISSION BUTTON -->
             <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
             </button>
@@ -229,14 +227,11 @@
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
-        <!-- HIDE/SHOW UI TOGGLE BUTTON -->
         <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[9px]"></i></button>
-        <!-- SAVE PDF TOOL -->
         <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[9px]"></i></button>
     </div>
 
     <script>
-        // PDF & UI Setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
@@ -252,7 +247,6 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // DRAGGABLE TOOLBAR LOGIC (पूरी स्क्रीन पर कहीं भी मूव करने के लिए)
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
         let startX, startY, initialLeft, initialTop;
@@ -295,7 +289,6 @@
             }
         });
 
-        // PPT to PDF Converter Integration Feature
         converterUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -459,7 +452,6 @@
             setTimeout(() => { screenDirty = true; }, 400);
         });
 
-        // HIDE/SHOW UI TOGGLE LOGIC (बाकी सब छिपाने/दिखाने का फीचर)
         const hideUiBtn = document.getElementById('hide-ui-btn');
         let isUiHidden = false;
         hideUiBtn.addEventListener('click', () => {
@@ -494,7 +486,6 @@
             screenDirty = true;
         });
 
-        // Drawing Engine
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
@@ -534,7 +525,6 @@
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
 
-        // SAVE PDF WITH DRAWN INKS FEATURE (सभी स्लाइडों पर लिखा गया सेव करने का टूल)
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
             if (slides.length === 0) {
@@ -612,12 +602,10 @@
             }
         });
 
-        // Settings Menu Toggle
         const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
-        // Manual Permission Request
         const btnRequestPermission = document.getElementById('btn-request-permission');
         if(btnRequestPermission) {
             btnRequestPermission.addEventListener('click', async () => {
@@ -631,7 +619,6 @@
             });
         }
 
-        // PURE & GENTLE AUDIO ENGINE
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
         const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
