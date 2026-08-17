@@ -218,7 +218,7 @@
             <input type="color" id="color-picker" value="#ffff00">
             <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[8px]"></i></button>
         </div>
-        <!-- नया 'Smooth Ink Pen' बटन (Glow Pen की जगह) -->
+        <!-- Smooth Ink Pen (Apple Pencil Style) - Replaced Glow Pen -->
         <button class="dock-btn active" id="smooth-pen-btn" title="Smooth Ink Pen"><i class="fas fa-feather-pointed text-[9px]"></i></button>
         <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[9px]"></i></button>
         <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[9px]"></i></button>
@@ -523,10 +523,12 @@
                 y: (points[points.length - 2].y + points[points.length - 1].y) / 2 
             };
 
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowBlur = 0; // Completely eliminate spread/blur on reload
+
             if (currentMode === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.lineWidth = baseSize;
-                ctx.shadowBlur = 0;
                 ctx.strokeStyle = 'rgba(0,0,0,1)';
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
@@ -534,9 +536,7 @@
                 ctx.moveTo(ep.x, ep.y);
             } 
             else if (currentMode === 'highlighter') {
-                ctx.globalCompositeOperation = 'source-over';
                 ctx.lineWidth = baseSize;
-                ctx.shadowBlur = 0;
                 ctx.strokeStyle = currentColor + '55';
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
@@ -544,9 +544,7 @@
                 ctx.moveTo(ep.x, ep.y);
             } 
             else if (currentMode === 'smooth') {
-                // SMOOTH INK PEN: Apple Pencil Style - Crisp, non-bleeding, sharp vector style with zero spread/blur buildup
-                ctx.globalCompositeOperation = 'source-over';
-                ctx.shadowBlur = 0;
+                // Apple Pencil Style Crisp & Clean Vector Stroke (Zero Blur)
                 ctx.lineWidth = baseSize;
                 ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
@@ -555,9 +553,7 @@
                 ctx.moveTo(ep.x, ep.y);
             } 
             else { // Normal Pen
-                ctx.globalCompositeOperation = 'source-over';
                 ctx.lineWidth = baseSize;
-                ctx.shadowBlur = 0;
                 ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
