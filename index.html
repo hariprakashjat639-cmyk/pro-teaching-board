@@ -229,6 +229,8 @@
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
+        <!-- HIDE/SHOW UI TOGGLE BUTTON -->
+        <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[9px]"></i></button>
         <!-- SAVE PDF TOOL -->
         <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[9px]"></i></button>
     </div>
@@ -343,7 +345,7 @@
                 a.download = `${file.name.replace(/\.[^/.]+$/, "")}_Converted.pdf`;
                 a.click();
 
-                loadingText.innerText = "PDF slides लोड की जा रही हैं...";
+                loadingText.innerText = "PDFslides लोड की जा रही हैं...";
                 const fileReader = new FileReader();
                 fileReader.onload = async function() {
                     const typedarray = new Uint8Array(this.result);
@@ -455,6 +457,46 @@
             if (!isFs) { if (docEl.requestFullscreen) docEl.requestFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-compress text-[9px]"></i>'; } 
             else { if (document.exitFullscreen) document.exitFullscreen(); fullscreenBtn.innerHTML = '<i class="fas fa-expand text-[9px]"></i>'; }
             setTimeout(() => { screenDirty = true; }, 400);
+        });
+
+        // HIDE/SHOW UI TOGGLE LOGIC (बाकी सब छिपाने/दिखाने का फीचर)
+        const hideUiBtn = document.getElementById('hide-ui-btn');
+        let isUiHidden = false;
+        hideUiBtn.addEventListener('click', () => {
+            isUiHidden = !isUiHidden;
+            const leftNav = document.getElementById('left-nav');
+            const rightNav = document.getElementById('right-nav');
+            const recorderUi = document.getElementById('recorder-ui');
+            
+            if (isUiHidden) {
+                // सारे कंट्रोल्स छिपाएँ सिवाय ड्राइंग कैनवास और करंट स्लाइड के
+                leftNav.style.display = 'none';
+                rightNav.style.display = 'none';
+                recorderUi.style.display = 'none';
+                // टूलबार को छोटा करके एक कोने (जैसे बॉटम-राइट या बॉटम-लेफ्ट) में सिर्फ Hide बटन छोड़ना चाहें तो रख सकते हैं, 
+                // या पूरे टूलबार को छिपाकर स्क्रीन पर कहीं भी क्लिक/डबल-क्लिक से वापस लाने का विकल्प दे सकते हैं। 
+                // यहाँ हम टूलबार के बाकी बटन्स को छुपा रहे हैं और सिर्फ इसी बटन को विजिबल रख रहे हैं ताकि वापस लाया जा सके।
+                Array.from(toolbar.children).forEach(child => {
+                    if (child !== hideUiBtn && child.id !== 'slide-counter') {
+                        child.style.display = 'none';
+                    }
+                });
+                hideUiBtn.innerHTML = '<i class="fas fa-eye text-[9px]"></i>';
+                hideUiBtn.style.color = '#ff453a';
+                hideUiBtn.title = "Show UI";
+            } else {
+                // सब कुछ वापस लाएँ
+                leftNav.style.display = 'flex';
+                rightNav.style.display = 'flex';
+                recorderUi.style.display = 'flex';
+                Array.from(toolbar.children).forEach(child => {
+                    child.style.display = '';
+                });
+                hideUiBtn.innerHTML = '<i class="fas fa-eye-slash text-[9px]"></i>';
+                hideUiBtn.style.color = '#0a84ff';
+                hideUiBtn.title = "Hide/Show UI";
+            }
+            screenDirty = true;
         });
 
         // Drawing Engine
