@@ -29,12 +29,12 @@
         #slide-image { 
             width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
             object-fit: contain; z-index: 1; border-radius: 4px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
         }
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; cursor: default; touch-action: none; display: none;
+            z-index: 10; cursor: default; 
         }
         
         #upload-prompt {
@@ -47,7 +47,7 @@
 
         .ipad-dock { 
             position: absolute; bottom: 12px; left: 15px; z-index: 100; 
-            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
+            display: flex; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
             padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
             align-items: center; max-width: 85vw; overflow-x: auto;
@@ -69,8 +69,10 @@
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
+        /* Toolbar Collapse Hidden Class */
         .toolbar-hidden { display: none !important; }
 
+        /* Translucent Side Nav Buttons */
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
             width: 36px; height: 50px; background: rgba(20, 20, 25, 0.25); border: 1px solid rgba(255,255,255,0.05);
@@ -142,7 +144,7 @@
             <input type="file" id="converter-upload" accept=".pptx, .ppt" style="display: none;">
         </div>
 
-        <img id="slide-image" src="">
+        <img id="slide-image" src="" style="display: none;">
         <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
@@ -169,6 +171,7 @@
                 </select>
             </div>
             
+            <!-- PURE NATURAL AUDIO ENGINE -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> नेचुरल ऑडियो मोड</div>
             
             <div class="rec-setting-item">
@@ -189,6 +192,7 @@
             </div>
             <div class="setting-desc">आवाज़ के वॉल्यूम को आरामदायक और सही स्तर पर लॉक रखता है।</div>
 
+            <!-- ADVANCED VIDEO SETTINGS -->
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
@@ -207,6 +211,7 @@
                 </select>
             </div>
 
+            <!-- MANUAL PERMISSION BUTTON -->
             <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
             </button>
@@ -228,13 +233,16 @@
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
+        <!-- COLLAPSE/HIDE BUTTON -->
         <button class="dock-btn" id="collapse-toolbar-btn" title="सिर्फ चालू टूल रखें / सब दिखाएं" style="color: #0a84ff;"><i class="fas fa-compress-alt text-[9px]"></i></button>
+        <!-- SAVE PDF TOOL -->
         <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[9px]"></i></button>
     </div>
 
     <script>
+        // PDF & UI Setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let slideInkImages = {}; let screenDirty = true;
+        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -291,7 +299,7 @@
             }
         });
 
-        // PPT to PDF Converter
+        // PPT to PDF Converter Integration Feature
         converterUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -415,10 +423,7 @@
         });
 
         function startApp() {
-            loadingScreen.style.display = 'none'; 
-            uploadPrompt.style.display = 'none';
-            slideImage.style.display = 'block';
-            canvas.style.display = 'block';
+            loadingScreen.style.display = 'none'; slideImage.style.display = 'block';
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
             document.getElementById('left-nav').style.display = 'flex';
@@ -466,13 +471,11 @@
             setTimeout(() => { screenDirty = true; }, 400);
         });
 
-        // FULLY ROBUST & INSTANT DRAWING ENGINE
+        // Drawing Engine
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
-        let isDrawing = false, currentMode = 'glow', currentColor = '#ffff00';
-        let lastX = 0, lastY = 0;
+        let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
         const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
-        const penToolsArr = [tools['glow'], tools['normal'], tools['highlighter'], tools['eraser']];
 
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
@@ -492,100 +495,30 @@
         tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
         document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); screenDirty = true; });
 
-        canvas.addEventListener('pointerdown', (e) => {
-            isDrawing = true;
-            lastX = e.clientX;
-            lastY = e.clientY;
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
-            screenDirty = true;
-        });
-
+        canvas.addEventListener('pointerdown', (e) => { isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); screenDirty = true; });
         canvas.addEventListener('pointermove', (e) => {
-            if (!isDrawing) return;
-            const currentX = e.clientX;
-            const currentY = e.clientY;
-            let baseSize = parseInt(sizeSlider.value);
+            if (!isDrawing) return; points.push({x: e.clientX, y: e.clientY}); let baseSize = parseInt(sizeSlider.value);
             
-            if (currentMode === 'eraser') { 
-                ctx.globalCompositeOperation = 'destination-out'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = 'rgba(0,0,0,1)'; 
-            } else if (currentMode === 'highlighter') { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = currentColor + '55'; 
-            } else if (currentMode === 'glow') { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 15; 
-                ctx.shadowColor = currentColor; 
-                ctx.strokeStyle = currentColor; 
-            } else { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = currentColor; 
-            }
+            if (currentMode === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; } 
+            else if (currentMode === 'highlighter') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; } 
+            else if (currentMode === 'glow') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 15; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; } 
+            else { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; }
 
-            ctx.lineTo(currentX, currentY);
-            ctx.stroke();
-            
-            lastX = currentX;
-            lastY = currentY;
-            screenDirty = true;
-        });
-
-        canvas.addEventListener('pointerup', (e) => {
-            if (isDrawing) {
-                isDrawing = false;
-                ctx.closePath();
-                try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
-                saveCurrentInk();
-                screenDirty = true;
+            if (points.length >= 3) {
+                const controlPoint = points[points.length - 2];
+                const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
+                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y); screenDirty = true;
             }
         });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
-        canvas.addEventListener('pointercancel', (e) => {
-            if (isDrawing) {
-                isDrawing = false;
-                ctx.closePath();
-                try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
-                saveCurrentInk();
-                screenDirty = true;
-            }
-        });
-
-        function saveCurrentInk() { 
-            if(slides.length > 0) {
-                const dataUrl = canvas.toDataURL();
-                slideInks[currentSlideIndex] = dataUrl;
-                let img = new Image();
-                img.src = dataUrl;
-                slideInkImages[currentSlideIndex] = img;
-            } 
-        }
+        function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         
         function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            if (slideInkImages[currentSlideIndex]) {
-                let img = slideInkImages[currentSlideIndex];
-                if (img.complete) {
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                } else {
-                    img.onload = () => {
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        screenDirty = true;
-                    };
-                }
-                screenDirty = true;
-            } else if (slideInks[currentSlideIndex]) { 
+            if (slideInks[currentSlideIndex]) { 
                 let img = new Image(); 
                 img.src = slideInks[currentSlideIndex]; 
-                slideInkImages[currentSlideIndex] = img;
                 img.onload = () => { 
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
                     screenDirty = true; 
@@ -593,19 +526,23 @@
             } 
         }
 
+        // TOOLBAR COLLAPSE / HIDE FEATURE
         let isToolbarCollapsed = false;
         const collapseBtn = document.getElementById('collapse-toolbar-btn');
 
         function updateToolbarCollapseView() {
-            penToolsArr.forEach(btn => {
+            const dockChildren = Array.from(toolbar.children);
+            dockChildren.forEach(child => {
+                if (child.id === 'slide-counter' || child.id === 'collapse-toolbar-btn' || child.id === 'save-pdf-btn') return;
+                
                 if (isToolbarCollapsed) {
-                    if (btn.classList.contains('active')) {
-                        btn.classList.remove('toolbar-hidden');
+                    if (child.classList.contains('active') || child.id === 'pen-size' || child.classList.contains('color-picker-wrapper')) {
+                        child.classList.remove('toolbar-hidden');
                     } else {
-                        btn.classList.add('toolbar-hidden');
+                        child.classList.add('toolbar-hidden');
                     }
                 } else {
-                    btn.classList.remove('toolbar-hidden');
+                    child.classList.remove('toolbar-hidden');
                 }
             });
         }
@@ -616,6 +553,7 @@
             collapseBtn.innerHTML = isToolbarCollapsed ? '<i class="fas fa-expand-alt text-[9px]"></i>' : '<i class="fas fa-compress-alt text-[9px]"></i>';
         });
 
+        // SAVE PDF WITH DRAWN INKS FEATURE
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
             if (slides.length === 0) {
@@ -629,70 +567,50 @@
 
             try {
                 const { jsPDF } = window.jspdf;
-                let pdf = null;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [1280, 720]
+                });
 
                 for (let i = 0; i < slides.length; i++) {
                     const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = canvas.width || 1280;
-                    tempCanvas.height = canvas.height || 720;
-                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = 1280;
+                    tempCanvas.height = 720;
+                    const tCtx = tempCanvas.getContext('2d');
 
-                    tempCtx.fillStyle = '#030305';
-                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-                    if (slides[i]) {
-                        await new Promise((resolve) => {
-                            const img = new Image();
-                            img.crossOrigin = "anonymous";
-                            img.onload = () => {
-                                let hRatio = tempCanvas.width / img.naturalWidth;
-                                let vRatio = tempCanvas.height / img.naturalHeight;
-                                let ratio = Math.min(hRatio, vRatio);
-                                let centerShiftX = (tempCanvas.width - img.naturalWidth * ratio) / 2;
-                                let centerShiftY = (tempCanvas.height - img.naturalHeight * ratio) / 2;
-                                tempCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, centerShiftX, centerShiftY, img.naturalWidth * ratio, img.naturalHeight * ratio);
-                                resolve();
-                            };
-                            img.onerror = resolve;
-                            img.src = slides[i];
-                        });
-                    }
+                    const slideImg = await loadImage(slides[i]);
+                    tCtx.drawImage(slideImg, 0, 0, 1280, 720);
 
                     if (slideInks[i]) {
-                        await new Promise((resolve) => {
-                            const inkImg = new Image();
-                            inkImg.onload = () => {
-                                tempCtx.drawImage(inkImg, 0, 0, tempCanvas.width, tempCanvas.height);
-                                resolve();
-                            };
-                            inkImg.onerror = resolve;
-                            inkImg.src = slideInks[i];
-                        });
+                        const inkImg = await loadImage(slideInks[i]);
+                        tCtx.drawImage(inkImg, 0, 0, 1280, 720);
                     }
 
-                    const imgData = tempCanvas.toDataURL('image/jpeg', 0.85);
-                    if (!pdf) {
-                        pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [tempCanvas.width, tempCanvas.height] });
-                    } else {
-                        pdf.addPage([tempCanvas.width, tempCanvas.height], 'landscape');
-                    }
-                    pdf.addImage(imgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
+                    const compositeDataUrl = tempCanvas.toDataURL('image/jpeg', 0.85);
+                    if (i > 0) pdf.addPage([1280, 720], 'landscape');
+                    pdf.addImage(compositeDataUrl, 'JPEG', 0, 0, 1280, 720);
                 }
 
-                const pdfBlob = pdf.output('blob');
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-                const a = document.createElement('a');
-                a.href = pdfUrl;
-                a.download = `EduCreator_Annotations_${Date.now()}.pdf`;
-                a.click();
-                loadingScreen.style.display = 'none';
-                alert("PDF सफलतापर्वक सेव हो गई!");
+                pdf.save("Annotated_Class_Notes.pdf");
             } catch (err) {
                 alert("PDF सेव करने में त्रुटि: " + err.message);
+            } finally {
                 loadingScreen.style.display = 'none';
             }
         });
 
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        // RECORDER & AUDIO ENGINE SETTINGS MENU TOGGLE
         const btnSettings = document.getElementById('btn-settings');
         const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => {
@@ -702,20 +620,19 @@
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
         recSettingsMenu.addEventListener('click', (e) => { e.stopPropagation(); });
 
-        let mediaRecorder; let recordedChunks = []; let recordingTimer = null; let secondsCount = 0;
-        let audioCtx, micStream, destStream, sourceNode, filterNode, eqNode, compressorNode;
-        const btnStart = document.getElementById('btn-start');
-        const btnStop = document.getElementById('btn-stop');
-        const timerText = document.getElementById('timer-text');
-        const btnRequestPermission = document.getElementById('btn-request-permission');
+        // RECORDING LOGIC WITH NATURAL AUDIO ENGINE
+        let mediaRecorder; let recordedChunks = []; let recordingStartTime = 0; let timerInterval = null;
+        const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
+        
+        let audioContext = null; let micStream = null;
 
-        btnRequestPermission.addEventListener('click', async () => {
+        document.getElementById('btn-request-permission').addEventListener('click', async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                alert("माइक परमिशन सफलतापूर्वक मिल गई है!");
-                stream.getTracks().forEach(t => t.stop());
-            } catch(err) {
-                alert("माइक परमिशन नहीं मिल पाई: " + err.message);
+                alert("माइक्रोफोन की परमिशन सफलतामिल गई है!");
+                stream.getTracks().forEach(track => track.stop());
+            } catch (err) {
+                alert("परमिशन नहीं मिल पाई: " + err.message);
             }
         });
 
@@ -725,11 +642,24 @@
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
                 const fps = parseInt(document.getElementById('setting-fps').value);
-                const bitrate = parseFloat(document.getElementById('setting-bitrate').value) * 1000000;
+                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value);
 
-                const canvasStream = canvas.captureStream(fps);
-                let finalStream = canvasStream;
+                let videoWidth = 1280, videoHeight = 720;
+                if (quality === 'high') { videoWidth = 1920; videoHeight = 1080; }
 
+                const presentationArea = document.getElementById('presentation-area');
+                
+                // Capture canvas/video stream using html2canvas style render optimization via canvas stream
+                const combinedCanvas = document.createElement('canvas');
+                combinedCanvas.width = videoWidth;
+                combinedCanvas.height = videoHeight;
+                const cCtx = combinedCanvas.getContext('2d');
+
+                let streamFPS = fps;
+                const screenStream = combinedCanvas.captureStream(streamFPS);
+
+                // Setup Audio Pipeline with Natural Sound Engine Filters
+                let finalAudioStream = null;
                 if (useMic) {
                     try {
                         micStream = await navigator.mediaDevices.getUserMedia({ 
@@ -737,66 +667,94 @@
                             video: false 
                         });
 
-                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        if (audioCtx.state === 'suspended') { await audioCtx.resume(); }
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const source = audioContext.createMediaStreamSource(micStream);
+                        let lastNode = source;
 
-                        sourceNode = audioCtx.createMediaStreamSource(micStream);
-                        let lastNode = sourceNode;
-
+                        // 1. Low-Rumble Filter (Highpass Filter)
                         if (document.getElementById('setting-anti-crackle').checked) {
-                            filterNode = audioCtx.createBiquadFilter();
-                            filterNode.type = 'highpass';
-                            filterNode.frequency.value = 85;
-                            lastNode.connect(filterNode);
-                            lastNode = filterNode;
+                            const highpass = audioContext.createBiquadFilter();
+                            highpass.type = 'highpass';
+                            highpass.frequency.setValueAtTime(80, audioContext.currentTime);
+                            lastNode.connect(highpass);
+                            lastNode = highpass;
                         }
 
+                        // 2. Gentle Soft Tone (Peaking EQ for warm vocal clarity)
                         if (document.getElementById('setting-sl40-eq').checked) {
-                            eqNode = audioCtx.createBiquadFilter();
-                            eqNode.type = 'peaking';
-                            eqNode.frequency.value = 3000;
-                            eqNode.gain.value = -2.5;
-                            eqNode.Q.value = 1.0;
-                            lastNode.connect(eqNode);
-                            lastNode = eqNode;
+                            const eq = audioContext.createBiquadFilter();
+                            eq.type = 'peaking';
+                            eq.frequency.setValueAtTime(2500, audioContext.currentTime);
+                            eq.gain.setValueAtTime(2.5, audioContext.currentTime);
+                            eq.Q.setValueAtTime(1.0, audioContext.currentTime);
+                            lastNode.connect(eq);
+                            lastNode = eq;
                         }
 
+                        // 3. Comfort Volume Leveler (Dynamics Compressor)
                         if (document.getElementById('setting-compressor').checked) {
-                            compressorNode = audioCtx.createDynamicsCompressor();
-                            compressorNode.threshold.value = -24;
-                            compressorNode.knee.value = 30;
-                            compressorNode.ratio.value = 4;
-                            compressorNode.attack.value = 0.003;
-                            compressorNode.release.value = 0.25;
-                            lastNode.connect(compressorNode);
-                            lastNode = compressorNode;
+                            const compressor = audioContext.createDynamicsCompressor();
+                            compressor.threshold.setValueAtTime(-20, audioContext.currentTime);
+                            compressor.knee.setValueAtTime(10, audioContext.currentTime);
+                            compressor.ratio.setValueAtTime(4, audioContext.currentTime);
+                            compressor.attack.setValueAtTime(0.003, audioContext.currentTime);
+                            compressor.release.setValueAtTime(0.250, audioContext.currentTime);
+                            lastNode.connect(compressor);
+                            lastNode = compressor;
                         }
 
-                        destStream = audioCtx.createMediaStreamDestination();
-                        lastNode.connect(destStream);
-
-                        if (destStream.stream.getAudioTracks().length > 0) {
-                            canvasStream.addTrack(destStream.stream.getAudioTracks()[0]);
-                        }
+                        const dest = audioContext.createMediaStreamDestination();
+                        lastNode.connect(dest);
+                        finalAudioStream = dest.stream;
                     } catch (micErr) {
-                        console.warn("Mic setup warning:", micErr);
+                        console.warn("माइक्रोफोन एक्सेस नहीं हो पाया, केवल वीडियो रिकॉर्ड होगी।", micErr);
                     }
                 }
 
-                let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+                if (finalAudioStream) {
+                    finalAudioStream.getAudioTracks().forEach(track => screenStream.addTrack(track));
+                }
+
+                // Continuous render loop to composite slide image & drawing canvas smoothly
+                let isRecordingActive = true;
+                function renderLoop() {
+                    if (!isRecordingActive) return;
+                    cCtx.fillStyle = '#030305';
+                    cCtx.fillRect(0, 0, videoWidth, videoHeight);
+
+                    if (slideImage.complete && slideImage.naturalWidth > 0) {
+                        cCtx.drawImage(slideImage, 0, 0, videoWidth, videoHeight);
+                    }
+                    if (canvas.width > 0 && canvas.height > 0) {
+                        cCtx.drawImage(canvas, 0, 0, videoWidth, videoHeight);
+                    }
+                    requestAnimationFrame(renderLoop);
+                }
+                renderLoop();
+
+                let options = { mimeType: 'video/webm; codecs=vp9,opus' };
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                     options = { mimeType: 'video/webm' };
                 }
-                options.videoBitsPerSecond = bitrate;
 
-                mediaRecorder = new MediaRecorder(finalStream, options);
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder = new MediaRecorder(screenStream, {
+                    ...options,
+                    videoBitsPerSecond: bitrateMbps * 1024 * 1024
+                });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
                 mediaRecorder.onstop = () => {
+                    isRecordingActive = false;
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `ProEduCreator_Recording_${Date.now()}.webm`;
+                    a.download = `Lecture_Recording_${Date.now()}.webm`;
                     a.click();
                 };
 
@@ -804,17 +762,18 @@
                 btnStart.style.display = 'none';
                 btnStop.style.display = 'flex';
                 timerText.style.display = 'inline-block';
-                secondsCount = 0;
-                timerText.innerText = "00:00";
-                recordingTimer = setInterval(() => {
-                    secondsCount++;
-                    let m = Math.floor(secondsCount / 60).toString().padStart(2, '0');
-                    let s = (secondsCount % 60).toString().padStart(2, '0');
-                    timerText.innerText = `${m}:${s}`;
+
+                recordingStartTime = Date.now();
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                    const secs = String(elapsed % 60).padStart(2, '0');
+                    timerText.innerText = `${mins}:${secs}`;
                 }, 1000);
 
             } catch (err) {
-                alert("रिकॉर्डिंग शुरू करने में त्रुटि: " + err.message);
+                alert("रिकॉर्डर शुरू करने में त्रुटि: " + err.message);
             }
         });
 
@@ -822,10 +781,13 @@
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
-            if (recordingTimer) clearInterval(recordingTimer);
-            if (micStream) micStream.getTracks().forEach(t => t.stop());
-            if (audioCtx) audioCtx.close();
-
+            if (micStream) {
+                micStream.getTracks().forEach(track => track.stop());
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            clearInterval(timerInterval);
             btnStop.style.display = 'none';
             btnStart.style.display = 'flex';
             timerText.style.display = 'none';
