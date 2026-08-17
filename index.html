@@ -792,8 +792,14 @@
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
+                    // यहाँ डिफ़ॉल्ट रूप से हार्डवेयर नॉइज सप्रेसर और इको कैंसिलेशन को मजबूत किया गया है ताकि अजीब साउंड न आए
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: sampleRateVal }, 
+                        audio: { 
+                            noiseSuppression: true, 
+                            echoCancellation: true, 
+                            autoGainControl: false, 
+                            sampleRate: sampleRateVal 
+                        }, 
                         video: false 
                     });
 
@@ -805,67 +811,50 @@
 
                     let currentNode = source;
 
-                    if (useMoreXlr) {
-                        if (noiseGateVal !== 'off') {
-                            const gateNode = audioCtx.createDynamicsCompressor();
-                            gateNode.threshold.value = noiseGateVal === 'aggressive' ? -30 : -45;
-                            gateNode.knee.value = 10;
-                            gateNode.ratio.value = 4;
-                            currentNode.connect(gateNode);
-                            currentNode = gateNode;
-                        }
-
-                        if (useDeEsser) {
-                            const deEsserNode = audioCtx.createBiquadFilter();
-                            deEsserNode.type = 'peaking';
-                            deEsserNode.frequency.value = 6500;
-                            deEsserNode.gain.value = -4.0;
-                            deEsserNode.Q.value = 2.0;
-                            currentNode.connect(deEsserNode);
-                            currentNode = deEsserNode;
-                        }
-
-                        if (paramEqVal !== 'flat') {
-                            const eqNode = audioCtx.createBiquadFilter();
-                            if (paramEqVal === 'podcast') {
-                                eqNode.type = 'peaking';
-                                eqNode.frequency.value = 300;
-                                eqNode.gain.value = 3.5;
-                                eqNode.Q.value = 1.0;
-                            } else if (paramEqVal === 'crisp') {
-                                eqNode.type = 'highshelf';
-                                eqNode.frequency.value = 4000;
-                                eqNode.gain.value = 4.0;
-                            }
-                            currentNode.connect(eqNode);
-                            currentNode = eqNode;
-                        }
+                    // साफ़ और क्रैकल-मुक्त आवाज़ के लिए क्लीन नॉइज गेट और फ़िल्टरिंग
+                    if (noiseGateVal !== 'off') {
+                        const gateNode = audioCtx.createDynamicsCompressor();
+                        gateNode.threshold.value = noiseGateVal === 'aggressive' ? -35 : -45;
+                        gateNode.knee.value = 6;
+                        gateNode.ratio.value = 12;
+                        gateNode.attack.value = 0.003;
+                        gateNode.release.value = 0.1;
+                        currentNode.connect(gateNode);
+                        currentNode = gateNode;
                     }
 
-                    const gentleHighPass = audioCtx.createBiquadFilter();
-                    gentleHighPass.type = 'highpass';
-                    gentleHighPass.frequency.value = 70;
+                    if (useAntiCrackle || useMoreXlr) {
+                        const cleanHighPass = audioCtx.createBiquadFilter();
+                        cleanHighPass.type = 'highpass';
+                        cleanHighPass.frequency.value = 90; // हवा और फटने की आवाज़ को पूरी तरह रोकने के लिए
+                        currentNode.connect(cleanHighPass);
+                        currentNode = cleanHighPass;
+                    }
 
-                    const softTrebleCut = audioCtx.createBiquadFilter();
-                    softTrebleCut.type = 'highshelf';
-                    softTrebleCut.frequency.value = 5200;
-                    softTrebleCut.gain.value = -3.0; 
+                    if (useDeEsser) {
+                        const deEsserNode = audioCtx.createBiquadFilter();
+                        deEsserNode.type = 'peaking';
+                        deEsserNode.frequency.value = 6000;
+                        deEsserNode.gain.value = -3.5;
+                        deEsserNode.Q.value = 1.5;
+                        currentNode.connect(deEsserNode);
+                        currentNode = deEsserNode;
+                    }
 
                     const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.72 * (useMoreXlr ? preampGainVal : 1.0);
+                    masterGain.gain.value = 0.85 * (useMoreXlr ? preampGainVal : 1.0);
 
-                    const gentleCompressor = audioCtx.createDynamicsCompressor();
-                    gentleCompressor.threshold.value = -18;
-                    gentleCompressor.knee.value = 20;
-                    gentleCompressor.ratio.value = 1.5;
-                    gentleCompressor.attack.value = 0.03;
-                    gentleCompressor.release.value = 0.2;
+                    const finalCompressor = audioCtx.createDynamicsCompressor();
+                    finalCompressor.threshold.value = -16;
+                    finalCompressor.knee.value = 12;
+                    finalCompressor.ratio.value = 3.0;
+                    finalCompressor.attack.value = 0.01;
+                    finalCompressor.release.value = 0.15;
 
-                    if (useAntiCrackle) { currentNode.connect(gentleHighPass); currentNode = gentleHighPass; }
-                    if (useSl40Eq) { currentNode.connect(softTrebleCut); currentNode = softTrebleCut; }
-                    currentNode.connect(masterGain); currentNode = masterGain;
-                    if (useCompressor) { currentNode.connect(gentleCompressor); currentNode = gentleCompressor; }
-                    currentNode.connect(destination);
+                    currentNode.connect(masterGain);
+                    masterGain.connect(finalCompressor);
+                    finalCompressor.connect(destination);
+
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
