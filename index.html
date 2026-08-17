@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Manual Audio Edition</title>
+    <title>Pro EduCreator Studio - Clean Audio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -96,7 +96,7 @@
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
         #rec-settings-menu {
-            position: absolute; top: 40px; right: 0; width: 330px; max-height: 80vh; overflow-y: auto;
+            position: absolute; top: 40px; right: 0; width: 300px; max-height: 80vh; overflow-y: auto;
             background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
             backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
@@ -153,7 +153,7 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
-        <!-- RECORDING SETTINGS & MANUAL AUDIO FILTERS MENU -->
+        <!-- RECORDING SETTINGS & CLEAN AUDIO MENU -->
         <div id="rec-settings-menu">
             <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स</div>
             <div class="rec-setting-item">
@@ -168,36 +168,22 @@
                 </select>
             </div>
             
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-sliders"></i> मैन्युअल ऑडियो फिल्टर्स (Manual FX)</div>
-            <div class="setting-desc">शुरुआत में सब कुछ ऑफ / नेचुरल रहेगा। जरूरत पड़ने पर अपनी पसंद के अनुसार टिक करें।</div>
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-sliders"></i> ऑडियो फिल्टर्स (केवल 2 जरूरी)</div>
+            <div class="setting-desc">शुरुआत में सब ऑफ रहता है (Raw Audio)। जरूरत पड़ने पर टिक करें।</div>
 
-            <!-- Manual Filter 1: Natural Noise Gate -->
+            <!-- Filter 1: Background Noise Removal -->
             <div class="rec-setting-item">
-                <span class="font-semibold text-blue-400">Manual Noise Gate (शोर हटाएं):</span>
-                <input type="checkbox" id="setting-manual-noisegate">
+                <span class="font-semibold text-blue-400">Background Noise Remove:</span>
+                <input type="checkbox" id="setting-noise-remove">
             </div>
-            <div class="setting-desc">बैकग्राउंड की हल्की गूंज या पंखे की आवाज को ब्लॉक करता है।</div>
+            <div class="setting-desc">पंखे या आस-पास के बैकग्राउंड शोर को हटाकर आवाज़ साफ़ करता है।</div>
 
-            <!-- Manual Filter 2: High-Pass Rumble Filter -->
+            <!-- Filter 2: Audio Smooth & Vocal Natural -->
             <div class="rec-setting-item">
-                <span class="font-semibold text-yellow-400">High-Pass Filter (माइक थड हटाए):</span>
-                <input type="checkbox" id="setting-manual-highpass">
+                <span class="font-semibold text-green-400">Audio Smooth & Natural:</span>
+                <input type="checkbox" id="setting-audio-smooth">
             </div>
-            <div class="setting-desc">माइक को छूने या हिलाने पर होने वाली भारी आवाज/थड़ को रोकता है।</div>
-
-            <!-- Manual Filter 3: Natural Vocal Warmth EQ -->
-            <div class="rec-setting-item">
-                <span class="font-semibold text-green-400">Natural Vocal Warmth (स्पष्टता):</span>
-                <input type="checkbox" id="setting-manual-eq">
-            </div>
-            <div class="setting-desc">आवाज़ को बिना कृत्रिम बनाए साफ, नेचुरल और क्रिस्प रखता है।</div>
-
-            <!-- Manual Filter 4: Volume Leveler / Compressor -->
-            <div class="rec-setting-item">
-                <span class="font-semibold text-purple-400">Volume Leveler (कम्प्रेशर):</span>
-                <input type="checkbox" id="setting-manual-compressor">
-            </div>
-            <div class="setting-desc">आवाज़ के उतार-चढ़ाव को संतुलित और एक समान रखता है।</div>
+            <div class="setting-desc">आवाज़ को बिना बदले बेहद नेचुरल, सॉफ्ट और क्रिस्प बनाता है।</div>
 
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
@@ -700,11 +686,9 @@
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
                 
-                // Manual Filters State
-                const useManualNoiseGate = document.getElementById('setting-manual-noisegate').checked;
-                const useManualHighPass = document.getElementById('setting-manual-highpass').checked;
-                const useManualEq = document.getElementById('setting-manual-eq').checked;
-                const useManualCompressor = document.getElementById('setting-manual-compressor').checked;
+                // Only 2 Selected Audio Filters
+                const useNoiseRemove = document.getElementById('setting-noise-remove').checked;
+                const useAudioSmooth = document.getElementById('setting-audio-smooth').checked;
 
                 const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
@@ -738,6 +722,7 @@
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
+                    // Browser level hardware noise suppression active by default
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
                         audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false }, 
                         video: false 
@@ -751,46 +736,33 @@
 
                     let currentNode = source;
 
-                    // 1. Manual Noise Gate
-                    if (useManualNoiseGate) {
-                        const gateNode = audioCtx.createDynamicsCompressor();
-                        gateNode.threshold.value = -40;
-                        gateNode.knee.value = 10;
-                        gateNode.ratio.value = 4;
-                        currentNode.connect(gateNode);
-                        currentNode = gateNode;
+                    // 1. Background Noise Removal Filter (Gentle Noise Gate)
+                    if (useNoiseRemove) {
+                        const noiseGate = audioCtx.createDynamicsCompressor();
+                        noiseGate.threshold.value = -45; // cuts out subtle background hum/fan noise
+                        noiseGate.knee.value = 12;
+                        noiseGate.ratio.value = 4;
+                        currentNode.connect(noiseGate);
+                        currentNode = noiseGate;
                     }
 
-                    // 2. Manual High-Pass Filter (Removes thuds & low rumble)
-                    if (useManualHighPass) {
+                    // 2. Audio Smooth & Natural Vocal Filter (Soft Highpass + Gentle Warmth)
+                    if (useAudioSmooth) {
+                        // High-pass to remove low rumble/thuds
                         const highPass = audioCtx.createBiquadFilter();
                         highPass.type = 'highpass';
-                        highPass.frequency.value = 80;
+                        highPass.frequency.value = 75;
+
+                        // Mild EQ peaking for natural crisp vocal clarity
+                        const vocalEq = audioCtx.createBiquadFilter();
+                        vocalEq.type = 'peaking';
+                        vocalEq.frequency.value = 2000;
+                        vocalEq.gain.value = 2.5;
+                        vocalEq.Q.value = 1.0;
+
                         currentNode.connect(highPass);
-                        currentNode = highPass;
-                    }
-
-                    // 3. Manual Natural Vocal Warmth (EQ)
-                    if (useManualEq) {
-                        const eqNode = audioCtx.createBiquadFilter();
-                        eqNode.type = 'peaking';
-                        eqNode.frequency.value = 2500;
-                        eqNode.gain.value = 3.0;
-                        eqNode.Q.value = 1.0;
-                        currentNode.connect(eqNode);
-                        currentNode = eqNode;
-                    }
-
-                    // 4. Manual Volume Leveler (Compressor)
-                    if (useManualCompressor) {
-                        const compressor = audioCtx.createDynamicsCompressor();
-                        compressor.threshold.value = -20;
-                        compressor.knee.value = 15;
-                        compressor.ratio.value = 2;
-                        compressor.attack.value = 0.03;
-                        compressor.release.value = 0.25;
-                        currentNode.connect(compressor);
-                        currentNode = compressor;
+                        highPass.connect(vocalEq);
+                        currentNode = vocalEq;
                     }
 
                     currentNode.connect(destination);
