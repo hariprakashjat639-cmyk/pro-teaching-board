@@ -452,8 +452,11 @@
         });
 
         const hideUiBtn = document.getElementById('hide-ui-btn');
-        const eraserBtn = document.getElementById('eraser-btn'); // इरेज़र बटन का reference
+        const eraserBtn = document.getElementById('eraser-btn');
+        const normalPenBtn = document.getElementById('normal-pen-btn');
+        const glowPenBtn = document.getElementById('glow-pen-btn');
         let isUiHidden = false;
+
         hideUiBtn.addEventListener('click', () => {
             isUiHidden = !isUiHidden;
             const leftNav = document.getElementById('left-nav');
@@ -465,8 +468,7 @@
                 rightNav.style.display = 'none';
                 recorderUi.style.display = 'none';
                 Array.from(toolbar.children).forEach(child => {
-                    // अब इरेज़र बटन (eraser-btn), हाईड/शो बटन और स्लाइड काउंटर को छुपाया नहीं जाएगा, बाकी सब छुप जाएंगे
-                    if (child !== hideUiBtn && child.id !== 'slide-counter' && child !== eraserBtn) {
+                    if (child !== hideUiBtn && child.id !== 'slide-counter' && child !== eraserBtn && child !== normalPenBtn && child !== glowPenBtn) {
                         child.style.display = 'none';
                     }
                 });
@@ -490,7 +492,7 @@
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
-        const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': eraserBtn };
+        const tools = { 'glow': glowPenBtn, 'normal': normalPenBtn, 'highlighter': document.getElementById('highlighter-btn'), 'eraser': eraserBtn };
 
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
@@ -524,7 +526,18 @@
         canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
-        function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
+        function restoreInk() { 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            ctx.shadowBlur = 0; 
+            if (slideInks[currentSlideIndex]) { 
+                let img = new Image(); 
+                img.src = slideInks[currentSlideIndex]; 
+                img.onload = () => { 
+                    ctx.drawImage(img, 0, 0); 
+                    screenDirty = true; 
+                }; 
+            } 
+        }
 
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
