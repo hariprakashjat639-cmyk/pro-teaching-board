@@ -52,14 +52,6 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
             align-items: center; max-width: 85vw; overflow-x: auto;
             cursor: move; touch-action: none;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        
-        /* Auto Hide Class */
-        .ipad-dock.autohide {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(20px);
         }
         
         .dock-btn { 
@@ -301,32 +293,6 @@
             }
         });
 
-        // ==========================================
-        // AUTO-HIDE TOOLBAR FEATURE (ऑटो-हाइड लॉजिक)
-        // ==========================================
-        let hideTimeout;
-        function triggerAutoHide() {
-            // अगर फाइल खुली हुई है तभी ऑटो-हाइड काम करे
-            if (slides.length > 0) {
-                toolbar.classList.remove('autohide');
-                clearTimeout(hideTimeout);
-                // 4 सेकंड तक कोई हरकत न होने पर टूलबार छुप जाएगा
-                hideTimeout = setTimeout(() => {
-                    if (!isDraggingToolbar) {
-                        toolbar.classList.add('autohide');
-                    }
-                }, 4000);
-            }
-        }
-
-        // स्क्रीन पर कहीं भी क्लिक या टच करने पर टूलबार तुरंत वापस आ जाएगा
-        window.addEventListener('pointerdown', (e) => {
-            triggerAutoHide();
-        });
-        window.addEventListener('mousemove', () => {
-            triggerAutoHide();
-        });
-
         // PPT to PDF Converter Integration Feature
         converterUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -457,7 +423,6 @@
             document.getElementById('left-nav').style.display = 'flex';
             document.getElementById('right-nav').style.display = 'flex';
             loadSlide(0);
-            triggerAutoHide();
         }
 
         function loadSlide(index) {
@@ -587,26 +552,175 @@
                         });
                     }
 
-                    const imgData = tempCanvas.toDataURL('image/jpeg', 0.85);
+                    const pageImgData = tempCanvas.toDataURL('image/jpeg', 0.95);
 
                     if (i === 0) {
                         pdf = new jsPDF({
-                            orientation: tempCanvas.width > tempCanvas.height ? 'landscape' : 'portrait',
+                            orientation: tempCanvas.width >= tempCanvas.height ? 'landscape' : 'portrait',
                             unit: 'px',
                             format: [tempCanvas.width, tempCanvas.height]
                         });
+                        pdf.addImage(pageImgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                     } else {
-                        pdf.addPage([tempCanvas.width, tempCanvas.height], tempCanvas.width > tempCanvas.height ? 'landscape' : 'portrait');
+                        pdf.addPage([tempCanvas.width, tempCanvas.height], tempCanvas.width >= tempCanvas.height ? 'landscape' : 'portrait');
+                        pdf.addImage(pageImgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                     }
-
-                    pdf.addImage(imgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                 }
 
-                pdf.save("Annotated_Class_Notes.pdf");
-                loadingScreen.style.display = 'none';
+                pdf.save(`Class_Notes_With_Inks_${new Date().getTime()}.pdf`);
             } catch (err) {
-                alert("PDF सेव करने में त्रुटि: " + err.message);
+                alert("PDF सेव करने में समस्या आई: " + err.message);
+            } finally {
                 loadingScreen.style.display = 'none';
+            }
+        });
+
+        // Settings Menu Toggle
+        const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
+        btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
+        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
+
+        // Manual Permission Request
+        const btnRequestPermission = document.getElementById('btn-request-permission');
+        if(btnRequestPermission) {
+            btnRequestPermission.addEventListener('click', async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    stream.getTracks().forEach(track => track.stop());
+                    alert("माइक्रोफोन की अनुमति मिल गई है!");
+                } catch (err) {
+                    alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
+                }
+            });
+        }
+
+        // PURE & GENTLE AUDIO ENGINE
+        let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
+        
+        const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
+
+        btnStart.addEventListener('click', async () => {
+            try {
+                const useMic = document.getElementById('setting-mic').checked;
+                const quality = document.getElementById('setting-quality').value;
+                const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
+                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
+                
+                const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
+                const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
+                const useCompressor = document.getElementById('setting-compressor').checked;
+
+                const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
+                recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
+
+                let activeSlideImg = new Image();
+                if (slides.length > 0 && slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
+
+                recordingLoopActive = true; screenDirty = true;
+                
+                function drawRecordingFrame() {
+                    if (!recordingLoopActive) return;
+                    if (screenDirty) {
+                        recCtx.fillStyle = '#030305'; recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+                        if (slides.length > 0 && slides[currentSlideIndex]) {
+                            if (activeSlideImg.src !== slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
+                            if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
+                                let hRatio = recCanvas.width / activeSlideImg.naturalWidth; let vRatio = recCanvas.height / activeSlideImg.naturalHeight; let ratio = Math.min(hRatio, vRatio);
+                                let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2; let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
+                                recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
+                            }
+                        }
+                        if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
+                        screenDirty = false;
+                    }
+                    requestAnimationFrame(drawRecordingFrame);
+                }
+                drawRecordingFrame();
+
+                const videoStream = recCanvas.captureStream(targetFps);
+                const finalStream = new MediaStream();
+                videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
+
+                if (useMic) {
+                    const micStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
+                        video: false 
+                    });
+
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+                    if (audioCtx.state === 'suspended') await audioCtx.resume();
+                    
+                    const source = audioCtx.createMediaStreamSource(micStream);
+                    const destination = audioCtx.createMediaStreamDestination();
+
+                    const gentleHighPass = audioCtx.createBiquadFilter();
+                    gentleHighPass.type = 'highpass';
+                    gentleHighPass.frequency.value = 70;
+
+                    const softTrebleCut = audioCtx.createBiquadFilter();
+                    softTrebleCut.type = 'highshelf';
+                    softTrebleCut.frequency.value = 5200;
+                    softTrebleCut.gain.value = -3.0; 
+
+                    const masterGain = audioCtx.createGain();
+                    masterGain.gain.value = 0.72;
+
+                    const gentleCompressor = audioCtx.createDynamicsCompressor();
+                    gentleCompressor.threshold.value = -18;
+                    gentleCompressor.knee.value = 20;
+                    gentleCompressor.ratio.value = 1.5;
+                    gentleCompressor.attack.value = 0.03;
+                    gentleCompressor.release.value = 0.2;
+
+                    let currentNode = source;
+                    if (useAntiCrackle) { currentNode.connect(gentleHighPass); currentNode = gentleHighPass; }
+                    if (useSl40Eq) { currentNode.connect(softTrebleCut); currentNode = softTrebleCut; }
+                    currentNode.connect(masterGain); currentNode = masterGain;
+                    if (useCompressor) { currentNode.connect(gentleCompressor); currentNode = gentleCompressor; }
+                    currentNode.connect(destination);
+                    destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+                }
+
+                let mimeType = 'video/webm;codecs=vp9,opus'; let fileExtension = 'webm';
+                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4'; } 
+                else if (MediaRecorder.isTypeSupported('video/mp4')) { mimeType = 'video/mp4'; fileExtension = 'mp4'; } 
+                else if (!MediaRecorder.isTypeSupported(mimeType)) { mimeType = 'video/webm'; }
+
+                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: bitrateMbps * 1000000 });
+                recordedChunks = [];
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+
+                mediaRecorder.onstop = () => {
+                    recordingLoopActive = false; clearInterval(timerInterval);
+                    timerText.style.display = 'none'; btnStart.style.display = 'flex'; btnStop.style.display = 'none';
+                    seconds = 0; timerText.innerText = "00:00";
+
+                    const blob = new Blob(recordedChunks, { type: mimeType });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url;
+                    a.download = `Pro_Class_Recording_${new Date().getTime()}.${fileExtension}`;
+                    a.click(); URL.revokeObjectURL(url);
+                    finalStream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start(1000); 
+                btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
+                
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0'); const secs = String(seconds % 60).padStart(2, '0');
+                    timerText.innerText = `${mins}:${secs}`;
+                }, 1000);
+
+            } catch (err) {
+                alert("रिकॉर्डिंग शुरू करने में समस्या आई: " + err.message);
+                btnStart.style.display = 'flex'; btnStop.style.display = 'none';
+            }
+        });
+
+        btnStop.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
             }
         });
     </script>
