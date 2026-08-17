@@ -69,7 +69,7 @@
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
-        /* Toolbar Collapse Hidden Class */
+        /* Toolbar Hidden Class */
         .toolbar-hidden { display: none !important; }
 
         /* Translucent Side Nav Buttons */
@@ -233,7 +233,7 @@
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
-        <!-- COLLAPSE/HIDE BUTTON (सिर्फ एक्टिव टूल दिखाने/छुपाने के लिए) -->
+        <!-- COLLAPSE/HIDE BUTTON (सिर्फ एक्टिव पेन टूल छुपाने/दिखाने के लिए) -->
         <button class="dock-btn" id="collapse-toolbar-btn" title="सिर्फ चालू टूल रखें / सब दिखाएं" style="color: #0a84ff;"><i class="fas fa-compress-alt text-[9px]"></i></button>
         <!-- SAVE PDF TOOL -->
         <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[9px]"></i></button>
@@ -242,7 +242,7 @@
     <script>
         // PDF & UI Setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
+        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let slideInkImages = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -476,6 +476,7 @@
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
         const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
+        const penToolsArr = [tools['glow'], tools['normal'], tools['highlighter'], tools['eraser']];
 
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
@@ -512,13 +513,34 @@
         });
         canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
-        function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
+        function saveCurrentInk() { 
+            if(slides.length > 0) {
+                const dataUrl = canvas.toDataURL();
+                slideInks[currentSlideIndex] = dataUrl;
+                let img = new Image();
+                img.src = dataUrl;
+                slideInkImages[currentSlideIndex] = img;
+            } 
+        }
         
+        // इंक रेस्टोरिंग और कैचिंग मेकैनिज्म को पूरी तरह स्टेबल किया गया है
         function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            if (slideInks[currentSlideIndex]) { 
+            if (slideInkImages[currentSlideIndex]) {
+                let img = slideInkImages[currentSlideIndex];
+                if (img.complete) {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                } else {
+                    img.onload = () => {
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        screenDirty = true;
+                    };
+                }
+                screenDirty = true;
+            } else if (slideInks[currentSlideIndex]) { 
                 let img = new Image(); 
                 img.src = slideInks[currentSlideIndex]; 
+                slideInkImages[currentSlideIndex] = img;
                 img.onload = () => { 
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
                     screenDirty = true; 
@@ -526,23 +548,20 @@
             } 
         }
 
-        // TOOLBAR COLLAPSE / HIDE FEATURE (Fixed with CSS Class)
+        // TOOLBAR COLLAPSE / HIDE FEATURE (सिर्फ एक्टिव पेन टूल को दिखाने/छुपाने के लिए)
         let isToolbarCollapsed = false;
         const collapseBtn = document.getElementById('collapse-toolbar-btn');
 
         function updateToolbarCollapseView() {
-            const dockChildren = Array.from(toolbar.children);
-            dockChildren.forEach(child => {
-                if (child.id === 'slide-counter' || child.id === 'collapse-toolbar-btn' || child.id === 'save-pdf-btn') return;
-                
+            penToolsArr.forEach(btn => {
                 if (isToolbarCollapsed) {
-                    if (child.classList.contains('active') || child.id === 'pen-size' || child.classList.contains('color-picker-wrapper')) {
-                        child.classList.remove('toolbar-hidden');
+                    if (btn.classList.contains('active')) {
+                        btn.classList.remove('toolbar-hidden');
                     } else {
-                        child.classList.add('toolbar-hidden');
+                        btn.classList.add('toolbar-hidden');
                     }
                 } else {
-                    child.classList.remove('toolbar-hidden');
+                    btn.classList.remove('toolbar-hidden');
                 }
             });
         }
