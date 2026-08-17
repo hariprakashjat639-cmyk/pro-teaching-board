@@ -29,12 +29,12 @@
         #slide-image { 
             width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
             object-fit: contain; z-index: 1; border-radius: 4px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none;
         }
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; cursor: default; touch-action: none; 
+            z-index: 10; cursor: default; touch-action: none; display: none;
         }
         
         #upload-prompt {
@@ -47,7 +47,7 @@
 
         .ipad-dock { 
             position: absolute; bottom: 12px; left: 15px; z-index: 100; 
-            display: flex; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
+            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
             padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
             align-items: center; max-width: 85vw; overflow-x: auto;
@@ -142,7 +142,7 @@
             <input type="file" id="converter-upload" accept=".pptx, .ppt" style="display: none;">
         </div>
 
-        <img id="slide-image" src="" style="display: none;">
+        <img id="slide-image" src="">
         <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
@@ -415,7 +415,10 @@
         });
 
         function startApp() {
-            loadingScreen.style.display = 'none'; slideImage.style.display = 'block';
+            loadingScreen.style.display = 'none'; 
+            uploadPrompt.style.display = 'none';
+            slideImage.style.display = 'block';
+            canvas.style.display = 'block';
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
             document.getElementById('left-nav').style.display = 'flex';
@@ -463,7 +466,7 @@
             setTimeout(() => { screenDirty = true; }, 400);
         });
 
-        // FULLY ROBUST & INSTANT DRAWING ENGINE (FIXED)
+        // FULLY ROBUST & INSTANT DRAWING ENGINE
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, currentMode = 'glow', currentColor = '#ffff00';
         let lastX = 0, lastY = 0;
