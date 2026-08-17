@@ -97,13 +97,13 @@
         #btn-settings:hover { background: rgba(255,255,255,0.25); }
 
         #rec-settings-menu {
-            position: absolute; top: 45px; right: 0; width: 300px; max-height: 85vh; overflow-y: auto;
+            position: absolute; top: 45px; right: 0; width: 310px; max-height: 85vh; overflow-y: auto;
             background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
         }
         .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; margin-bottom: 2px;}
-        .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
+        .rec-setting-item select, .rec-setting-item input[type="checkbox"], .rec-setting-item input[type="range"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
         .setting-desc { font-size: 9px; color: #888; margin-top: -4px; margin-bottom: 4px; line-height: 1.1; }
 
         .timer-badge {
@@ -187,6 +187,57 @@
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
             <div class="setting-desc">आवाज़ के वॉल्यूम को आरामदायक और सही स्तर पर लॉक रखता है।</div>
+
+            <!-- NEW MORE SETTINGS FOR XLR / PROFESSIONAL AUDIO -->
+            <div class="text-[11px] font-bold text-purple-400 border-t border-white/10 pt-2 mt-1 flex items-center justify-between">
+                <span><i class="fas fa-sliders mr-1"></i> More Settings (XLR Studio)</span>
+                <input type="checkbox" id="setting-more-toggle" checked title="Enable/Disable Advanced XLR Options">
+            </div>
+            <div class="setting-desc">XLR केबल माइक इंटरफ़ेस के लिए प्रोफेशनल्स जैसे डीप कस्टमाइज़ेशन।</div>
+
+            <div id="xlr-advanced-container" style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                <div class="rec-setting-item">
+                    <span>सैंपल रेट (Sample Rate):</span>
+                    <select id="setting-sample-rate">
+                        <option value="44100">44.1 kHz (Standard)</option>
+                        <option value="48000" selected>48.0 kHz (Pro Studio)</option>
+                        <option value="96000">96.0 kHz (Ultra HD)</option>
+                    </select>
+                </div>
+
+                <div class="rec-setting-item">
+                    <span>Noise Gate (बैकग्राउंड कट):</span>
+                    <select id="setting-noise-gate">
+                        <option value="off">Off (Raw)</option>
+                        <option value="soft" selected>Soft (-45dB)</option>
+                        <option value="aggressive">Aggressive (-30dB)</option>
+                    </select>
+                </div>
+
+                <div class="rec-setting-item">
+                    <span>De-Esser (श/स की तीक्ष्णता कम):</span>
+                    <input type="checkbox" id="setting-de-esser" checked>
+                </div>
+
+                <div class="rec-setting-item">
+                    <span>Parametric EQ (Warmth & Mids):</span>
+                    <select id="setting-param-eq">
+                        <option value="flat">Flat (Natural)</option>
+                        <option value="podcast" selected>Podcast Broadcast (Warm)</option>
+                        <option value="crisp">Crisp & Clear (Bright)</option>
+                    </select>
+                </div>
+
+                <div class="rec-setting-item">
+                    <span>XLR Preamp Gain Boost:</span>
+                    <select id="setting-preamp-gain">
+                        <option value="1">1.0x (Normal)</option>
+                        <option value="1.25" selected>1.25x (Balanced Boost)</option>
+                        <option value="1.5">1.5x (High Gain)</option>
+                    </select>
+                </div>
+            </div>
+            <!-- END OF NEW MORE SETTINGS -->
 
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
@@ -480,7 +531,6 @@
                 leftNav.style.display = 'none';
                 rightNav.style.display = 'none';
                 recorderUi.style.display = 'none';
-                // Hide other buttons, but keep Smooth Pen, Normal Pen, Eraser, Slide Counter, Prev/Next buttons & Hide UI button visible in dock
                 Array.from(toolbar.children).forEach(child => {
                     if (child !== hideUiBtn && child !== slideCounter && child !== dockPrevBtn && child !== dockNextBtn && child !== smoothPenBtn && child !== normalPenBtn && child !== eraserBtn && !child.classList.contains('dock-divider')) {
                         child.style.display = 'none';
@@ -557,7 +607,7 @@
                 ctx.beginPath();
                 ctx.moveTo(ep.x, ep.y);
             } 
-            else { // Normal Pen
+            else { 
                 ctx.lineWidth = baseSize;
                 ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
@@ -661,6 +711,13 @@
             }
         });
 
+        // Toggle More Settings view
+        const settingMoreToggle = document.getElementById('setting-more-toggle');
+        const xlrAdvancedContainer = document.getElementById('xlr-advanced-container');
+        settingMoreToggle.addEventListener('change', () => {
+            xlrAdvancedContainer.style.display = settingMoreToggle.checked ? 'flex' : 'none';
+        });
+
         const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
@@ -692,6 +749,14 @@
                 const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
+
+                // XLR More Settings values
+                const useMoreXlr = settingMoreToggle.checked;
+                const sampleRateVal = parseInt(document.getElementById('setting-sample-rate').value) || 48000;
+                const noiseGateVal = document.getElementById('setting-noise-gate').value;
+                const useDeEsser = document.getElementById('setting-de-esser').checked;
+                const paramEqVal = document.getElementById('setting-param-eq').value;
+                const preampGainVal = parseFloat(document.getElementById('setting-preamp-gain').value) || 1.25;
 
                 const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
@@ -726,16 +791,60 @@
 
                 if (useMic) {
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
+                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: sampleRateVal }, 
                         video: false 
                     });
 
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: sampleRateVal });
                     if (audioCtx.state === 'suspended') await audioCtx.resume();
                     
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
 
+                    let currentNode = source;
+
+                    // XLR / More settings nodes implementation
+                    if (useMoreXlr) {
+                        // 1. Noise Gate simulation via DynamicsCompressor or custom filter
+                        if (noiseGateVal !== 'off') {
+                            const gateNode = audioCtx.createDynamicsCompressor();
+                            gateNode.threshold.value = noiseGateVal === 'aggressive' ? -30 : -45;
+                            gateNode.knee.value = 10;
+                            gateNode.ratio.value = 4;
+                            currentNode.connect(gateNode);
+                            currentNode = gateNode;
+                        }
+
+                        // 2. De-Esser simulation (High-mid notch/shelf)
+                        if (useDeEsser) {
+                            const deEsserNode = audioCtx.createBiquadFilter();
+                            deEsserNode.type = 'peaking';
+                            deEsserNode.frequency.value = 6500;
+                            deEsserNode.gain.value = -4.0;
+                            deEsserNode.Q.value = 2.0;
+                            currentNode.connect(deEsserNode);
+                            currentNode = deEsserNode;
+                        }
+
+                        // 3. Parametric EQ profiles
+                        if (paramEqVal !== 'flat') {
+                            const eqNode = audioCtx.createBiquadFilter();
+                            if (paramEqVal === 'podcast') {
+                                eqNode.type = 'peaking';
+                                eqNode.frequency.value = 300; // Warmth
+                                eqNode.gain.value = 3.5;
+                                eqNode.Q.value = 1.0;
+                            } else if (paramEqVal === 'crisp') {
+                                eqNode.type = 'highshelf';
+                                eqNode.frequency.value = 4000; // Brightness
+                                eqNode.gain.value = 4.0;
+                            }
+                            currentNode.connect(eqNode);
+                            currentNode = eqNode;
+                        }
+                    }
+
+                    // Existing standard filters
                     const gentleHighPass = audioCtx.createBiquadFilter();
                     gentleHighPass.type = 'highpass';
                     gentleHighPass.frequency.value = 70;
@@ -746,7 +855,7 @@
                     softTrebleCut.gain.value = -3.0; 
 
                     const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.72;
+                    masterGain.gain.value = 0.72 * (useMoreXlr ? preampGainVal : 1.0);
 
                     const gentleCompressor = audioCtx.createDynamicsCompressor();
                     gentleCompressor.threshold.value = -18;
@@ -755,7 +864,6 @@
                     gentleCompressor.attack.value = 0.03;
                     gentleCompressor.release.value = 0.2;
 
-                    let currentNode = source;
                     if (useAntiCrackle) { currentNode.connect(gentleHighPass); currentNode = gentleHighPass; }
                     if (useSl40Eq) { currentNode.connect(softTrebleCut); currentNode = softTrebleCut; }
                     currentNode.connect(masterGain); currentNode = masterGain;
