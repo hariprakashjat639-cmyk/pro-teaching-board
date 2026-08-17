@@ -218,7 +218,7 @@
             <input type="color" id="color-picker" value="#ffff00">
             <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[8px]"></i></button>
         </div>
-        <!-- Smooth Ink Pen (Apple Pencil Style) - Replaced Glow Pen -->
+        <!-- Smooth Ink Pen (Apple Pencil Style) -->
         <button class="dock-btn active" id="smooth-pen-btn" title="Smooth Ink Pen"><i class="fas fa-feather-pointed text-[9px]"></i></button>
         <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[9px]"></i></button>
         <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[9px]"></i></button>
@@ -423,6 +423,11 @@
         function loadSlide(index) {
             saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
+            
+            // अगर मिनी स्लाइड नेविगेशन मौजूद है, तो उसका काउंटर भी अपडेट करें[cite: 8]
+            const miniCounter = document.getElementById('mini-slide-counter');
+            if (miniCounter) miniCounter.innerText = document.getElementById('slide-counter').innerText;
+
             slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
@@ -434,6 +439,13 @@
                     savePdfBtn.style.border = "none";
                     savePdfBtn.style.boxShadow = "none";
                 }
+            }
+        }
+
+        function changeSlide(direction) {
+            const newIndex = currentSlideIndex + direction;
+            if (newIndex >= 0 && newIndex < slides.length) {
+                loadSlide(newIndex);
             }
         }
 
@@ -476,6 +488,39 @@
                 hideUiBtn.innerHTML = '<i class="fas fa-eye text-[9px]"></i>';
                 hideUiBtn.style.color = '#ff453a';
                 hideUiBtn.title = "Show UI";
+
+                // 🔥 आवश्यक अपडेट: UI छुपने पर नीचे की तरफ बिल्कुल छोटा, पारदर्शी स्लाइड नेविगेशन बटन दिखाना[cite: 8]
+                let miniNav = document.getElementById('mini-slide-nav');
+                if (!miniNav) {
+                    miniNav = document.createElement('div');
+                    miniNav.id = 'mini-slide-nav';
+                    miniNav.style.cssText = 'position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 8px; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(4px); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); opacity: 0.6; transition: opacity 0.2s;';
+                    miniNav.onmouseenter = () => miniNav.style.opacity = '1';
+                    miniNav.onmouseleave = () => miniNav.style.opacity = '0.6';
+
+                    const prevBtn = document.createElement('button');
+                    prevBtn.innerHTML = '<i class="fas fa-chevron-left text-[9px]"></i>';
+                    prevBtn.style.cssText = 'background: transparent; border: none; color: white; cursor: pointer; padding: 2px 6px; font-size: 10px;';
+                    prevBtn.onclick = () => changeSlide(-1);
+
+                    const indicator = document.createElement('span');
+                    indicator.id = 'mini-slide-counter';
+                    indicator.innerText = document.getElementById('slide-counter').innerText;
+                    indicator.style.cssText = 'color: white; font-size: 9px; font-weight: bold; font-family: monospace;';
+
+                    const nextBtn = document.createElement('button');
+                    nextBtn.innerHTML = '<i class="fas fa-chevron-right text-[9px]"></i>';
+                    nextBtn.style.cssText = 'background: transparent; border: none; color: white; cursor: pointer; padding: 2px 6px; font-size: 10px;';
+                    nextBtn.onclick = () => changeSlide(1);
+
+                    miniNav.appendChild(prevBtn);
+                    miniNav.appendChild(indicator);
+                    miniNav.appendChild(nextBtn);
+                    document.body.appendChild(miniNav);
+                } else {
+                    document.getElementById('mini-slide-counter').innerText = document.getElementById('slide-counter').innerText;
+                    miniNav.style.display = 'flex';
+                }
             } else {
                 leftNav.style.display = 'flex';
                 rightNav.style.display = 'flex';
@@ -486,6 +531,10 @@
                 hideUiBtn.innerHTML = '<i class="fas fa-eye-slash text-[9px]"></i>';
                 hideUiBtn.style.color = '#0a84ff';
                 hideUiBtn.title = "Hide/Show UI";
+
+                // UI वापस आने पर मिनी नेविगेशन को छिपा देना[cite: 8]
+                const miniNav = document.getElementById('mini-slide-nav');
+                if (miniNav) miniNav.style.display = 'none';
             }
             screenDirty = true;
         });
@@ -524,7 +573,7 @@
             };
 
             ctx.globalCompositeOperation = 'source-over';
-            ctx.shadowBlur = 0; // Completely eliminate spread/blur on reload
+            ctx.shadowBlur = 0; 
 
             if (currentMode === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
@@ -544,7 +593,6 @@
                 ctx.moveTo(ep.x, ep.y);
             } 
             else if (currentMode === 'smooth') {
-                // Apple Pencil Style Crisp & Clean Vector Stroke (Zero Blur)
                 ctx.lineWidth = baseSize;
                 ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
@@ -552,7 +600,7 @@
                 ctx.beginPath();
                 ctx.moveTo(ep.x, ep.y);
             } 
-            else { // Normal Pen
+            else { 
                 ctx.lineWidth = baseSize;
                 ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
