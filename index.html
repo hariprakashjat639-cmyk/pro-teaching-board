@@ -30,14 +30,11 @@
             width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
             object-fit: contain; z-index: 1; border-radius: 4px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
-            pointer-events: none; /* ताकि इमेज टच को ब्लॉक न करे */
         }
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 50; /* इसे सबसे ऊपर रखा है ताकि टच सीधे इसी पर आएं */
-            touch-action: none; 
-            pointer-events: auto !important; 
+            z-index: 10; cursor: default; 
         }
         
         #upload-prompt {
@@ -50,11 +47,19 @@
 
         .ipad-dock { 
             position: absolute; bottom: 12px; left: 15px; z-index: 100; 
-            display: flex; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
+            display: none; flex-direction: row; gap: 5px; background: rgba(20, 20, 25, 0.85); 
             padding: 5px 10px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.12); 
             box-shadow: 0 10px 25px rgba(0,0,0,0.8); backdrop-filter: blur(20px);
             align-items: center; max-width: 85vw; overflow-x: auto;
-            cursor: move; touch-action: none; pointer-events: auto;
+            cursor: move; touch-action: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        /* Auto Hide Class */
+        .ipad-dock.autohide {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
         }
         
         .dock-btn { 
@@ -62,39 +67,35 @@
             border: 1px solid transparent; transition: all 0.2s; 
             display: flex; justify-content: center; align-items: center; 
             background: rgba(255, 255, 255, 0.06); color: white; font-size: 11px; flex-shrink: 0;
-            pointer-events: auto;
         }
         .dock-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
         .dock-btn.active { border-color: #0a84ff; background: #0a84ff; box-shadow: 0 0 8px rgba(10, 132, 255, 0.5); }
         
-        .color-picker-wrapper { position: relative; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; pointer-events: auto; }
-        #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; pointer-events: auto; }
+        .color-picker-wrapper { position: relative; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+        #color-picker { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
         
-        .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; pointer-events: auto; }
+        .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
-
-        .toolbar-hidden { display: none !important; }
 
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
-            width: 36px; height: 50px; background: rgba(20, 20, 25, 0.25); border: 1px solid rgba(255,255,255,0.05);
-            color: rgba(255, 255, 255, 0.7); display: none; justify-content: center; align-items: center; cursor: pointer;
-            backdrop-filter: blur(6px); transition: 0.2s; font-size: 14px; pointer-events: auto;
+            width: 36px; height: 50px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
+            color: white; display: none; justify-content: center; align-items: center; cursor: pointer;
+            backdrop-filter: blur(10px); transition: 0.2s; font-size: 14px;
         }
-        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.7); color: white; }
+        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.8); }
         #left-nav { left: 0; border-radius: 0 8px 8px 0; }
         #right-nav { right: 0; border-radius: 8px 0 0 8px; }
 
         .recorder-ui { 
             position: absolute; top: 12px; right: 12px; z-index: 100; 
-            display: none; align-items: center; gap: 6px; pointer-events: auto;
+            display: none; align-items: center; gap: 6px;
         }
         
         .rec-circle-btn {
             width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: 0.3s; color: white; font-size: 11px;
-            pointer-events: auto;
         }
         #btn-start { background: #30d158; }
         #btn-start:hover { background: #28b84d; transform: scale(1.05); }
@@ -106,7 +107,7 @@
             position: absolute; top: 45px; right: 0; width: 300px; max-height: 85vh; overflow-y: auto;
             background: rgba(20, 20, 25, 0.98); border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px; pointer-events: auto;
+            backdrop-filter: blur(15px); display: none; z-index: 105; flex-direction: column; gap: 8px;
         }
         .rec-setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #ccc; margin-bottom: 2px;}
         .rec-setting-item select, .rec-setting-item input[type="checkbox"] { cursor: pointer; background: #2c2c35; color: white; border: 1px solid #444; border-radius: 4px; padding: 2px 4px; font-size: 10px; }
@@ -174,6 +175,7 @@
                 </select>
             </div>
             
+            <!-- PURE NATURAL AUDIO ENGINE -->
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> नेचुरल ऑडियो मोड</div>
             
             <div class="rec-setting-item">
@@ -194,6 +196,7 @@
             </div>
             <div class="setting-desc">आवाज़ के वॉल्यूम को आरामदायक और सही स्तर पर लॉक रखता है।</div>
 
+            <!-- ADVANCED VIDEO SETTINGS -->
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
@@ -212,6 +215,7 @@
                 </select>
             </div>
 
+            <!-- MANUAL PERMISSION BUTTON -->
             <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
                 <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
             </button>
@@ -233,11 +237,12 @@
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
-        <button class="dock-btn" id="collapse-toolbar-btn" title="सिर्फ चालू टूल रखें / सब दिखाएं" style="color: #0a84ff;"><i class="fas fa-compress-alt text-[9px]"></i></button>
+        <!-- SAVE PDF TOOL -->
         <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[9px]"></i></button>
     </div>
 
     <script>
+        // PDF & UI Setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
@@ -253,6 +258,7 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
+        // DRAGGABLE TOOLBAR LOGIC (पूरी स्क्रीन पर कहीं भी मूव करने के लिए)
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
         let startX, startY, initialLeft, initialTop;
@@ -295,6 +301,33 @@
             }
         });
 
+        // ==========================================
+        // AUTO-HIDE TOOLBAR FEATURE (ऑटो-हाइड लॉजिक)
+        // ==========================================
+        let hideTimeout;
+        function triggerAutoHide() {
+            // अगर फाइल खुली हुई है तभी ऑटो-हाइड काम करे
+            if (slides.length > 0) {
+                toolbar.classList.remove('autohide');
+                clearTimeout(hideTimeout);
+                // 4 सेकंड तक कोई हरकत न होने पर टूलबार छुप जाएगा
+                hideTimeout = setTimeout(() => {
+                    if (!isDraggingToolbar) {
+                        toolbar.classList.add('autohide');
+                    }
+                }, 4000);
+            }
+        }
+
+        // स्क्रीन पर कहीं भी क्लिक या टच करने पर टूलबार तुरंत वापस आ जाएगा
+        window.addEventListener('pointerdown', (e) => {
+            triggerAutoHide();
+        });
+        window.addEventListener('mousemove', () => {
+            triggerAutoHide();
+        });
+
+        // PPT to PDF Converter Integration Feature
         converterUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -424,20 +457,13 @@
             document.getElementById('left-nav').style.display = 'flex';
             document.getElementById('right-nav').style.display = 'flex';
             loadSlide(0);
+            triggerAutoHide();
         }
 
         function loadSlide(index) {
-            saveCurrentInk(); 
-            currentSlideIndex = index; 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
-            
-            slideImage.onload = () => { 
-                resizeCanvas(); 
-                restoreInk(); 
-                screenDirty = true; 
-            }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
             if (savePdfBtn) {
@@ -466,168 +492,47 @@
             setTimeout(() => { screenDirty = true; }, 400);
         });
 
-        // ================= DRAWING ENGINE (FIXED FOR 100% TOUCH & PEN SUPPORT) =================
-        const canvas = document.getElementById('drawing-canvas'); 
-        const ctx = canvas.getContext('2d');
+        // Drawing Engine
+        const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
-        const sizeSlider = document.getElementById('pen-size'); 
-        const colorPicker = document.getElementById('color-picker'); 
-        const colorBtn = document.getElementById('color-btn');
+        const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
         const tools = { 'glow': document.getElementById('glow-pen-btn'), 'normal': document.getElementById('normal-pen-btn'), 'highlighter': document.getElementById('highlighter-btn'), 'eraser': document.getElementById('eraser-btn') };
 
-        function resizeCanvas() { 
-            canvas.width = window.innerWidth; 
-            canvas.height = window.innerHeight; 
-            ctx.lineCap = 'round'; 
-            ctx.lineJoin = 'round'; 
-            restoreInk(); 
-            screenDirty = true; 
-        }
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
 
         function setActiveTool(mode) {
-            currentMode = mode; 
-            Object.values(tools).forEach(btn => btn.classList.remove('active')); 
-            tools[mode].classList.add('active');
-            if(mode === 'highlighter') sizeSlider.value = 30; 
-            else if(mode === 'eraser') sizeSlider.value = 40; 
-            else sizeSlider.value = 6;
-            
-            if (isToolbarCollapsed) {
-                updateToolbarCollapseView();
-            }
+            currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
+            if(mode === 'highlighter') sizeSlider.value = 30; else if(mode === 'eraser') sizeSlider.value = 40; else sizeSlider.value = 6;
         }
         setActiveTool('glow');
 
         colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
-        tools['glow'].addEventListener('click', () => setActiveTool('glow')); 
-        tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
-        tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); 
-        tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
+        tools['glow'].addEventListener('click', () => setActiveTool('glow')); tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
+        tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
         document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); screenDirty = true; });
 
-        // यूनिवर्सल ड्राइंग कोऑर्डिनेट और इवेंट हैंडलर (Touch + Mouse दोनों के लिए मजबूत सपोर्ट)
-        function startDrawing(x, y) {
-            isDrawing = true; 
-            points = [{x: x, y: y}]; 
-            ctx.beginPath(); 
-            ctx.moveTo(x, y); 
-            screenDirty = true;
-        }
-
-        function moveDrawing(x, y) {
-            if (!isDrawing) return; 
-            points.push({x: x, y: y}); 
-            let baseSize = parseInt(sizeSlider.value);
+        canvas.addEventListener('pointerdown', (e) => { isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); screenDirty = true; });
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDrawing) return; points.push({x: e.clientX, y: e.clientY}); let baseSize = parseInt(sizeSlider.value);
             
-            if (currentMode === 'eraser') { 
-                ctx.globalCompositeOperation = 'destination-out'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = 'rgba(0,0,0,1)'; 
-            } else if (currentMode === 'highlighter') { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = currentColor + '55'; 
-            } else if (currentMode === 'glow') { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 15; 
-                ctx.shadowColor = currentColor; 
-                ctx.strokeStyle = currentColor; 
-            } else { 
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.lineWidth = baseSize; 
-                ctx.shadowBlur = 0; 
-                ctx.strokeStyle = currentColor; 
-            }
+            if (currentMode === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,1)'; } 
+            else if (currentMode === 'highlighter') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor + '55'; } 
+            else if (currentMode === 'glow') { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 15; ctx.shadowColor = currentColor; ctx.strokeStyle = currentColor; } 
+            else { ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = baseSize; ctx.shadowBlur = 0; ctx.strokeStyle = currentColor; }
 
             if (points.length >= 3) {
                 const controlPoint = points[points.length - 2];
                 const endPoint = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
-                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); 
-                ctx.stroke(); 
-                ctx.beginPath(); 
-                ctx.moveTo(endPoint.x, endPoint.y); 
-                screenDirty = true;
+                ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endPoint.x, endPoint.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(endPoint.x, endPoint.y); screenDirty = true;
             }
-        }
-
-        function endDrawing() {
-            if (!isDrawing) return;
-            isDrawing = false; 
-            points = []; 
-            saveCurrentInk(); 
-            screenDirty = true;
-        }
-
-        // माउस इवेंट्स
-        canvas.addEventListener('mousedown', (e) => startDrawing(e.clientX, e.clientY));
-        canvas.addEventListener('mousemove', (e) => moveDrawing(e.clientX, e.clientY));
-        window.addEventListener('mouseup', endDrawing);
-
-        // मोबाइल टच इवेंट्स (ताकि स्क्रीन पर उंगली या टच पेन से 100% काम करे)
-        canvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                startDrawing(touch.clientX, touch.clientY);
-                e.preventDefault(); // स्क्रीन को स्क्रॉल होने से रोकने के लिए
-            }
-        }, { passive: false });
-
-        canvas.addEventListener('touchmove', (e) => {
-            if (isDrawing && e.touches.length === 1) {
-                const touch = e.touches[0];
-                moveDrawing(touch.clientX, touch.clientY);
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        canvas.addEventListener('touchend', endDrawing);
-        canvas.addEventListener('touchcancel', endDrawing);
+        });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
-        
-        function restoreInk() { 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            if (slideInks[currentSlideIndex]) { 
-                let img = new Image(); 
-                img.src = slideInks[currentSlideIndex]; 
-                img.onload = () => { 
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
-                    screenDirty = true; 
-                }; 
-            } 
-        }
+        function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
 
-        let isToolbarCollapsed = false;
-        const collapseBtn = document.getElementById('collapse-toolbar-btn');
-
-        function updateToolbarCollapseView() {
-            const dockChildren = Array.from(toolbar.children);
-            dockChildren.forEach(child => {
-                if (child.id === 'slide-counter' || child.id === 'collapse-toolbar-btn' || child.id === 'save-pdf-btn') return;
-                
-                if (isToolbarCollapsed) {
-                    if (child.classList.contains('active') || child.id === 'pen-size' || child.classList.contains('color-picker-wrapper')) {
-                        child.classList.remove('toolbar-hidden');
-                    } else {
-                        child.classList.add('toolbar-hidden');
-                    }
-                } else {
-                    child.classList.remove('toolbar-hidden');
-                }
-            });
-        }
-
-        collapseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isToolbarCollapsed = !isToolbarCollapsed;
-            updateToolbarCollapseView();
-            collapseBtn.innerHTML = isToolbarCollapsed ? '<i class="fas fa-expand-alt text-[9px]"></i>' : '<i class="fas fa-compress-alt text-[9px]"></i>';
-        });
-
+        // SAVE PDF WITH DRAWN INKS FEATURE (सभी स्लाइडों पर लिखा गया सेव करने का टूल)
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
             if (slides.length === 0) {
@@ -641,220 +546,68 @@
 
             try {
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'px',
-                    format: [1280, 720]
-                });
+                let pdf = null;
 
                 for (let i = 0; i < slides.length; i++) {
                     const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = 1280;
-                    tempCanvas.height = 720;
-                    const tCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = canvas.width || 1280;
+                    tempCanvas.height = canvas.height || 720;
+                    const tempCtx = tempCanvas.getContext('2d');
 
-                    const slideImg = await loadImage(slides[i]);
-                    tCtx.drawImage(slideImg, 0, 0, 1280, 720);
+                    tempCtx.fillStyle = '#030305';
+                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-                    if (slideInks[i]) {
-                        const inkImg = await loadImage(slideInks[i]);
-                        tCtx.drawImage(inkImg, 0, 0, 1280, 720);
+                    if (slides[i]) {
+                        await new Promise((resolve) => {
+                            const img = new Image();
+                            img.crossOrigin = "anonymous";
+                            img.onload = () => {
+                                let hRatio = tempCanvas.width / img.naturalWidth;
+                                let vRatio = tempCanvas.height / img.naturalHeight;
+                                let ratio = Math.min(hRatio, vRatio);
+                                let centerShiftX = (tempCanvas.width - img.naturalWidth * ratio) / 2;
+                                let centerShiftY = (tempCanvas.height - img.naturalHeight * ratio) / 2;
+                                tempCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, centerShiftX, centerShiftY, img.naturalWidth * ratio, img.naturalHeight * ratio);
+                                resolve();
+                            };
+                            img.onerror = resolve;
+                            img.src = slides[i];
+                        });
                     }
 
-                    const compositeDataUrl = tempCanvas.toDataURL('image/jpeg', 0.85);
-                    if (i > 0) pdf.addPage([1280, 720], 'landscape');
-                    pdf.addImage(compositeDataUrl, 'JPEG', 0, 0, 1280, 720);
+                    if (slideInks[i]) {
+                        await new Promise((resolve) => {
+                            const inkImg = new Image();
+                            inkImg.onload = () => {
+                                tempCtx.drawImage(inkImg, 0, 0);
+                                resolve();
+                            };
+                            inkImg.onerror = resolve;
+                            inkImg.src = slideInks[i];
+                        });
+                    }
+
+                    const imgData = tempCanvas.toDataURL('image/jpeg', 0.85);
+
+                    if (i === 0) {
+                        pdf = new jsPDF({
+                            orientation: tempCanvas.width > tempCanvas.height ? 'landscape' : 'portrait',
+                            unit: 'px',
+                            format: [tempCanvas.width, tempCanvas.height]
+                        });
+                    } else {
+                        pdf.addPage([tempCanvas.width, tempCanvas.height], tempCanvas.width > tempCanvas.height ? 'landscape' : 'portrait');
+                    }
+
+                    pdf.addImage(imgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                 }
 
                 pdf.save("Annotated_Class_Notes.pdf");
+                loadingScreen.style.display = 'none';
             } catch (err) {
                 alert("PDF सेव करने में त्रुटि: " + err.message);
-            } finally {
                 loadingScreen.style.display = 'none';
             }
-        });
-
-        function loadImage(src) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-                img.src = src;
-            });
-        }
-
-        const btnSettings = document.getElementById('btn-settings');
-        const recSettingsMenu = document.getElementById('rec-settings-menu');
-        btnSettings.addEventListener('click', (e) => {
-            e.stopPropagation();
-            recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex';
-        });
-        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; });
-        recSettingsMenu.addEventListener('click', (e) => { e.stopPropagation(); });
-
-        let mediaRecorder; let recordedChunks = []; let recordingStartTime = 0; let timerInterval = null;
-        const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
-        
-        let audioContext = null; let micStream = null;
-
-        document.getElementById('btn-request-permission').addEventListener('click', async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                alert("माइक्रोफोन की परमिशन मिल गई है!");
-                stream.getTracks().forEach(track => track.stop());
-            } catch (err) {
-                alert("परमिशन नहीं मिल पाई: " + err.message);
-            }
-        });
-
-        btnStart.addEventListener('click', async () => {
-            try {
-                recordedChunks = [];
-                const useMic = document.getElementById('setting-mic').checked;
-                const quality = document.getElementById('setting-quality').value;
-                const fps = parseInt(document.getElementById('setting-fps').value);
-                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value);
-
-                let videoWidth = 1280, videoHeight = 720;
-                if (quality === 'high') { videoWidth = 1920; videoHeight = 1080; }
-                
-                const combinedCanvas = document.createElement('canvas');
-                combinedCanvas.width = videoWidth;
-                combinedCanvas.height = videoHeight;
-                const cCtx = combinedCanvas.getContext('2d');
-
-                let streamFPS = fps;
-                const screenStream = combinedCanvas.captureStream(streamFPS);
-
-                let finalAudioStream = null;
-                if (useMic) {
-                    try {
-                        micStream = await navigator.mediaDevices.getUserMedia({ 
-                            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, 
-                            video: false 
-                        });
-
-                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        const source = audioContext.createMediaStreamSource(micStream);
-                        let lastNode = source;
-
-                        if (document.getElementById('setting-anti-crackle').checked) {
-                            const highpass = audioContext.createBiquadFilter();
-                            highpass.type = 'highpass';
-                            highpass.frequency.setValueAtTime(80, audioContext.currentTime);
-                            lastNode.connect(highpass);
-                            lastNode = highpass;
-                        }
-
-                        if (document.getElementById('setting-sl40-eq').checked) {
-                            const eq = audioContext.createBiquadFilter();
-                            eq.type = 'peaking';
-                            eq.frequency.setValueAtTime(2500, audioContext.currentTime);
-                            eq.gain.setValueAtTime(2.5, audioContext.currentTime);
-                            eq.Q.setValueAtTime(1.0, audioContext.currentTime);
-                            lastNode.connect(eq);
-                            lastNode = eq;
-                        }
-
-                        if (document.getElementById('setting-compressor').checked) {
-                            const compressor = audioContext.createDynamicsCompressor();
-                            compressor.threshold.setValueAtTime(-20, audioContext.currentTime);
-                            compressor.knee.setValueAtTime(10, audioContext.currentTime);
-                            compressor.ratio.setValueAtTime(4, audioContext.currentTime);
-                            compressor.attack.setValueAtTime(0.003, audioContext.currentTime);
-                            compressor.release.setValueAtTime(0.250, audioContext.currentTime);
-                            lastNode.connect(compressor);
-                            lastNode = compressor;
-                        }
-
-                        const dest = audioContext.createMediaStreamDestination();
-                        lastNode.connect(dest);
-                        finalAudioStream = dest.stream;
-                    } catch (micErr) {
-                        console.warn("माइक्रोफोन एक्सेस नहीं हो पाया", micErr);
-                    }
-                }
-
-                if (finalAudioStream) {
-                    finalAudioStream.getAudioTracks().forEach(track => screenStream.addTrack(track));
-                }
-
-                let isRecordingActive = true;
-                function renderLoop() {
-                    if (!isRecordingActive) return;
-                    cCtx.fillStyle = '#030305';
-                    cCtx.fillRect(0, 0, videoWidth, videoHeight);
-
-                    if (slideImage.complete && slideImage.naturalWidth > 0) {
-                        cCtx.drawImage(slideImage, 0, 0, videoWidth, videoHeight);
-                    }
-                    if (canvas.width > 0 && canvas.height > 0) {
-                        cCtx.drawImage(canvas, 0, 0, videoWidth, videoHeight);
-                    }
-                    requestAnimationFrame(renderLoop);
-                }
-                renderLoop();
-
-                let options = { mimeType: 'video/webm; codecs=vp9,opus' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = { mimeType: 'video/webm' };
-                }
-
-                mediaRecorder = new MediaRecorder(screenStream, {
-                    ...options,
-                    videoBitsPerSecond: bitrateMbps * 1024 * 1024
-                });
-
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data && event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = () => {
-                    isRecordingActive = false;
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `Lecture_Recording_${Date.now()}.webm`;
-                    a.click();
-                };
-
-                mediaRecorder.start(1000);
-                btnStart.style.display = 'none';
-                btnStop.style.display = 'flex';
-                timerText.style.display = 'inline-block';
-
-                recordingStartTime = Date.now();
-                clearInterval(timerInterval);
-                timerInterval = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-                    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-                    const secs = String(elapsed % 60).padStart(2, '0');
-                    timerText.innerText = `${mins}:${secs}`;
-                }, 1000);
-
-            } catch (err) {
-                alert("रिकॉर्डर शुरू करने में त्रुटि: " + err.message);
-            }
-        });
-
-        btnStop.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-            if (micStream) {
-                micStream.getTracks().forEach(track => track.stop());
-            }
-            if (audioContext) {
-                audioContext.close();
-            }
-            clearInterval(timerInterval);
-            btnStop.style.display = 'none';
-            btnStart.style.display = 'flex';
-            timerText.style.display = 'none';
         });
     </script>
 </body>
