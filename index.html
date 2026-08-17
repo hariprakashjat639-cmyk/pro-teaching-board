@@ -416,55 +416,13 @@
             document.getElementById('recorder-ui').style.display = 'flex';
             document.getElementById('left-nav').style.display = 'flex';
             document.getElementById('right-nav').style.display = 'flex';
-            changeSlideTo(0);
+            loadSlide(0);
         }
 
-        // ==========================================
-        // 🚀 PRO-LEVEL UPDATED SLIDE NAVIGATION FUNCTION
-        // ==========================================
-        function changeSlide(step) {
-            // 1. पुरानी स्लाइड का बचा हुआ पाथ और ड्राइंग स्टेट तुरंत रीसेट करें (Smudging / Ghosting रोकने के लिए)
-            if (typeof ctx !== 'undefined') {
-                ctx.beginPath();
-                isDrawing = false; // ड्राइंग फ्लैग बंद करें
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // पुरानी इंक साफ़ करें
-            }
-
-            // 2. मौजूदा इंक को सेव करें ताकि बदलाव के बाद पुराना लिखा हुआ डिलीट न हो
-            saveCurrentInk();
-
-            // 3. स्लाइड इंडेक्स को अपडेट करें और सीमाएं (Bounds) चेक करें
-            currentSlideIndex += step;
-            if (currentSlideIndex < 0) currentSlideIndex = 0;
-            if (currentSlideIndex >= slides.length) currentSlideIndex = slides.length - 1;
-
-            // 4. नई स्लाइड लोड और रेंडर करें
-            loadAndRenderCurrentSlide();
-        }
-
-        // डायरेक्ट किसी इंडेक्स पर जाने के लिए helper function
-        function changeSlideTo(index) {
-            if (typeof ctx !== 'undefined') {
-                ctx.beginPath();
-                isDrawing = false;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-            saveCurrentInk();
-            currentSlideIndex = index;
-            if (currentSlideIndex < 0) currentSlideIndex = 0;
-            if (currentSlideIndex >= slides.length) currentSlideIndex = slides.length - 1;
-            loadAndRenderCurrentSlide();
-        }
-
-        function loadAndRenderCurrentSlide() {
-            slideImage.src = slides[currentSlideIndex]; 
+        function loadSlide(index) {
+            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
-            
-            slideImage.onload = () => { 
-                resizeCanvas(); 
-                restoreInk(); // इस स्लाइड पर पहले से किया गया काम/इंक वापस लोड हो जाएगा
-                screenDirty = true; 
-            }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
             if (savePdfBtn) {
@@ -478,28 +436,11 @@
             }
         }
 
-        // नेविगेशन बटन इवेंट्स को नए changeSlide फंक्शन से जोड़ दिया गया है
-        document.getElementById('left-nav').addEventListener('click', () => { 
-            // Touch/Mouse Event Interruption
-            isDrawing = false;
-            changeSlide(-1); 
-        });
-        
-        document.getElementById('right-nav').addEventListener('click', () => { 
-            // Touch/Mouse Event Interruption
-            isDrawing = false;
-            changeSlide(1); 
-        });
-
+        document.getElementById('left-nav').addEventListener('click', () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); });
+        document.getElementById('right-nav').addEventListener('click', () => { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); });
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === 'PageDown') { 
-                isDrawing = false;
-                changeSlide(1); 
-            }
-            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { 
-                isDrawing = false;
-                changeSlide(-1); 
-            }
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') { if (currentSlideIndex < slides.length - 1) loadSlide(currentSlideIndex + 1); }
+            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); }
         });
 
         const fullscreenBtn = document.getElementById('fullscreen-btn');
@@ -602,20 +543,14 @@
                 ctx.moveTo(ep.x, ep.y);
             } 
             else if (currentMode === 'glow') {
+                // FIXED GLOW PEN: No multi-pass stacking buildup when reloading/restoring ink
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.shadowBlur = 0;
-
-                // 1. Outer Soft Aura Pass
-                ctx.lineWidth = baseSize * 2.2;
-                ctx.strokeStyle = currentColor + '45';
+                ctx.shadowBlur = baseSize * 1.5;
+                ctx.shadowColor = currentColor;
+                ctx.lineWidth = baseSize;
+                ctx.strokeStyle = '#ffffff';
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
-
-                // 2. Inner Core Bright Pass
-                ctx.lineWidth = baseSize;
-                ctx.strokeStyle = currentColor;
-                ctx.stroke();
-
                 ctx.beginPath();
                 ctx.moveTo(ep.x, ep.y);
             } 
@@ -640,11 +575,11 @@
             ctx.shadowBlur = 0; 
             if (slideInks[currentSlideIndex]) { 
                 let img = new Image(); 
-                img.src = slideInks[currentSlideIndex]; 
                 img.onload = () => { 
                     ctx.drawImage(img, 0, 0); 
                     screenDirty = true; 
                 }; 
+                img.src = slideInks[currentSlideIndex]; 
             } 
         }
 
