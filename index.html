@@ -218,7 +218,8 @@
             <input type="color" id="color-picker" value="#ffff00">
             <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[8px]"></i></button>
         </div>
-        <button class="dock-btn active" id="glow-pen-btn" title="Glow Pen"><i class="fas fa-magic text-[9px]"></i></button>
+        <!-- नया 'Smooth Ink Pen' बटन (Glow Pen की जगह) -->
+        <button class="dock-btn active" id="smooth-pen-btn" title="Smooth Ink Pen"><i class="fas fa-feather-pointed text-[9px]"></i></button>
         <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[9px]"></i></button>
         <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[9px]"></i></button>
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[9px]"></i></button>
@@ -454,7 +455,7 @@
         const hideUiBtn = document.getElementById('hide-ui-btn');
         const eraserBtn = document.getElementById('eraser-btn');
         const normalPenBtn = document.getElementById('normal-pen-btn');
-        const glowPenBtn = document.getElementById('glow-pen-btn');
+        const smoothPenBtn = document.getElementById('smooth-pen-btn');
         let isUiHidden = false;
 
         hideUiBtn.addEventListener('click', () => {
@@ -468,7 +469,7 @@
                 rightNav.style.display = 'none';
                 recorderUi.style.display = 'none';
                 Array.from(toolbar.children).forEach(child => {
-                    if (child !== hideUiBtn && child.id !== 'slide-counter' && child !== eraserBtn && child !== normalPenBtn && child !== glowPenBtn) {
+                    if (child !== hideUiBtn && child.id !== 'slide-counter' && child !== eraserBtn && child !== normalPenBtn && child !== smoothPenBtn) {
                         child.style.display = 'none';
                     }
                 });
@@ -490,9 +491,9 @@
         });
 
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
-        let isDrawing = false, points = [], currentMode = 'glow', currentColor = '#ffff00';
+        let isDrawing = false, points = [], currentMode = 'smooth', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
-        const tools = { 'glow': glowPenBtn, 'normal': normalPenBtn, 'highlighter': document.getElementById('highlighter-btn'), 'eraser': eraserBtn };
+        const tools = { 'smooth': smoothPenBtn, 'normal': normalPenBtn, 'highlighter': document.getElementById('highlighter-btn'), 'eraser': eraserBtn };
 
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
@@ -501,10 +502,10 @@
             currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
             if(mode === 'highlighter') sizeSlider.value = 30; else if(mode === 'eraser') sizeSlider.value = 40; else sizeSlider.value = 6;
         }
-        setActiveTool('glow');
+        setActiveTool('smooth');
 
         colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
-        tools['glow'].addEventListener('click', () => setActiveTool('glow')); tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
+        tools['smooth'].addEventListener('click', () => setActiveTool('smooth')); tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
         tools['highlighter'].addEventListener('click', () => setActiveTool('highlighter')); tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
         document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); screenDirty = true; });
 
@@ -542,13 +543,12 @@
                 ctx.beginPath();
                 ctx.moveTo(ep.x, ep.y);
             } 
-            else if (currentMode === 'glow') {
-                // FIXED GLOW PEN: No multi-pass stacking buildup when reloading/restoring ink
+            else if (currentMode === 'smooth') {
+                // SMOOTH INK PEN: Apple Pencil Style - Crisp, non-bleeding, sharp vector style with zero spread/blur buildup
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.shadowBlur = baseSize * 1.5;
-                ctx.shadowColor = currentColor;
+                ctx.shadowBlur = 0;
                 ctx.lineWidth = baseSize;
-                ctx.strokeStyle = '#ffffff';
+                ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
                 ctx.beginPath();
@@ -575,11 +575,11 @@
             ctx.shadowBlur = 0; 
             if (slideInks[currentSlideIndex]) { 
                 let img = new Image(); 
+                img.src = slideInks[currentSlideIndex]; 
                 img.onload = () => { 
                     ctx.drawImage(img, 0, 0); 
                     screenDirty = true; 
                 }; 
-                img.src = slideInks[currentSlideIndex]; 
             } 
         }
 
