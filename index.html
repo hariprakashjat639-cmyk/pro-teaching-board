@@ -169,32 +169,32 @@
                 </select>
             </div>
             
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> नेचुरल ऑडियो मोड</div>
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> क्रिस्टल क्लियर स्टूडियो ऑडियो मोड</div>
             
             <div class="rec-setting-item">
-                <span class="font-semibold text-blue-400">Low-Rumble Filter:</span>
+                <span class="font-semibold text-blue-400">Precision Low-Cut ($80\text{Hz}$):</span>
                 <input type="checkbox" id="setting-anti-crackle" checked>
             </div>
-            <div class="setting-desc">केवल माइक हिलाने की गूंज हटाता है, आवाज़ पूरी तरह नेचुरल रहती है।</div>
+            <div class="setting-desc">साँस की फटने की आवाज़ और माइक की गूंज को साफ़ करता है।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-yellow-400">Gentle Soft Tone:</span>
+                <span class="font-semibold text-yellow-400">Vocal Presence Enhancer:</span>
                 <input type="checkbox" id="setting-sl40-eq" checked>
             </div>
-            <div class="setting-desc">तीखेपन को रोककर आवाज़ को कानों के लिए सहज और हल्की रखता है।</div>
+            <div class="setting-desc">आवाज़ को खुलकर और स्पष्ट बनाता है ताकि गहराई बनी रहे।</div>
 
             <div class="rec-setting-item">
-                <span class="font-semibold text-green-400">Comfort Volume Leveler:</span>
+                <span class="font-semibold text-green-400">Broadcast Compressor:</span>
                 <input type="checkbox" id="setting-compressor" checked>
             </div>
-            <div class="setting-desc">आवाज़ के वॉल्यूम को आरामदायक और सही स्तर पर लॉक रखता है।</div>
+            <div class="setting-desc">वॉल्यूम को संतुलित और आरामदायक स्तर पर रखता है।</div>
 
             <!-- MORE SETTINGS (XLR STUDIO MODE) -->
             <div class="text-[11px] font-bold text-purple-400 border-t border-white/10 pt-2 mt-1 flex items-center justify-between">
-                <span><i class="fas fa-sliders mr-1"></i> More Settings (XLR Studio)</span>
-                <input type="checkbox" id="setting-more-toggle" checked title="Enable XLR Options">
+                <span><i class="fas fa-sliders mr-1"></i> Pro Studio Options</span>
+                <input type="checkbox" id="setting-more-toggle" checked title="Enable Pro Options">
             </div>
-            <div class="setting-desc">XLR केबल माइक इंटरफ़ेस के लिए प्रोफेशनल्स जैसे डीप कस्टमाइज़ेशन।</div>
+            <div class="setting-desc">प्रोफेशनल पॉडकास्ट क्वालिटी के लिए उन्नत नियंत्रण।</div>
 
             <div id="xlr-advanced-container" style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);">
                 <div class="rec-setting-item">
@@ -202,39 +202,27 @@
                     <select id="setting-sample-rate">
                         <option value="44100">44.1 kHz (Standard)</option>
                         <option value="48000" selected>48.0 kHz (Pro Studio)</option>
-                        <option value="96000">96.0 kHz (Ultra HD)</option>
                     </select>
                 </div>
 
                 <div class="rec-setting-item">
-                    <span>Noise Gate (बैकग्राउंड कट):</span>
+                    <span>Ambient Noise Reducer:</span>
                     <select id="setting-noise-gate">
                         <option value="off">Off (Raw)</option>
-                        <option value="soft" selected>Soft (-45dB)</option>
-                        <option value="aggressive">Aggressive (-30dB)</option>
+                        <option value="smooth" selected>Smooth Background Cleaner</option>
                     </select>
                 </div>
 
                 <div class="rec-setting-item">
-                    <span>De-Esser (श/स की तीक्ष्णता कम):</span>
+                    <span>Vocal Warmth Boost:</span>
                     <input type="checkbox" id="setting-de-esser" checked>
                 </div>
 
                 <div class="rec-setting-item">
-                    <span>Parametric EQ (Warmth & Mids):</span>
-                    <select id="setting-param-eq">
-                        <option value="flat">Flat (Natural)</option>
-                        <option value="podcast" selected>Podcast Broadcast (Warm)</option>
-                        <option value="crisp">Crisp & Clear (Bright)</option>
-                    </select>
-                </div>
-
-                <div class="rec-setting-item">
-                    <span>XLR Preamp Gain Boost:</span>
+                    <span>Studio Gain Level:</span>
                     <select id="setting-preamp-gain">
                         <option value="1">1.0x (Normal)</option>
-                        <option value="1.25" selected>1.25x (Balanced Boost)</option>
-                        <option value="1.5">1.5x (High Gain)</option>
+                        <option value="1.15" selected>1.15x (Clear Boost)</option>
                     </select>
                 </div>
             </div>
@@ -752,13 +740,12 @@
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
 
-                // XLR More Settings values
+                // Pro Studio Options values
                 const useMoreXlr = settingMoreToggle.checked;
                 const sampleRateVal = parseInt(document.getElementById('setting-sample-rate').value) || 48000;
                 const noiseGateVal = document.getElementById('setting-noise-gate').value;
                 const useDeEsser = document.getElementById('setting-de-esser').checked;
-                const paramEqVal = document.getElementById('setting-param-eq').value;
-                const preampGainVal = parseFloat(document.getElementById('setting-preamp-gain').value) || 1.25;
+                const preampGainVal = parseFloat(document.getElementById('setting-preamp-gain').value) || 1.15;
 
                 const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
                 recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
@@ -792,7 +779,6 @@
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
-                    // यहाँ डिफ़ॉल्ट रूप से हार्डवेयर नॉइज सप्रेसर और इको कैंसिलेशन को मजबूत किया गया है ताकि अजीब साउंड न आए
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
                         audio: { 
                             noiseSuppression: true, 
@@ -811,49 +797,62 @@
 
                     let currentNode = source;
 
-                    // साफ़ और क्रैकल-मुक्त आवाज़ के लिए क्लीन नॉइज गेट और फ़िल्टरिंग
-                    if (noiseGateVal !== 'off') {
-                        const gateNode = audioCtx.createDynamicsCompressor();
-                        gateNode.threshold.value = noiseGateVal === 'aggressive' ? -35 : -45;
-                        gateNode.knee.value = 6;
-                        gateNode.ratio.value = 12;
-                        gateNode.attack.value = 0.003;
-                        gateNode.release.value = 0.1;
-                        currentNode.connect(gateNode);
-                        currentNode = gateNode;
+                    // 1. Smooth Background Expander / Cleaner (हिसिंग और पंखे की आवाज़ को बिना शब्दों काटे दबाने के लिए)
+                    if (noiseGateVal === 'smooth') {
+                        const smoothExpander = audioCtx.createDynamicsCompressor();
+                        smoothExpander.threshold.value = -48;
+                        smoothExpander.knee.value = 10;
+                        smoothExpander.ratio.value = 4.0;
+                        smoothExpander.attack.value = 0.005;
+                        smoothExpander.release.value = 0.25;
+                        currentNode.connect(smoothExpander);
+                        currentNode = smoothExpander;
                     }
 
+                    // 2. Precision Low-Cut High-Pass Filter ($80\text{Hz}$) - सांस की फटने की आवाज़ और गूंज रोकने के लिए
                     if (useAntiCrackle || useMoreXlr) {
-                        const cleanHighPass = audioCtx.createBiquadFilter();
-                        cleanHighPass.type = 'highpass';
-                        cleanHighPass.frequency.value = 90; // हवा और फटने की आवाज़ को पूरी तरह रोकने के लिए
-                        currentNode.connect(cleanHighPass);
-                        currentNode = cleanHighPass;
+                        const lowCutFilter = audioCtx.createBiquadFilter();
+                        lowCutFilter.type = 'highpass';
+                        lowCutFilter.frequency.value = 80;
+                        currentNode.connect(lowCutFilter);
+                        currentNode = lowCutFilter;
                     }
 
-                    if (useDeEsser) {
-                        const deEsserNode = audioCtx.createBiquadFilter();
-                        deEsserNode.type = 'peaking';
-                        deEsserNode.frequency.value = 6000;
-                        deEsserNode.gain.value = -3.5;
-                        deEsserNode.Q.value = 1.5;
-                        currentNode.connect(deEsserNode);
-                        currentNode = deEsserNode;
+                    // 3. Vocal Presence Enhancer - आवाज़ की स्पष्टता और क्रिस्पनेस बढ़ाने के लिए
+                    if (useSl40Eq || useMoreXlr) {
+                        const presenceFilter = audioCtx.createBiquadFilter();
+                        presenceFilter.type = 'peaking';
+                        presenceFilter.frequency.value = 2200;
+                        presenceFilter.gain.value = 3.0;
+                        presenceFilter.Q.value = 1.0;
+                        currentNode.connect(presenceFilter);
+                        currentNode = presenceFilter;
                     }
 
+                    // 4. Vocal Warmth Boost (वैकल्पिक प्राकृतिक गर्माहट)
+                    if (useDeEsser && useMoreXlr) {
+                        const warmthFilter = audioCtx.createBiquadFilter();
+                        warmthFilter.type = 'lowshelf';
+                        warmthFilter.frequency.value = 250;
+                        warmthFilter.gain.value = 2.0;
+                        currentNode.connect(warmthFilter);
+                        currentNode = warmthFilter;
+                    }
+
+                    // 5. Broadcast Compressor & Soft Limiter - वॉल्यूम नियंत्रण और डिस्टॉर्शन रोकने के लिए
                     const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.85 * (useMoreXlr ? preampGainVal : 1.0);
+                    masterGain.gain.value = 0.9 * (useMoreXlr ? preampGainVal : 1.0);
 
-                    const finalCompressor = audioCtx.createDynamicsCompressor();
-                    finalCompressor.threshold.value = -16;
-                    finalCompressor.knee.value = 12;
-                    finalCompressor.ratio.value = 3.0;
-                    finalCompressor.attack.value = 0.01;
-                    finalCompressor.release.value = 0.15;
+                    const broadcastCompressor = audioCtx.createDynamicsCompressor();
+                    broadcastCompressor.threshold.value = -18;
+                    broadcastCompressor.knee.value = 10;
+                    broadcastCompressor.ratio.value = 2.5;
+                    broadcastCompressor.attack.value = 0.008;
+                    broadcastCompressor.release.value = 0.15;
 
                     currentNode.connect(masterGain);
-                    masterGain.connect(finalCompressor);
-                    finalCompressor.connect(destination);
+                    masterGain.connect(broadcastCompressor);
+                    broadcastCompressor.connect(destination);
 
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
