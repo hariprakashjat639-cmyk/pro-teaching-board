@@ -127,13 +127,13 @@
     <div id="presentation-area">
         <div id="upload-prompt">
             <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
-            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें</h2>
+            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/PPTX/Images चुनें</h2>
             <div class="flex flex-col gap-2 w-full mt-3">
                 <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
                     <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (PDF / PPTX / Images)
                 </button>
                 <button type="button" id="ppt-to-pdf-btn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs px-4 py-2.5 rounded-xl cursor-pointer hover:opacity-90 transition font-semibold shadow-lg">
-                    <i class="fas fa-wand-magic-sparkles mr-2"></i> PPT को PDF में बदलें (Converter)
+                    <i class="fas fa-play mr-2"></i> PPT Slide Show देखें
                 </button>
             </div>
             <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
@@ -250,7 +250,7 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // DRAGGABLE TOOLBAR LOGIC (पूरी स्क्रीन पर कहीं भी मूव करने के लिए)
+        // DRAGGABLE TOOLBAR LOGIC
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
         let startX, startY, initialLeft, initialTop;
@@ -293,76 +293,161 @@
             }
         });
 
-        // PPT to PDF Converter Integration Feature
+        // POWERPOINT PPTX SLIDE SHOW RENDER ENGINE
+        async function processPPTXFile(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const zip = new JSZip();
+            const zipContent = await zip.loadAsync(arrayBuffer);
+
+            const slideFiles = [];
+            zipContent.forEach((relativePath, zipEntry) => {
+                if (/^ppt\/slides\/slide\d+\.xml$/i.test(relativePath) && !zipEntry.dir) {
+                    slideFiles.push(zipEntry);
+                }
+            });
+
+            if (slideFiles.length === 0) {
+                const mediaFiles = [];
+                zipContent.forEach((relativePath, zipEntry) => {
+                    if (relativePath.startsWith('ppt/media/') && !zipEntry.dir) {
+                        mediaFiles.push(zipEntry);
+                    }
+                });
+                if (mediaFiles.length === 0) {
+                    throw new Error("PPTX फाइल में स्लाइड्स या मीडिया सामग्री नहीं मिली।");
+                }
+                mediaFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+                const mediaSlides = [];
+                for (let imgEntry of mediaFiles) {
+                    const blob = await imgEntry.async('blob');
+                    mediaSlides.push(await blobToDataURL(blob));
+                }
+                return mediaSlides;
+            }
+
+            slideFiles.sort((a, b) => {
+                const numA = parseInt(a.name.match(/\d+/)[0], 10);
+                const numB = parseInt(b.name.match(/\d+/)[0], 10);
+                return numA - numB;
+            });
+
+            const parser = new DOMParser();
+            const pptSlides = [];
+
+            for (let i = 0; i < slideFiles.length; i++) {
+                const slideXmlText = await slideFiles[i].async('string');
+                const xmlDoc = parser.parseFromString(slideXmlText, 'text/xml');
+
+                const slideCanvas = document.createElement('canvas');
+                slideCanvas.width = 1280;
+                slideCanvas.height = 720;
+                const ctx = slideCanvas.getContext('2d');
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 1280, 720);
+
+                const bgClr = xmlDoc.querySelector('bg srgbClr, bg solidFill srgbClr');
+                if (bgClr && bgClr.getAttribute('val')) {
+                    ctx.fillStyle = '#' + bgClr.getAttribute('val');
+                    ctx.fillRect(0, 0, 1280, 720);
+                }
+
+                const shapes = xmlDoc.getElementsByTagName('p:sp');
+                for (let sp of shapes) {
+                    const off = sp.querySelector('off');
+                    const ext = sp.querySelector('ext');
+                    
+                    let x = 60, y = 100, w = 1160, h = 100;
+                    if (off && ext) {
+                        const emuX = parseInt(off.getAttribute('x') || '0', 10);
+                        const emuY = parseInt(off.getAttribute('y') || '0', 10);
+                        const emuW = parseInt(ext.getAttribute('cx') || '0', 10);
+                        const emuH = parseInt(ext.getAttribute('cy') || '0', 10);
+                        
+                        x = Math.max(10, Math.min(1200, emuX / 9525));
+                        y = Math.max(10, Math.min(680, emuY / 9525));
+                        w = emuW / 9525;
+                        h = emuH / 9525;
+                    }
+
+                    const spFill = sp.querySelector('spPr solidFill srgbClr');
+                    if (spFill && spFill.getAttribute('val')) {
+                        ctx.fillStyle = '#' + spFill.getAttribute('val');
+                        ctx.fillRect(x, y, w, h);
+                    }
+
+                    const paragraphs = sp.getElementsByTagName('a:p');
+                    let currY = y + 28;
+
+                    for (let p of paragraphs) {
+                        const textRuns = p.getElementsByTagName('a:r');
+                        let pText = "";
+                        let fontSize = 22;
+                        let textColor = '#000000';
+
+                        for (let r of textRuns) {
+                            const t = r.querySelector('t');
+                            if (t && t.textContent) {
+                                pText += t.textContent;
+                            }
+                            const rPr = r.querySelector('rPr');
+                            if (rPr) {
+                                const sz = rPr.getAttribute('sz');
+                                if (sz) fontSize = Math.max(14, Math.min(54, parseInt(sz, 10) / 100));
+                                const clr = rPr.querySelector('srgbClr');
+                                if (clr && clr.getAttribute('val')) textColor = '#' + clr.getAttribute('val');
+                            }
+                        }
+
+                        if (!pText) {
+                            const directT = p.getElementsByTagName('a:t');
+                            for (let dt of directT) {
+                                if (dt.textContent) pText += dt.textContent;
+                            }
+                        }
+
+                        if (pText.trim()) {
+                            ctx.fillStyle = textColor;
+                            ctx.font = `${fontSize}px sans-serif`;
+                            
+                            const words = pText.split(' ');
+                            let line = '';
+                            const maxW = w > 50 ? w : 1160;
+                            
+                            for (let n = 0; n < words.length; n++) {
+                                let testLine = line + words[n] + ' ';
+                                let metrics = ctx.measureText(testLine);
+                                if (metrics.width > maxW && n > 0) {
+                                    ctx.fillText(line, x + 10, currY);
+                                    line = words[n] + ' ';
+                                    currY += fontSize * 1.3;
+                                } else {
+                                    line = testLine;
+                                }
+                            }
+                            ctx.fillText(line, x + 10, currY);
+                            currY += fontSize * 1.4;
+                        }
+                    }
+                }
+
+                pptSlides.push(slideCanvas.toDataURL('image/png', 0.95));
+            }
+
+            return pptSlides;
+        }
+
         converterUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             uploadPrompt.style.display = 'none'; 
             loadingScreen.style.display = 'flex';
-            loadingText.innerText = "PPTX फाइल को PDF में कन्वर्ट किया जा रहा है...";
+            loadingText.innerText = "PPTX स्लाइड्स को शो के लिए प्रोसेस किया जा रहा है...";
 
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                const zip = new JSZip();
-                const zipContent = await zip.loadAsync(arrayBuffer);
-
-                const imageFiles = [];
-                zipContent.forEach((relativePath, zipEntry) => {
-                    if (relativePath.startsWith('ppt/media/') && !zipEntry.dir) {
-                        imageFiles.push(zipEntry);
-                    }
-                });
-
-                if (imageFiles.length === 0) {
-                    throw new Error("इस PPTX में कोई इमेजेज नहीं मिलीं!");
-                }
-
-                imageFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'px',
-                    format: [1280, 720]
-                });
-
-                for (let i = 0; i < imageFiles.length; i++) {
-                    const imgBlob = await imageFiles[i].async('blob');
-                    const imgDataUrl = await blobToDataURL(imgBlob);
-                    
-                    if (i > 0) pdf.addPage([1280, 720], 'landscape');
-                    pdf.addImage(imgDataUrl, 'JPEG', 0, 0, 1280, 720);
-                }
-
-                const pdfBlob = pdf.output('blob');
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-                
-                const a = document.createElement('a');
-                a.href = pdfUrl;
-                a.download = `${file.name.replace(/\.[^/.]+$/, "")}_Converted.pdf`;
-                a.click();
-
-                loadingText.innerText = "PDFslides लोड की जा रही हैं...";
-                const fileReader = new FileReader();
-                fileReader.onload = async function() {
-                    const typedarray = new Uint8Array(this.result);
-                    const loadingTask = pdfjsLib.getDocument({ data: typedarray });
-                    const pdfDoc = await loadingTask.promise;
-                    slides = [];
-                    for (let i = 1; i <= pdfDoc.numPages; i++) {
-                        const page = await pdfDoc.getPage(i);
-                        const viewport = page.getViewport({ scale: 2.0 }); 
-                        const canvasTemp = document.createElement('canvas');
-                        canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
-                        const contextTemp = canvasTemp.getContext('2d');
-                        await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
-                        slides.push(canvasTemp.toDataURL('image/png', 0.9));
-                    }
-                    startApp();
-                };
-                fileReader.readAsArrayBuffer(pdfBlob);
-
+                slides = await processPPTXFile(file);
+                startApp();
             } catch (err) {
                 alert("त्रुटि: " + err.message);
                 loadingScreen.style.display = 'none'; 
@@ -406,12 +491,16 @@
                         startApp();
                     };
                     fileReader.readAsArrayBuffer(firstFile);
+                } else if (fileName.endsWith('.pptx') || fileName.endsWith('.ppt')) {
+                    loadingText.innerText = "PPTX स्लाइड्स लोड की जा रही हैं...";
+                    slides = await processPPTXFile(firstFile);
+                    startApp();
                 } else {
                     slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
                     startApp();
                 }
             } catch (err) {
-                alert("फाइल इम्पोर्ट करने में समस्या आई।");
+                alert("फाइल इम्पोर्ट करने में समस्या आई: " + err.message);
                 loadingScreen.style.display = 'none'; uploadPrompt.style.display = 'flex';
             }
         });
@@ -497,7 +586,7 @@
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
 
-        // SAVE PDF WITH DRAWN INKS FEATURE (सभी स्लाइडों पर लिखा गया सेव करने का टूल)
+        // SAVE PDF WITH DRAWN INKS FEATURE
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
             if (slides.length === 0) {
@@ -552,175 +641,25 @@
                         });
                     }
 
-                    const pageImgData = tempCanvas.toDataURL('image/jpeg', 0.95);
-
+                    const imgData = tempCanvas.toDataURL('image/jpeg', 0.9);
                     if (i === 0) {
                         pdf = new jsPDF({
-                            orientation: tempCanvas.width >= tempCanvas.height ? 'landscape' : 'portrait',
+                            orientation: 'landscape',
                             unit: 'px',
                             format: [tempCanvas.width, tempCanvas.height]
                         });
-                        pdf.addImage(pageImgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
+                        pdf.addImage(imgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                     } else {
-                        pdf.addPage([tempCanvas.width, tempCanvas.height], tempCanvas.width >= tempCanvas.height ? 'landscape' : 'portrait');
-                        pdf.addImage(pageImgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
+                        pdf.addPage([tempCanvas.width, tempCanvas.height], 'landscape');
+                        pdf.addImage(imgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                     }
                 }
 
-                pdf.save(`Class_Notes_With_Inks_${new Date().getTime()}.pdf`);
-            } catch (err) {
-                alert("PDF सेव करने में समस्या आई: " + err.message);
-            } finally {
+                pdf.save(`Presentation_Notes_${Date.now()}.pdf`);
                 loadingScreen.style.display = 'none';
-            }
-        });
-
-        // Settings Menu Toggle
-        const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
-        btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
-        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
-
-        // Manual Permission Request
-        const btnRequestPermission = document.getElementById('btn-request-permission');
-        if(btnRequestPermission) {
-            btnRequestPermission.addEventListener('click', async () => {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                    stream.getTracks().forEach(track => track.stop());
-                    alert("माइक्रोफोन की अनुमति मिल गई है!");
-                } catch (err) {
-                    alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
-                }
-            });
-        }
-
-        // PURE & GENTLE AUDIO ENGINE
-        let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
-        
-        const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
-
-        btnStart.addEventListener('click', async () => {
-            try {
-                const useMic = document.getElementById('setting-mic').checked;
-                const quality = document.getElementById('setting-quality').value;
-                const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
-                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
-                
-                const useAntiCrackle = document.getElementById('setting-anti-crackle').checked;
-                const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
-                const useCompressor = document.getElementById('setting-compressor').checked;
-
-                const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
-                recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
-
-                let activeSlideImg = new Image();
-                if (slides.length > 0 && slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
-
-                recordingLoopActive = true; screenDirty = true;
-                
-                function drawRecordingFrame() {
-                    if (!recordingLoopActive) return;
-                    if (screenDirty) {
-                        recCtx.fillStyle = '#030305'; recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
-                        if (slides.length > 0 && slides[currentSlideIndex]) {
-                            if (activeSlideImg.src !== slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
-                            if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
-                                let hRatio = recCanvas.width / activeSlideImg.naturalWidth; let vRatio = recCanvas.height / activeSlideImg.naturalHeight; let ratio = Math.min(hRatio, vRatio);
-                                let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2; let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
-                                recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
-                            }
-                        }
-                        if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
-                        screenDirty = false;
-                    }
-                    requestAnimationFrame(drawRecordingFrame);
-                }
-                drawRecordingFrame();
-
-                const videoStream = recCanvas.captureStream(targetFps);
-                const finalStream = new MediaStream();
-                videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
-
-                if (useMic) {
-                    const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false, sampleRate: 48000 }, 
-                        video: false 
-                    });
-
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
-                    if (audioCtx.state === 'suspended') await audioCtx.resume();
-                    
-                    const source = audioCtx.createMediaStreamSource(micStream);
-                    const destination = audioCtx.createMediaStreamDestination();
-
-                    const gentleHighPass = audioCtx.createBiquadFilter();
-                    gentleHighPass.type = 'highpass';
-                    gentleHighPass.frequency.value = 70;
-
-                    const softTrebleCut = audioCtx.createBiquadFilter();
-                    softTrebleCut.type = 'highshelf';
-                    softTrebleCut.frequency.value = 5200;
-                    softTrebleCut.gain.value = -3.0; 
-
-                    const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.72;
-
-                    const gentleCompressor = audioCtx.createDynamicsCompressor();
-                    gentleCompressor.threshold.value = -18;
-                    gentleCompressor.knee.value = 20;
-                    gentleCompressor.ratio.value = 1.5;
-                    gentleCompressor.attack.value = 0.03;
-                    gentleCompressor.release.value = 0.2;
-
-                    let currentNode = source;
-                    if (useAntiCrackle) { currentNode.connect(gentleHighPass); currentNode = gentleHighPass; }
-                    if (useSl40Eq) { currentNode.connect(softTrebleCut); currentNode = softTrebleCut; }
-                    currentNode.connect(masterGain); currentNode = masterGain;
-                    if (useCompressor) { currentNode.connect(gentleCompressor); currentNode = gentleCompressor; }
-                    currentNode.connect(destination);
-                    destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
-                }
-
-                let mimeType = 'video/webm;codecs=vp9,opus'; let fileExtension = 'webm';
-                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4'; } 
-                else if (MediaRecorder.isTypeSupported('video/mp4')) { mimeType = 'video/mp4'; fileExtension = 'mp4'; } 
-                else if (!MediaRecorder.isTypeSupported(mimeType)) { mimeType = 'video/webm'; }
-
-                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: bitrateMbps * 1000000 });
-                recordedChunks = [];
-                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-
-                mediaRecorder.onstop = () => {
-                    recordingLoopActive = false; clearInterval(timerInterval);
-                    timerText.style.display = 'none'; btnStart.style.display = 'flex'; btnStop.style.display = 'none';
-                    seconds = 0; timerText.innerText = "00:00";
-
-                    const blob = new Blob(recordedChunks, { type: mimeType });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a'); a.href = url;
-                    a.download = `Pro_Class_Recording_${new Date().getTime()}.${fileExtension}`;
-                    a.click(); URL.revokeObjectURL(url);
-                    finalStream.getTracks().forEach(track => track.stop());
-                };
-
-                mediaRecorder.start(1000); 
-                btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
-                
-                timerInterval = setInterval(() => {
-                    seconds++;
-                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0'); const secs = String(seconds % 60).padStart(2, '0');
-                    timerText.innerText = `${mins}:${secs}`;
-                }, 1000);
-
             } catch (err) {
-                alert("रिकॉर्डिंग शुरू करने में समस्या आई: " + err.message);
-                btnStart.style.display = 'flex'; btnStop.style.display = 'none';
-            }
-        });
-
-        btnStop.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
+                alert("PDF सेव करने में त्रुटि आई: " + err.message);
+                loadingScreen.style.display = 'none';
             }
         });
     </script>
