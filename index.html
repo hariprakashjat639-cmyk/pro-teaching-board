@@ -69,13 +69,14 @@
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
+        /* Translucent Side Nav Buttons */
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
-            width: 36px; height: 50px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
-            color: white; display: none; justify-content: center; align-items: center; cursor: pointer;
-            backdrop-filter: blur(10px); transition: 0.2s; font-size: 14px;
+            width: 36px; height: 50px; background: rgba(20, 20, 25, 0.25); border: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255, 255, 255, 0.7); display: none; justify-content: center; align-items: center; cursor: pointer;
+            backdrop-filter: blur(6px); transition: 0.2s; font-size: 14px;
         }
-        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.8); }
+        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.7); color: white; }
         #left-nav { left: 0; border-radius: 0 8px 8px 0; }
         #right-nav { right: 0; border-radius: 8px 0 0 8px; }
 
@@ -229,6 +230,8 @@
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[9px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[9px]"></i></button>
+        <!-- COLLAPSE/HIDE BUTTON (सिर्फ एक्टिव टूल दिखाने/छुपाने के लिए) -->
+        <button class="dock-btn" id="collapse-toolbar-btn" title="सिर्फ चालू टूल रखें / सब दिखाएं" style="color: #0a84ff;"><i class="fas fa-compress-alt text-[9px]"></i></button>
         <!-- SAVE PDF TOOL -->
         <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[9px]"></i></button>
     </div>
@@ -250,7 +253,7 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // DRAGGABLE TOOLBAR LOGIC (पूरी स्क्रीन पर कहीं भी मूव करने के लिए)
+        // DRAGGABLE TOOLBAR LOGIC
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
         let startX, startY, initialLeft, initialTop;
@@ -426,9 +429,17 @@
         }
 
         function loadSlide(index) {
-            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); 
+            currentSlideIndex = index; 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // स्लाइड बदलते ही कैनवास तुरंत साफ़ करें ताकि इंक न फैले
+            slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
-            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
+            
+            slideImage.onload = () => { 
+                resizeCanvas(); 
+                restoreInk(); 
+                screenDirty = true; 
+            }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
             if (savePdfBtn) {
@@ -469,6 +480,11 @@
         function setActiveTool(mode) {
             currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
             if(mode === 'highlighter') sizeSlider.value = 30; else if(mode === 'eraser') sizeSlider.value = 40; else sizeSlider.value = 6;
+            
+            // यदि टूलबार कोलैप्स है, तो एक्टिव बदलने पर केवल नया एक्टिव टूल ही दिखे
+            if (isToolbarCollapsed) {
+                updateToolbarCollapseView();
+            }
         }
         setActiveTool('glow');
 
@@ -495,9 +511,49 @@
         canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
-        function restoreInk() { ctx.clearRect(0, 0, canvas.width, canvas.height); if (slideInks[currentSlideIndex]) { let img = new Image(); img.src = slideInks[currentSlideIndex]; img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; } }
+        
+        // इंक रीस्टोर करते वक्त स्ट्रेचिंग रोकने के लिए सही कैनवास dimensions पर स्केल किया गया है
+        function restoreInk() { 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            if (slideInks[currentSlideIndex]) { 
+                let img = new Image(); 
+                img.src = slideInks[currentSlideIndex]; 
+                img.onload = () => { 
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+                    screenDirty = true; 
+                }; 
+            } 
+        }
 
-        // SAVE PDF WITH DRAWN INKS FEATURE (सभी स्लाइडों पर लिखा गया सेव करने का टूल)
+        // TOOLBAR COLLAPSE / HIDE FEATURE (सिर्फ चालू टूल रखने का फीचर)
+        let isToolbarCollapsed = false;
+        const collapseBtn = document.getElementById('collapse-toolbar-btn');
+
+        function updateToolbarCollapseView() {
+            const dockChildren = Array.from(toolbar.children);
+            dockChildren.forEach(child => {
+                if (child.id === 'slide-counter' || child.id === 'collapse-toolbar-btn' || child.id === 'save-pdf-btn') return;
+                
+                if (isToolbarCollapsed) {
+                    // यदि एक्टिव टूल है या स्लाइड काउंटर/कोलैप्स/सेव बटन है तो दिखेगा, बाकी सब छिप जाएंगे
+                    if (child.classList.contains('active') || child.id === 'pen-size') {
+                        child.style.display = 'flex';
+                    } else {
+                        child.style.display = 'none';
+                    }
+                } else {
+                    child.style.display = '';
+                }
+            });
+        }
+
+        collapseBtn.addEventListener('click', () => {
+            isToolbarCollapsed = !isToolbarCollapsed;
+            updateToolbarCollapseView();
+            collapseBtn.innerHTML = isToolbarCollapsed ? '<i class="fas fa-expand-alt text-[9px]"></i>' : '<i class="fas fa-compress-alt text-[9px]"></i>';
+        });
+
+        // SAVE PDF WITH DRAWN INKS FEATURE
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
             if (slides.length === 0) {
@@ -544,7 +600,7 @@
                         await new Promise((resolve) => {
                             const inkImg = new Image();
                             inkImg.onload = () => {
-                                tempCtx.drawImage(inkImg, 0, 0);
+                                tempCtx.drawImage(inkImg, 0, 0, tempCanvas.width, tempCanvas.height);
                                 resolve();
                             };
                             inkImg.onerror = resolve;
