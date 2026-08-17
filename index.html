@@ -45,7 +45,6 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.9); max-width: 420px; width: 90%;
         }
 
-        /* Compact & Smaller iPad Dock */
         .ipad-dock { 
             position: absolute; bottom: 10px; left: 15px; z-index: 100; 
             display: none; flex-direction: row; gap: 3px; background: rgba(20, 20, 25, 0.85); 
@@ -172,7 +171,7 @@
             <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-headphones"></i> क्रिस्टल क्लियर स्टूडियो ऑडियो मोड</div>
             
             <div class="rec-setting-item">
-                <span class="font-semibold text-blue-400">Precision Low-Cut ($80\text{Hz}$):</span>
+                <span class="font-semibold text-blue-400">Precision Low-Cut (80Hz):</span>
                 <input type="checkbox" id="setting-anti-crackle" checked>
             </div>
             <div class="setting-desc">साँस की फटने की आवाज़ और माइक की गूंज को साफ़ करता है।</div>
@@ -701,7 +700,6 @@
             }
         });
 
-        // Toggle More Settings view
         const settingMoreToggle = document.getElementById('setting-more-toggle');
         const xlrAdvancedContainer = document.getElementById('xlr-advanced-container');
         settingMoreToggle.addEventListener('change', () => {
@@ -740,7 +738,6 @@
                 const useSl40Eq = document.getElementById('setting-sl40-eq').checked;
                 const useCompressor = document.getElementById('setting-compressor').checked;
 
-                // Pro Studio Options values
                 const useMoreXlr = settingMoreToggle.checked;
                 const sampleRateVal = parseInt(document.getElementById('setting-sample-rate').value) || 48000;
                 const noiseGateVal = document.getElementById('setting-noise-gate').value;
@@ -797,19 +794,19 @@
 
                     let currentNode = source;
 
-                    // 1. Smooth Background Expander / Cleaner (हिसिंग और पंखे की आवाज़ को बिना शब्दों काटे दबाने के लिए)
+                    // 1. Smooth Background Expander (माइक्रोफोन बैकग्राउंड हम्म को साफ करने के लिए)
                     if (noiseGateVal === 'smooth') {
                         const smoothExpander = audioCtx.createDynamicsCompressor();
-                        smoothExpander.threshold.value = -48;
-                        smoothExpander.knee.value = 10;
-                        smoothExpander.ratio.value = 4.0;
-                        smoothExpander.attack.value = 0.005;
-                        smoothExpander.release.value = 0.25;
+                        smoothExpander.threshold.value = -42;
+                        smoothExpander.knee.value = 12;
+                        smoothExpander.ratio.value = 3.0;
+                        smoothExpander.attack.value = 0.003;
+                        smoothExpander.release.value = 0.2;
                         currentNode.connect(smoothExpander);
                         currentNode = smoothExpander;
                     }
 
-                    // 2. Precision Low-Cut High-Pass Filter ($80\text{Hz}$) - सांस की फटने की आवाज़ और गूंज रोकने के लिए
+                    // 2. Precision Low-Cut High-Pass Filter (80Hz)
                     if (useAntiCrackle || useMoreXlr) {
                         const lowCutFilter = audioCtx.createBiquadFilter();
                         lowCutFilter.type = 'highpass';
@@ -818,18 +815,18 @@
                         currentNode = lowCutFilter;
                     }
 
-                    // 3. Vocal Presence Enhancer - आवाज़ की स्पष्टता और क्रिस्पनेस बढ़ाने के लिए
+                    // 3. Vocal Presence Enhancer (2.2kHz पर क्रिस्पनेस)
                     if (useSl40Eq || useMoreXlr) {
                         const presenceFilter = audioCtx.createBiquadFilter();
                         presenceFilter.type = 'peaking';
                         presenceFilter.frequency.value = 2200;
-                        presenceFilter.gain.value = 3.0;
+                        presenceFilter.gain.value = 3.5;
                         presenceFilter.Q.value = 1.0;
                         currentNode.connect(presenceFilter);
                         currentNode = presenceFilter;
                     }
 
-                    // 4. Vocal Warmth Boost (वैकल्पिक प्राकृतिक गर्माहट)
+                    // 4. Vocal Warmth Boost (Low shelf)
                     if (useDeEsser && useMoreXlr) {
                         const warmthFilter = audioCtx.createBiquadFilter();
                         warmthFilter.type = 'lowshelf';
@@ -839,20 +836,22 @@
                         currentNode = warmthFilter;
                     }
 
-                    // 5. Broadcast Compressor & Soft Limiter - वॉल्यूम नियंत्रण और डिस्टॉर्शन रोकने के लिए
+                    // 5. Broadcast Compressor & Volume Master Gain
+                    if (useCompressor || useMoreXlr) {
+                        const broadcastCompressor = audioCtx.createDynamicsCompressor();
+                        broadcastCompressor.threshold.value = -20;
+                        broadcastCompressor.knee.value = 12;
+                        broadcastCompressor.ratio.value = 3.0;
+                        broadcastCompressor.attack.value = 0.005;
+                        broadcastCompressor.release.value = 0.12;
+                        currentNode.connect(broadcastCompressor);
+                        currentNode = broadcastCompressor;
+                    }
+
                     const masterGain = audioCtx.createGain();
-                    masterGain.gain.value = 0.9 * (useMoreXlr ? preampGainVal : 1.0);
-
-                    const broadcastCompressor = audioCtx.createDynamicsCompressor();
-                    broadcastCompressor.threshold.value = -18;
-                    broadcastCompressor.knee.value = 10;
-                    broadcastCompressor.ratio.value = 2.5;
-                    broadcastCompressor.attack.value = 0.008;
-                    broadcastCompressor.release.value = 0.15;
-
+                    masterGain.gain.value = useMoreXlr ? preampGainVal : 1.1;
                     currentNode.connect(masterGain);
-                    masterGain.connect(broadcastCompressor);
-                    broadcastCompressor.connect(destination);
+                    masterGain.connect(destination);
 
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
