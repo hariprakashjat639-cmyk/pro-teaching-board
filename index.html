@@ -69,15 +69,17 @@
         .dock-slider { width: 38px; cursor: pointer; accent-color: #0a84ff; height: 3px; border-radius: 2px; background: #666; flex-shrink: 0; margin: 0 2px; }
         .dock-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 2px; flex-shrink: 0; }
 
+        /* अत्यंत सुंदर और छोटे बाएं-दाएं स्लाइड नेविगेशन बटन */
         .side-nav-btn {
             position: absolute; top: 50%; transform: translateY(-50%); z-index: 90;
-            width: 26px; height: 36px; background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255,255,255,0.1);
+            width: 32px; height: 44px; background: rgba(20, 20, 25, 0.75); border: 1px solid rgba(255,255,255,0.15);
             color: white; display: none; justify-content: center; align-items: center; cursor: pointer;
-            backdrop-filter: blur(10px); transition: 0.2s; font-size: 11px;
+            backdrop-filter: blur(10px); transition: 0.2s; font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
-        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.8); }
-        #left-nav { left: 0; border-radius: 0 6px 6px 0; }
-        #right-nav { right: 0; border-radius: 6px 0 0 6px; }
+        .side-nav-btn:hover { background: rgba(10, 132, 255, 0.9); transform: translateY(-50%) scale(1.08); }
+        #left-nav { left: 8px; border-radius: 8px; }
+        #right-nav { right: 8px; border-radius: 8px; }
 
         .recorder-ui { 
             position: absolute; top: 12px; right: 12px; z-index: 100; 
@@ -143,8 +145,8 @@
         <img id="slide-image" src="" style="display: none;">
         <canvas id="drawing-canvas"></canvas>
 
-        <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
-        <button class="side-nav-btn" id="right-nav"><i class="fas fa-chevron-right"></i></button>
+        <button class="side-nav-btn" id="left-nav" title="Previous Slide"><i class="fas fa-chevron-left"></i></button>
+        <button class="side-nav-btn" id="right-nav" title="Next Slide"><i class="fas fa-chevron-right"></i></button>
     </div>
 
     <div class="recorder-ui" id="recorder-ui">
@@ -218,7 +220,7 @@
             <input type="color" id="color-picker" value="#ffff00">
             <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[8px]"></i></button>
         </div>
-        <!-- Smooth Ink Pen (Apple Pencil Style) -->
+        <!-- Smooth Ink Pen (Apple Pencil Style) - Replaced Glow Pen -->
         <button class="dock-btn active" id="smooth-pen-btn" title="Smooth Ink Pen"><i class="fas fa-feather-pointed text-[9px]"></i></button>
         <button class="dock-btn" id="normal-pen-btn" title="Normal Pen"><i class="fas fa-pen text-[9px]"></i></button>
         <button class="dock-btn" id="highlighter-btn" title="Highlighter"><i class="fas fa-highlighter text-[9px]"></i></button>
@@ -423,11 +425,6 @@
         function loadSlide(index) {
             saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             document.getElementById('slide-counter').innerText = `${currentSlideIndex + 1}/${slides.length}`; 
-            
-            // अगर मिनी स्लाइड नेविगेशन मौजूद है, तो उसका काउंटर भी अपडेट करें[cite: 8]
-            const miniCounter = document.getElementById('mini-slide-counter');
-            if (miniCounter) miniCounter.innerText = document.getElementById('slide-counter').innerText;
-
             slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
@@ -439,13 +436,6 @@
                     savePdfBtn.style.border = "none";
                     savePdfBtn.style.boxShadow = "none";
                 }
-            }
-        }
-
-        function changeSlide(direction) {
-            const newIndex = currentSlideIndex + direction;
-            if (newIndex >= 0 && newIndex < slides.length) {
-                loadSlide(newIndex);
             }
         }
 
@@ -488,39 +478,6 @@
                 hideUiBtn.innerHTML = '<i class="fas fa-eye text-[9px]"></i>';
                 hideUiBtn.style.color = '#ff453a';
                 hideUiBtn.title = "Show UI";
-
-                // 🔥 आवश्यक अपडेट: UI छुपने पर नीचे की तरफ बिल्कुल छोटा, पारदर्शी स्लाइड नेविगेशन बटन दिखाना[cite: 8]
-                let miniNav = document.getElementById('mini-slide-nav');
-                if (!miniNav) {
-                    miniNav = document.createElement('div');
-                    miniNav.id = 'mini-slide-nav';
-                    miniNav.style.cssText = 'position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 8px; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(4px); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15); opacity: 0.6; transition: opacity 0.2s;';
-                    miniNav.onmouseenter = () => miniNav.style.opacity = '1';
-                    miniNav.onmouseleave = () => miniNav.style.opacity = '0.6';
-
-                    const prevBtn = document.createElement('button');
-                    prevBtn.innerHTML = '<i class="fas fa-chevron-left text-[9px]"></i>';
-                    prevBtn.style.cssText = 'background: transparent; border: none; color: white; cursor: pointer; padding: 2px 6px; font-size: 10px;';
-                    prevBtn.onclick = () => changeSlide(-1);
-
-                    const indicator = document.createElement('span');
-                    indicator.id = 'mini-slide-counter';
-                    indicator.innerText = document.getElementById('slide-counter').innerText;
-                    indicator.style.cssText = 'color: white; font-size: 9px; font-weight: bold; font-family: monospace;';
-
-                    const nextBtn = document.createElement('button');
-                    nextBtn.innerHTML = '<i class="fas fa-chevron-right text-[9px]"></i>';
-                    nextBtn.style.cssText = 'background: transparent; border: none; color: white; cursor: pointer; padding: 2px 6px; font-size: 10px;';
-                    nextBtn.onclick = () => changeSlide(1);
-
-                    miniNav.appendChild(prevBtn);
-                    miniNav.appendChild(indicator);
-                    miniNav.appendChild(nextBtn);
-                    document.body.appendChild(miniNav);
-                } else {
-                    document.getElementById('mini-slide-counter').innerText = document.getElementById('slide-counter').innerText;
-                    miniNav.style.display = 'flex';
-                }
             } else {
                 leftNav.style.display = 'flex';
                 rightNav.style.display = 'flex';
@@ -531,10 +488,6 @@
                 hideUiBtn.innerHTML = '<i class="fas fa-eye-slash text-[9px]"></i>';
                 hideUiBtn.style.color = '#0a84ff';
                 hideUiBtn.title = "Hide/Show UI";
-
-                // UI वापस आने पर मिनी नेविगेशन को छिपा देना[cite: 8]
-                const miniNav = document.getElementById('mini-slide-nav');
-                if (miniNav) miniNav.style.display = 'none';
             }
             screenDirty = true;
         });
