@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Smart Stamp Edition</title>
+    <title>Pro EduCreator Studio - Image Stamping Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -37,7 +37,7 @@
             z-index: 10; cursor: default; 
         }
 
-        /* Container for Stamped / Draggable Elements & Text Notes */
+        /* Container for Stamped / Draggable Images & Text */
         #stamps-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 12; pointer-events: none;
@@ -50,11 +50,11 @@
             touch-action: none;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             padding: 4px 8px;
             border: 1.5px dashed rgba(255, 255, 255, 0.4);
             border-radius: 6px;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.35);
             backdrop-filter: blur(2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             transform-origin: center center;
@@ -62,15 +62,16 @@
 
         .active-stamp.selected {
             border-color: #0a84ff;
-            background: rgba(10, 132, 255, 0.15);
+            background: rgba(10, 132, 255, 0.2);
         }
 
         .active-stamp img {
-            width: 28px;
-            height: 28px;
+            width: 40px;
+            height: 40px;
             object-fit: contain;
             flex-shrink: 0;
             pointer-events: none;
+            border-radius: 4px;
         }
 
         .active-stamp .stamp-text-input {
@@ -80,7 +81,7 @@
             font-size: 16px;
             font-weight: 600;
             outline: none;
-            width: 120px;
+            width: 140px;
             text-shadow: 0 1px 3px rgba(0,0,0,0.9);
             font-family: inherit;
         }
@@ -213,7 +214,7 @@
 
         <img id="slide-image" src="" style="display: none;">
         
-        <!-- Container where Right Tick, Wrong Cross, and text boxes are added -->
+        <!-- Container where custom added images and text notes are placed -->
         <div id="stamps-container"></div>
 
         <canvas id="drawing-canvas"></canvas>
@@ -300,10 +301,11 @@
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[8px]"></i></button>
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
-        <!-- Right Tick Button -->
-        <button class="dock-btn" id="add-right-tick-btn" title="सही का निशान (Right Tick)" style="color: #30d158;"><i class="fas fa-check text-[10px]"></i></button>
-        <!-- Wrong Cross Button -->
-        <button class="dock-btn" id="add-wrong-cross-btn" title="गलत का निशान (Wrong Cross)" style="color: #ff453a;"><i class="fas fa-times text-[10px]"></i></button>
+        
+        <!-- Add Image Stamp Button with hidden file input -->
+        <button class="dock-btn" id="add-image-stamp-btn" title="इमेज जोड़ें और स्लाइड पर स्थिर करें (Add Image)" style="color: #0a84ff;"><i class="fas fa-image text-[10px]"></i></button>
+        <input type="file" id="stamp-image-upload" accept="image/*" style="display: none;">
+
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
@@ -327,19 +329,30 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // Built-in Clean SVG Data URIs for Right Tick and Wrong Cross
-        const rightTickSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%2330d158" d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.203c9.997-9.997 26.206-9.997 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.206-9.997 36.204 0l36.203 36.203c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.4c-9.998 9.997-26.207 9.997-36.204-.001z"/></svg>';
-        const wrongCrossSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%23ff453a" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65.1-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65.1 65.6 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>';
-
         const stampsContainer = document.getElementById('stamps-container');
-        const addRightTickBtn = document.getElementById('add-right-tick-btn');
-        const addWrongCrossBtn = document.getElementById('add-wrong-cross-btn');
+        const addImageStampBtn = document.getElementById('add-image-stamp-btn');
+        const stampImageUpload = document.getElementById('stamp-image-upload');
+
+        addImageStampBtn.addEventListener('click', () => {
+            stampImageUpload.click();
+        });
+
+        stampImageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                createStamp(event.target.result, '');
+            };
+            reader.readAsDataURL(file);
+            stampImageUpload.value = ''; // Reset input
+        });
 
         function createStamp(imgSrc, defaultText = '') {
             const stampEl = document.createElement('div');
             stampEl.className = 'active-stamp';
             // Default center position on screen
-            stampEl.style.left = (window.innerWidth / 2 - 80) + 'px';
+            stampEl.style.left = (window.innerWidth / 2 - 90) + 'px';
             stampEl.style.top = (window.innerHeight / 2 - 30) + 'px';
 
             const img = document.createElement('img');
@@ -423,14 +436,6 @@
             saveCurrentStamps();
             screenDirty = true;
         }
-
-        addRightTickBtn.addEventListener('click', () => {
-            createStamp(rightTickSvg);
-        });
-
-        addWrongCrossBtn.addEventListener('click', () => {
-            createStamp(wrongCrossSvg);
-        });
 
         // Click outside stamps to deselect
         document.getElementById('presentation-area').addEventListener('pointerdown', (e) => {
@@ -917,16 +922,15 @@
                         });
                     }
 
-                    // Render Stamps & Text Notes for slide i
+                    // Render custom images and text notes for slide i
                     const stampList = slideStamps[i] || [];
                     for (let sData of stampList) {
                         await new Promise((resolve) => {
                             const stampImg = new Image();
                             stampImg.crossOrigin = "anonymous";
                             stampImg.onload = () => {
-                                // Create a temporary DOM element to measure position accurately
                                 const tempEl = document.createElement('div');
-                                tempEl.style.cssText = `position:absolute; left:${sData.left}; top:${sData.top}; visibility:hidden; display:inline-flex; align-items:center; gap:4px; padding:4px 8px;`;
+                                tempEl.style.cssText = `position:absolute; left:${sData.left}; top:${sData.top}; visibility:hidden; display:inline-flex; align-items:center; gap:6px; padding:4px 8px;`;
                                 document.body.appendChild(tempEl);
                                 const rect = tempEl.getBoundingClientRect();
                                 document.body.removeChild(tempEl);
@@ -937,14 +941,14 @@
                                 const renderX = parseFloat(sData.left) * scaleX;
                                 const renderY = parseFloat(sData.top) * scaleY;
 
-                                tempCtx.drawImage(stampImg, renderX + 4, renderY + 4, 28 * scaleX, 28 * scaleY);
+                                tempCtx.drawImage(stampImg, renderX + 4, renderY + 4, 40 * scaleX, 40 * scaleY);
 
                                 if (sData.text) {
                                     tempCtx.font = `600 ${Math.round(16 * scaleY)}px sans-serif`;
                                     tempCtx.fillStyle = '#ffffff';
                                     tempCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
                                     tempCtx.shadowBlur = 4;
-                                    tempCtx.fillText(sData.text, renderX + 36 * scaleX, renderY + 24 * scaleY);
+                                    tempCtx.fillText(sData.text, renderX + 50 * scaleX, renderY + 30 * scaleY);
                                     tempCtx.shadowBlur = 0;
                                 }
                                 resolve();
@@ -981,7 +985,7 @@
                     }
                 }
 
-                pdf.save(`Class_Notes_With_Stamps_${new Date().getTime()}.pdf`);
+                pdf.save(`Class_Notes_With_Images_${new Date().getTime()}.pdf`);
             } catch (err) {
                 alert("PDF सेव करने में समस्या आई: " + err.message);
             } finally {
@@ -1041,25 +1045,24 @@
                             }
                         }
 
-                        // Draw stamps & text on recording frame
+                        // Draw custom added images and text on recording frame
                         const stampList = slideStamps[currentSlideIndex] || [];
                         const scaleX = recCanvas.width / window.innerWidth;
                         const scaleY = recCanvas.height / window.innerHeight;
 
-                        // We can render stamps synchronously during recording if preloaded, or iterate
                         stampList.forEach(sData => {
                             const cachedImg = new Image();
                             cachedImg.src = sData.imgSrc;
                             if (cachedImg.complete && cachedImg.naturalWidth) {
                                 const renderX = parseFloat(sData.left) * scaleX;
                                 const renderY = parseFloat(sData.top) * scaleY;
-                                recCtx.drawImage(cachedImg, renderX + 4, renderY + 4, 28 * scaleX, 28 * scaleY);
+                                recCtx.drawImage(cachedImg, renderX + 4, renderY + 4, 40 * scaleX, 40 * scaleY);
                                 if (sData.text) {
                                     recCtx.font = `600 ${Math.round(16 * scaleY)}px sans-serif`;
                                     recCtx.fillStyle = '#ffffff';
                                     recCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
                                     recCtx.shadowBlur = 4;
-                                    recCtx.fillText(sData.text, renderX + 36 * scaleX, renderY + 24 * scaleY);
+                                    recCtx.fillText(sData.text, renderX + 50 * scaleX, renderY + 30 * scaleY);
                                     recCtx.shadowBlur = 0;
                                 }
                             }
