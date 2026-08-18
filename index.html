@@ -225,6 +225,10 @@
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[8px]"></i></button>
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
+        <!-- ADD MAP/IMAGE BUTTON -->
+        <button class="dock-btn" id="add-map-btn" title="मैप या इमेज जोड़ें (Add Image)" style="color: #ff9f0a;"><i class="fas fa-image text-[8px]"></i></button>
+        <input type="file" id="map-image-upload" accept="image/*" style="display: none;">
+        <!-- EXISTING BUTTONS -->
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
         <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[8px]"></i></button>
@@ -233,7 +237,7 @@
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
+        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let slideMovableImages = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -246,6 +250,170 @@
 
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
+
+        // Map / Image Upload handling
+        const addMapBtn = document.getElementById('add-map-btn');
+        const mapImageUpload = document.getElementById('map-image-upload');
+        const presentationArea = document.getElementById('presentation-area');
+
+        addMapBtn.addEventListener('click', () => mapImageUpload.click());
+
+        mapImageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const imageUrl = URL.createObjectURL(file);
+            createMovableImageElement(imageUrl, '100px', '100px', '250px', 'auto');
+            mapImageUpload.value = '';
+        });
+
+        function createMovableImageElement(src, left = '100px', top = '100px', width = '250px', height = 'auto') {
+            const existing = document.getElementById('movable-image-wrapper');
+            if (existing) existing.remove();
+
+            const wrapper = document.createElement('div');
+            wrapper.id = 'movable-image-wrapper';
+            wrapper.style.position = 'absolute';
+            wrapper.style.left = left;
+            wrapper.style.top = top;
+            wrapper.style.width = width;
+            wrapper.style.height = height;
+            wrapper.style.zIndex = '15';
+            wrapper.style.cursor = 'move';
+            wrapper.style.touchAction = 'none';
+            wrapper.style.border = '2px dashed rgba(10, 132, 255, 0.8)';
+            wrapper.style.background = 'rgba(0,0,0,0.4)';
+            wrapper.style.borderRadius = '6px';
+            wrapper.style.overflow = 'hidden';
+            wrapper.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+
+            const img = document.createElement('img');
+            img.src = src;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.display = 'block';
+            wrapper.appendChild(img);
+
+            // Close / Delete button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '2px';
+            closeBtn.style.right = '2px';
+            closeBtn.style.background = '#ff453a';
+            closeBtn.style.color = 'white';
+            closeBtn.style.border = 'none';
+            closeBtn.style.borderRadius = '50%';
+            closeBtn.style.width = '20px';
+            closeBtn.style.height = '20px';
+            closeBtn.style.fontSize = '10px';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.style.display = 'flex';
+            closeBtn.style.alignItems = 'center';
+            closeBtn.style.justifyContent = 'center';
+            closeBtn.style.zIndex = '16';
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                wrapper.remove();
+                delete slideMovableImages[currentSlideIndex];
+                screenDirty = true;
+            });
+            wrapper.appendChild(closeBtn);
+
+            // Resize handle at bottom right
+            const resizeHandle = document.createElement('div');
+            resizeHandle.style.position = 'absolute';
+            resizeHandle.style.bottom = '0';
+            resizeHandle.style.right = '0';
+            resizeHandle.style.width = '15px';
+            resizeHandle.style.height = '15px';
+            resizeHandle.style.background = '#0a84ff';
+            resizeHandle.style.cursor = 'se-resize';
+            resizeHandle.style.zIndex = '16';
+            wrapper.appendChild(resizeHandle);
+
+            let isDraggingImg = false;
+            let isResizingImg = false;
+            let startX, startY, startLeft, startTop, startWidth, startHeight;
+
+            wrapper.addEventListener('pointerdown', (e) => {
+                if (e.target === closeBtn || closeBtn.contains(e.target)) return;
+                if (e.target === resizeHandle) {
+                    isResizingImg = true;
+                    resizeHandle.setPointerCapture(e.pointerId);
+                } else {
+                    isDraggingImg = true;
+                    wrapper.setPointerCapture(e.pointerId);
+                }
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = wrapper.getBoundingClientRect();
+                const parentRect = presentationArea.getBoundingClientRect();
+                startLeft = rect.left - parentRect.left;
+                startTop = rect.top - parentRect.top;
+                startWidth = rect.width;
+                startHeight = rect.height;
+                e.stopPropagation();
+            });
+
+            wrapper.addEventListener('pointermove', (e) => {
+                if (isDraggingImg) {
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    wrapper.style.left = (startLeft + dx) + 'px';
+                    wrapper.style.top = (startTop + dy) + 'px';
+                    screenDirty = true;
+                } else if (isResizingImg) {
+                    const dw = e.clientX - startX;
+                    const dh = e.clientY - startY;
+                    wrapper.style.width = Math.max(100, startWidth + dw) + 'px';
+                    wrapper.style.height = Math.max(100, startHeight + dh) + 'px';
+                    screenDirty = true;
+                }
+            });
+
+            wrapper.addEventListener('pointerup', (e) => {
+                if (isDraggingImg) {
+                    isDraggingImg = false;
+                    try { wrapper.releasePointerCapture(e.pointerId); } catch(err){}
+                }
+                if (isResizingImg) {
+                    isResizingImg = false;
+                    try { resizeHandle.releasePointerCapture(e.pointerId); } catch(err){}
+                }
+                saveCurrentMovableImage();
+                screenDirty = true;
+            });
+
+            presentationArea.appendChild(wrapper);
+            saveCurrentMovableImage();
+            screenDirty = true;
+        }
+
+        function saveCurrentMovableImage() {
+            const wrapper = document.getElementById('movable-image-wrapper');
+            if (wrapper) {
+                slideMovableImages[currentSlideIndex] = {
+                    src: wrapper.querySelector('img').src,
+                    left: wrapper.style.left,
+                    top: wrapper.style.top,
+                    width: wrapper.style.width,
+                    height: wrapper.style.height
+                };
+            } else {
+                delete slideMovableImages[currentSlideIndex];
+            }
+        }
+
+        function restoreMovableImage() {
+            const existing = document.getElementById('movable-image-wrapper');
+            if (existing) existing.remove();
+
+            if (slideMovableImages[currentSlideIndex]) {
+                const data = slideMovableImages[currentSlideIndex];
+                createMovableImageElement(data.src, data.left, data.top, data.width, data.height);
+            }
+        }
 
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
@@ -421,10 +589,18 @@
         }
 
         function loadSlide(index) {
-            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); 
+            saveCurrentMovableImage();
+            currentSlideIndex = index; 
+            slideImage.src = slides[currentSlideIndex]; 
             const counterText = `${currentSlideIndex + 1}/${slides.length}`;
             document.getElementById('slide-counter').innerText = counterText; 
-            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
+            slideImage.onload = () => { 
+                resizeCanvas(); 
+                restoreInk(); 
+                restoreMovableImage();
+                screenDirty = true; 
+            }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
             if (savePdfBtn) {
@@ -589,6 +765,7 @@
             }
 
             saveCurrentInk();
+            saveCurrentMovableImage();
             loadingScreen.style.display = 'flex';
             loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";
 
@@ -605,6 +782,7 @@
                     tempCtx.fillStyle = '#030305';
                     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
+                    // 1. Draw Slide Background
                     if (slides[i]) {
                         await new Promise((resolve) => {
                             const img = new Image();
@@ -623,6 +801,34 @@
                         });
                     }
 
+                    // 2. Draw Movable Map/Image if exists on this slide
+                    if (slideMovableImages[i]) {
+                        await new Promise((resolve) => {
+                            const mData = slideMovableImages[i];
+                            const mImg = new Image();
+                            mImg.onload = () => {
+                                // Calculate scale relative to current screen bounds
+                                const pRect = presentationArea.getBoundingClientRect();
+                                let scaleX = tempCanvas.width / pRect.width;
+                                let scaleY = tempCanvas.height / pRect.height;
+                                
+                                // Parse CSS left/top/width/height
+                                let wrapperEl = document.getElementById('movable-image-wrapper');
+                                // If currently active, we can use its actual rect, else parse
+                                let rx = parseFloat(mData.left) * scaleX;
+                                let ry = parseFloat(mData.top) * scaleY;
+                                let rw = parseFloat(mData.width) * scaleX;
+                                let rh = mData.height === 'auto' ? (mImg.naturalHeight * (rw / mImg.naturalWidth)) : parseFloat(mData.height) * scaleY;
+                                
+                                tempCtx.drawImage(mImg, rx, ry, rw, rh);
+                                resolve();
+                            };
+                            mImg.onerror = resolve;
+                            mImg.src = mData.src;
+                        });
+                    }
+
+                    // 3. Draw Ink Canvas
                     if (slideInks[i]) {
                         await new Promise((resolve) => {
                             const inkImg = new Image();
@@ -686,7 +892,6 @@
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
                 
-                // Only 2 Selected Audio Filters
                 const useNoiseRemove = document.getElementById('setting-noise-remove').checked;
                 const useAudioSmooth = document.getElementById('setting-audio-smooth').checked;
 
@@ -702,6 +907,8 @@
                     if (!recordingLoopActive) return;
                     if (screenDirty) {
                         recCtx.fillStyle = '#030305'; recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+                        
+                        // 1. Draw slide background
                         if (slides.length > 0 && slides[currentSlideIndex]) {
                             if (activeSlideImg.src !== slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
                             if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
@@ -710,6 +917,25 @@
                                 recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
                             }
                         }
+
+                        // 2. Draw movable map/image if present
+                        const movableWrapper = document.getElementById('movable-image-wrapper');
+                        if (movableWrapper) {
+                            const mImg = movableWrapper.querySelector('img');
+                            const mRect = movableWrapper.getBoundingClientRect();
+                            const pRect = presentationArea.getBoundingClientRect();
+                            let scaleX = recCanvas.width / pRect.width;
+                            let scaleY = recCanvas.height / pRect.height;
+                            let rx = (mRect.left - pRect.left) * scaleX;
+                            let ry = (mRect.top - pRect.top) * scaleY;
+                            let rw = mRect.width * scaleX;
+                            let rh = mRect.height * scaleY;
+                            if (mImg && mImg.complete && mImg.naturalWidth) {
+                                recCtx.drawImage(mImg, rx, ry, rw, rh);
+                            }
+                        }
+
+                        // 3. Draw ink canvas
                         if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         screenDirty = false;
                     }
@@ -722,7 +948,6 @@
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
-                    // Browser level hardware noise suppression active by default
                     const micStream = await navigator.mediaDevices.getUserMedia({ 
                         audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false }, 
                         video: false 
@@ -736,24 +961,20 @@
 
                     let currentNode = source;
 
-                    // 1. Background Noise Removal Filter (Gentle Noise Gate)
                     if (useNoiseRemove) {
                         const noiseGate = audioCtx.createDynamicsCompressor();
-                        noiseGate.threshold.value = -45; // cuts out subtle background hum/fan noise
+                        noiseGate.threshold.value = -45;
                         noiseGate.knee.value = 12;
                         noiseGate.ratio.value = 4;
                         currentNode.connect(noiseGate);
                         currentNode = noiseGate;
                     }
 
-                    // 2. Audio Smooth & Natural Vocal Filter (Soft Highpass + Gentle Warmth)
                     if (useAudioSmooth) {
-                        // High-pass to remove low rumble/thuds
                         const highPass = audioCtx.createBiquadFilter();
                         highPass.type = 'highpass';
                         highPass.frequency.value = 75;
 
-                        // Mild EQ peaking for natural crisp vocal clarity
                         const vocalEq = audioCtx.createBiquadFilter();
                         vocalEq.type = 'peaking';
                         vocalEq.frequency.value = 2000;
