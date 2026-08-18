@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Image Stamping Edition</title>
+    <title>Pro EduCreator Studio - Map & Image Stamping Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -37,7 +37,7 @@
             z-index: 10; cursor: default; 
         }
 
-        /* Container for Stamped / Draggable Images & Text */
+        /* Container for Draggable & Resizable Map / Image Stamps */
         #stamps-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 12; pointer-events: none;
@@ -49,49 +49,64 @@
             cursor: move;
             touch-action: none;
             display: inline-flex;
+            flex-direction: column;
             align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
+            padding: 6px;
             border: 1.5px dashed rgba(255, 255, 255, 0.4);
-            border-radius: 6px;
-            background: rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
             transform-origin: center center;
+            min-width: 100px;
+            min-height: 100px;
         }
 
         .active-stamp.selected {
             border-color: #0a84ff;
-            background: rgba(10, 132, 255, 0.2);
+            background: rgba(10, 132, 255, 0.15);
+        }
+
+        .stamp-content-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .active-stamp img {
-            width: 40px;
-            height: 40px;
+            width: 220px;
+            height: 150px;
             object-fit: contain;
-            flex-shrink: 0;
             pointer-events: none;
             border-radius: 4px;
+            display: block;
         }
 
         .active-stamp .stamp-text-input {
-            background: transparent;
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             outline: none;
-            width: 140px;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            width: 100%;
+            margin-top: 4px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            text-align: center;
             font-family: inherit;
         }
 
+        /* Delete Button */
         .stamp-delete-btn {
             position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 20px;
-            height: 20px;
+            top: -10px;
+            right: -10px;
+            width: 22px;
+            height: 22px;
             background: #ff453a;
             color: white;
             border-radius: 50%;
@@ -101,11 +116,32 @@
             font-size: 10px;
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            z-index: 25;
+            z-index: 30;
             border: 1.5px solid white;
         }
 
-        .active-stamp.selected .stamp-delete-btn {
+        /* Resize Handle (Bottom-Right Corner) */
+        .stamp-resize-handle {
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            background: #0a84ff;
+            color: white;
+            border-radius: 50%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 9px;
+            cursor: nwse-resize;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 30;
+            border: 1.5px solid white;
+        }
+
+        .active-stamp.selected .stamp-delete-btn,
+        .active-stamp.selected .stamp-resize-handle {
             display: flex;
         }
         
@@ -214,7 +250,7 @@
 
         <img id="slide-image" src="" style="display: none;">
         
-        <!-- Container where custom added images and text notes are placed -->
+        <!-- Container where draggable, resizable maps/images & text notes are placed -->
         <div id="stamps-container"></div>
 
         <canvas id="drawing-canvas"></canvas>
@@ -302,15 +338,15 @@
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
         
-        <!-- Add Image Stamp Button with hidden file input -->
-        <button class="dock-btn" id="add-image-stamp-btn" title="इमेज जोड़ें और स्लाइड पर स्थिर करें (Add Image)" style="color: #0a84ff;"><i class="fas fa-image text-[10px]"></i></button>
+        <!-- Add Map / Image Stamp Button with hidden file input -->
+        <button class="dock-btn" id="add-map-stamp-btn" title="मैप या इमेज जोड़ें, छोटा-बड़ा करें और स्लाइड पर स्थिर करें (Add Map/Image)" style="color: #0a84ff;"><i class="fas fa-map text-[10px]"></i></button>
         <input type="file" id="stamp-image-upload" accept="image/*" style="display: none;">
 
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
         <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[8px]"></i></button>
-        <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[8px]"></i></button>
+        <button class="dock-btn" id="save-pdf-btn" title="मैप व चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[8px]"></i></button>
     </div>
 
     <script>
@@ -330,10 +366,10 @@
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
         const stampsContainer = document.getElementById('stamps-container');
-        const addImageStampBtn = document.getElementById('add-image-stamp-btn');
+        const addMapStampBtn = document.getElementById('add-map-stamp-btn');
         const stampImageUpload = document.getElementById('stamp-image-upload');
 
-        addImageStampBtn.addEventListener('click', () => {
+        addMapStampBtn.addEventListener('click', () => {
             stampImageUpload.click();
         });
 
@@ -342,29 +378,34 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
-                createStamp(event.target.result, '');
+                createStamp(event.target.result, '', 220, 150);
             };
             reader.readAsDataURL(file);
             stampImageUpload.value = ''; // Reset input
         });
 
-        function createStamp(imgSrc, defaultText = '') {
+        function createStamp(imgSrc, defaultText = '', customWidth = 220, customHeight = 150) {
             const stampEl = document.createElement('div');
             stampEl.className = 'active-stamp';
             // Default center position on screen
-            stampEl.style.left = (window.innerWidth / 2 - 90) + 'px';
-            stampEl.style.top = (window.innerHeight / 2 - 30) + 'px';
+            stampEl.style.left = (window.innerWidth / 2 - customWidth / 2) + 'px';
+            stampEl.style.top = (window.innerHeight / 2 - customHeight / 2) + 'px';
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'stamp-content-wrapper';
 
             const img = document.createElement('img');
             img.src = imgSrc;
-            stampEl.appendChild(img);
+            img.style.width = customWidth + 'px';
+            img.style.height = customHeight + 'px';
+            contentWrapper.appendChild(img);
 
             const input = document.createElement('input');
             input.type = 'text';
             input.className = 'stamp-text-input';
             input.value = defaultText;
-            input.placeholder = 'लिखें...';
-            stampEl.appendChild(input);
+            input.placeholder = 'मैप के बारे में लिखें...';
+            contentWrapper.appendChild(input);
 
             const delBtn = document.createElement('div');
             delBtn.className = 'stamp-delete-btn';
@@ -377,16 +418,22 @@
             });
             stampEl.appendChild(delBtn);
 
-            // Dragging Logic for the Stamp
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'stamp-resize-handle';
+            resizeHandle.innerHTML = '<i class="fas fa-expand-alt"></i>';
+            stampEl.appendChild(resizeHandle);
+
+            stampEl.appendChild(contentWrapper);
+
+            // Dragging Logic
             let isDragging = false;
             let startX, startY, startLeft, startTop;
 
             stampEl.addEventListener('pointerdown', (e) => {
-                if (e.target === input || e.target === delBtn || e.target.closest('.stamp-delete-btn')) return;
+                if (e.target === input || e.target === delBtn || e.target === resizeHandle || e.target.closest('.stamp-delete-btn') || e.target.closest('.stamp-resize-handle')) return;
                 isDragging = true;
                 stampEl.setPointerCapture(e.pointerId);
                 
-                // Select this stamp and deselect others
                 document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
                 stampEl.classList.add('selected');
 
@@ -421,6 +468,40 @@
                 }
             });
 
+            // Resizing Logic (Scaling Map bigger/smaller)
+            let isResizing = false;
+            let initialW, initialH, initMouseX, initMouseY;
+
+            resizeHandle.addEventListener('pointerdown', (e) => {
+                isResizing = true;
+                resizeHandle.setPointerCapture(e.pointerId);
+                initMouseX = e.clientX;
+                initMouseY = e.clientY;
+                initialW = img.offsetWidth;
+                initialH = img.offsetHeight;
+                e.stopPropagation();
+            });
+
+            resizeHandle.addEventListener('pointermove', (e) => {
+                if (!isResizing) return;
+                const dw = e.clientX - initMouseX;
+                const dh = e.clientY - initMouseY;
+                let newW = Math.max(80, initialW + dw);
+                let newH = Math.max(60, initialH + dh);
+
+                img.style.width = newW + 'px';
+                img.style.height = newH + 'px';
+                screenDirty = true;
+            });
+
+            resizeHandle.addEventListener('pointerup', (e) => {
+                if (isResizing) {
+                    isResizing = false;
+                    try { resizeHandle.releasePointerCapture(e.pointerId); } catch(err){}
+                    saveCurrentStamps();
+                }
+            });
+
             input.addEventListener('input', () => {
                 saveCurrentStamps();
                 screenDirty = true;
@@ -432,6 +513,7 @@
             });
 
             stampsContainer.appendChild(stampEl);
+            document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
             stampEl.classList.add('selected');
             saveCurrentStamps();
             screenDirty = true;
@@ -453,6 +535,8 @@
                 stampDataList.push({
                     left: el.style.left,
                     top: el.style.top,
+                    width: img.style.width || '220px',
+                    height: img.style.height || '150px',
                     imgSrc: img.src,
                     text: input.value
                 });
@@ -469,16 +553,21 @@
                 stampEl.style.left = data.left;
                 stampEl.style.top = data.top;
 
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'stamp-content-wrapper';
+
                 const img = document.createElement('img');
                 img.src = data.imgSrc;
-                stampEl.appendChild(img);
+                img.style.width = data.width;
+                img.style.height = data.height;
+                contentWrapper.appendChild(img);
 
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.className = 'stamp-text-input';
                 input.value = data.text;
-                input.placeholder = 'लिखें...';
-                stampEl.appendChild(input);
+                input.placeholder = 'मैप के बारे में लिखें...';
+                contentWrapper.appendChild(input);
 
                 const delBtn = document.createElement('div');
                 delBtn.className = 'stamp-delete-btn';
@@ -491,11 +580,18 @@
                 });
                 stampEl.appendChild(delBtn);
 
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'stamp-resize-handle';
+                resizeHandle.innerHTML = '<i class="fas fa-expand-alt"></i>';
+                stampEl.appendChild(resizeHandle);
+
+                stampEl.appendChild(contentWrapper);
+
                 let isDragging = false;
                 let startX, startY, startLeft, startTop;
 
                 stampEl.addEventListener('pointerdown', (e) => {
-                    if (e.target === input || e.target === delBtn || e.target.closest('.stamp-delete-btn')) return;
+                    if (e.target === input || e.target === delBtn || e.target === resizeHandle || e.target.closest('.stamp-delete-btn') || e.target.closest('.stamp-resize-handle')) return;
                     isDragging = true;
                     stampEl.setPointerCapture(e.pointerId);
                     document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
@@ -525,6 +621,38 @@
                     if (isDragging) {
                         isDragging = false;
                         try { stampEl.releasePointerCapture(e.pointerId); } catch(err){}
+                        saveCurrentStamps();
+                    }
+                });
+
+                let isResizing = false;
+                let initialW, initialH, initMouseX, initMouseY;
+
+                resizeHandle.addEventListener('pointerdown', (e) => {
+                    isResizing = true;
+                    resizeHandle.setPointerCapture(e.pointerId);
+                    initMouseX = e.clientX;
+                    initMouseY = e.clientY;
+                    initialW = img.offsetWidth;
+                    initialH = img.offsetHeight;
+                    e.stopPropagation();
+                });
+
+                resizeHandle.addEventListener('pointermove', (e) => {
+                    if (!isResizing) return;
+                    const dw = e.clientX - initMouseX;
+                    const dh = e.clientY - initMouseY;
+                    let newW = Math.max(80, initialW + dw);
+                    let newH = Math.max(60, initialH + dh);
+                    img.style.width = newW + 'px';
+                    img.style.height = newH + 'px';
+                    screenDirty = true;
+                });
+
+                resizeHandle.addEventListener('pointerup', (e) => {
+                    if (isResizing) {
+                        isResizing = false;
+                        try { resizeHandle.releasePointerCapture(e.pointerId); } catch(err){}
                         saveCurrentStamps();
                     }
                 });
@@ -775,7 +903,7 @@
                 leftNav.style.display = 'none';
                 rightNav.style.display = 'none';
                 recorderUi.style.display = 'none';
-                document.querySelectorAll('.active-stamp .stamp-delete-btn').forEach(b => b.style.display = 'none');
+                document.querySelectorAll('.active-stamp .stamp-delete-btn, .active-stamp .stamp-resize-handle').forEach(b => b.style.display = 'none');
                 Array.from(toolbar.children).forEach(child => {
                     if (child !== hideUiBtn && child !== slideCounter && child !== dockPrevBtn && child !== dockNextBtn && child !== smoothPenBtn && child !== normalPenBtn && child !== eraserBtn && !child.classList.contains('dock-divider')) {
                         child.style.display = 'none';
@@ -889,7 +1017,7 @@
             saveCurrentInk();
             saveCurrentStamps();
             loadingScreen.style.display = 'flex';
-            loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";
+            loadingText.innerText = "मैप और चित्रण सहित पूरी PDF तैयार की जा रही है...";
 
             try {
                 const { jsPDF } = window.jspdf;
@@ -922,33 +1050,29 @@
                         });
                     }
 
-                    // Render custom images and text notes for slide i
+                    // Render custom maps / images and text notes for slide i
                     const stampList = slideStamps[i] || [];
                     for (let sData of stampList) {
                         await new Promise((resolve) => {
                             const stampImg = new Image();
                             stampImg.crossOrigin = "anonymous";
                             stampImg.onload = () => {
-                                const tempEl = document.createElement('div');
-                                tempEl.style.cssText = `position:absolute; left:${sData.left}; top:${sData.top}; visibility:hidden; display:inline-flex; align-items:center; gap:6px; padding:4px 8px;`;
-                                document.body.appendChild(tempEl);
-                                const rect = tempEl.getBoundingClientRect();
-                                document.body.removeChild(tempEl);
-
                                 const scaleX = tempCanvas.width / window.innerWidth;
                                 const scaleY = tempCanvas.height / window.innerHeight;
 
                                 const renderX = parseFloat(sData.left) * scaleX;
                                 const renderY = parseFloat(sData.top) * scaleY;
+                                const renderW = parseFloat(sData.width) * scaleX;
+                                const renderH = parseFloat(sData.height) * scaleY;
 
-                                tempCtx.drawImage(stampImg, renderX + 4, renderY + 4, 40 * scaleX, 40 * scaleY);
+                                tempCtx.drawImage(stampImg, renderX + 6, renderY + 6, renderW, renderH);
 
                                 if (sData.text) {
-                                    tempCtx.font = `600 ${Math.round(16 * scaleY)}px sans-serif`;
+                                    tempCtx.font = `600 ${Math.round(14 * scaleY)}px sans-serif`;
                                     tempCtx.fillStyle = '#ffffff';
                                     tempCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
                                     tempCtx.shadowBlur = 4;
-                                    tempCtx.fillText(sData.text, renderX + 50 * scaleX, renderY + 30 * scaleY);
+                                    tempCtx.fillText(sData.text, renderX + 6, renderY + renderH + 24 * scaleY);
                                     tempCtx.shadowBlur = 0;
                                 }
                                 resolve();
@@ -985,7 +1109,7 @@
                     }
                 }
 
-                pdf.save(`Class_Notes_With_Images_${new Date().getTime()}.pdf`);
+                pdf.save(`Map_Class_Notes_${new Date().getTime()}.pdf`);
             } catch (err) {
                 alert("PDF सेव करने में समस्या आई: " + err.message);
             } finally {
@@ -1045,7 +1169,7 @@
                             }
                         }
 
-                        // Draw custom added images and text on recording frame
+                        // Draw custom maps/images and text on recording frame
                         const stampList = slideStamps[currentSlideIndex] || [];
                         const scaleX = recCanvas.width / window.innerWidth;
                         const scaleY = recCanvas.height / window.innerHeight;
@@ -1056,13 +1180,16 @@
                             if (cachedImg.complete && cachedImg.naturalWidth) {
                                 const renderX = parseFloat(sData.left) * scaleX;
                                 const renderY = parseFloat(sData.top) * scaleY;
-                                recCtx.drawImage(cachedImg, renderX + 4, renderY + 4, 40 * scaleX, 40 * scaleY);
+                                const renderW = parseFloat(sData.width) * scaleX;
+                                const renderH = parseFloat(sData.height) * scaleY;
+
+                                recCtx.drawImage(cachedImg, renderX + 6, renderY + 6, renderW, renderH);
                                 if (sData.text) {
-                                    recCtx.font = `600 ${Math.round(16 * scaleY)}px sans-serif`;
+                                    recCtx.font = `600 ${Math.round(14 * scaleY)}px sans-serif`;
                                     recCtx.fillStyle = '#ffffff';
                                     recCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
                                     recCtx.shadowBlur = 4;
-                                    recCtx.fillText(sData.text, renderX + 50 * scaleX, renderY + 30 * scaleY);
+                                    recCtx.fillText(sData.text, renderX + 6, renderY + renderH + 24 * scaleY);
                                     recCtx.shadowBlur = 0;
                                 }
                             }
@@ -1139,7 +1266,7 @@
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); a.href = url;
-                    a.download = `Pro_Class_Recording_${new Date().getTime()}.${fileExtension}`;
+                    a.download = `Map_Class_Recording_${new Date().getTime()}.${fileExtension}`;
                     a.click(); URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
                 };
