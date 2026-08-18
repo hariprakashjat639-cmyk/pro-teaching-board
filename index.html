@@ -34,7 +34,7 @@
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; cursor: default; pointer-events: auto; /* Ensures drawing/pen touches register properly */
+            z-index: 10; cursor: default; pointer-events: auto; 
         }
 
         /* Draggable & Resizable Image Element on Slide */
@@ -272,7 +272,6 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
-        // Node Pen custom color slots per slide or globally
         let nodePenSlots = ['#ffff00', '#00ffcc', '#ff3b30', '#30d158'];
         let currentNodeSlotIndex = 0;
 
@@ -296,7 +295,6 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // Handle Add Image Icon
         addImageBtn.addEventListener('click', () => customImageUpload.click());
         customImageUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -308,7 +306,6 @@
             screenDirty = true;
         });
 
-        // Lock/Unlock Image
         lockImageBtn.addEventListener('click', () => {
             isImageLocked = !isImageLocked;
             if (isImageLocked) {
@@ -324,7 +321,6 @@
             }
         });
 
-        // Make custom image draggable, movable, and resizable smoothly across screen
         let isDraggingCustomImg = false;
         let imgStartX, imgStartY, initialImgLeft, initialImgTop;
 
@@ -611,7 +607,7 @@
         });
 
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
-        let isDrawing = false, points = [], currentMode = 'smooth', currentColor = '#ffff00';
+        let isDrawing = false, lastX = 0, lastY = 0, currentMode = 'smooth', currentColor = '#ffff00';
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
         const tools = { 'smooth': smoothPenBtn, 'normal': normalPenBtn, 'node': nodePenBtn, 'eraser': eraserBtn };
 
@@ -661,73 +657,78 @@
             screenDirty = true; 
         });
 
-        // Fixed Pointer/Touch drawing event listeners so pens and brushes work reliably
-        canvas.addEventListener('pointerdown', (e) => { 
-            isDrawing = true; 
+        // 100% Responsive & Instant Pointer Drawing Logic for All Pens & Brushes
+        canvas.addEventListener('pointerdown', (e) => {
+            isDrawing = true;
             try { canvas.setPointerCapture(e.pointerId); } catch(err){}
-            points = [{x: e.clientX, y: e.clientY}]; 
-            ctx.beginPath(); 
-            ctx.moveTo(e.clientX, e.clientY); 
-            screenDirty = true; 
-        });
-        
-        canvas.addEventListener('pointermove', (e) => {
-            if (!isDrawing) return; 
-            points.push({x: e.clientX, y: e.clientY}); 
-            if (points.length < 3) return;
-
+            lastX = e.clientX;
+            lastY = e.clientY;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            
             let baseSize = parseInt(sizeSlider.value);
-            const cp = points[points.length - 2];
-            const ep = { 
-                x: (points[points.length - 2].x + points[points.length - 1].x) / 2, 
-                y: (points[points.length - 2].y + points[points.length - 1].y) / 2 
-            };
-
-            ctx.globalCompositeOperation = 'source-over';
+            ctx.lineWidth = baseSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.shadowBlur = 0;
 
             if (currentMode === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = baseSize;
                 ctx.strokeStyle = 'rgba(0,0,0,1)';
-                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(ep.x, ep.y);
-            } 
-            else if (currentMode === 'smooth' || currentMode === 'node') {
-                ctx.lineWidth = baseSize;
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
                 ctx.strokeStyle = currentColor;
-                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
-                ctx.stroke();
+                // Draw initial dot for taps
+                ctx.fillStyle = currentColor;
                 ctx.beginPath();
-                ctx.moveTo(ep.x, ep.y);
-            } 
-            else { 
-                ctx.lineWidth = baseSize;
-                ctx.strokeStyle = currentColor;
-                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
-                ctx.stroke();
+                ctx.arc(lastX, lastY, baseSize / 2, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.beginPath();
-                ctx.moveTo(ep.x, ep.y);
+                ctx.moveTo(lastX, lastY);
             }
             screenDirty = true;
         });
+        
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDrawing) return;
+            const currentX = e.clientX;
+            const currentY = e.clientY;
 
-        canvas.addEventListener('pointerup', (e) => { 
+            let baseSize = parseInt(sizeSlider.value);
+            ctx.lineWidth = baseSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowBlur = 0;
+
+            if (currentMode === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+            }
+
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+            
+            lastX = currentX;
+            lastY = currentY;
+            screenDirty = true;
+        });
+
+        canvas.addEventListener('pointerup', (e) => {
             if (isDrawing) {
-                isDrawing = false; 
+                isDrawing = false;
                 try { canvas.releasePointerCapture(e.pointerId); } catch(err){}
-                points = []; 
-                saveCurrentInk(); 
-                screenDirty = true; 
+                saveCurrentInk();
+                screenDirty = true;
             }
         });
 
         canvas.addEventListener('pointercancel', (e) => {
             if (isDrawing) {
                 isDrawing = false;
-                points = [];
                 saveCurrentInk();
                 screenDirty = true;
             }
