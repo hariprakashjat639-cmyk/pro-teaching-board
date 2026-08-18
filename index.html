@@ -242,7 +242,7 @@
         <button class="dock-btn" id="dock-prev-btn" title="Previous Slide"><i class="fas fa-chevron-left text-[9px]"></i></button>
         <button class="dock-btn" id="dock-next-btn" title="Next Slide"><i class="fas fa-chevron-right text-[9px]"></i></button>
         <div class="dock-divider"></div>
-        <!-- Add Image Button -->
+        <!-- Add Image Button Icon Only -->
         <button class="dock-btn" id="add-image-btn" title="स्लाइड पर इमेज जोड़ें (Add Image)" style="color: #30d158;"><i class="fas fa-image text-[8px]"></i></button>
         <input type="file" id="slide-image-upload" accept="image/*" style="display: none;">
         <!-- Permanent Bake Image Button -->
@@ -678,7 +678,6 @@
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'smooth';
         
-        // --- SEPARATE PENS CONFIG (Smooth & Normal) ---
         let penConfigs = {
             'smooth': { color: '#ffff00', size: 6 },
             'normal': { color: '#00ffcc', size: 6 }
