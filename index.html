@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Clean Audio Edition</title>
+    <title>Pro EduCreator Studio - Right Tick Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -35,6 +35,63 @@
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             z-index: 10; cursor: default; 
+        }
+
+        /* Draggable Custom Floating Map / Image / Tick Overlay Container */
+        #floating-overlay {
+            position: absolute;
+            top: 100px;
+            left: 100px;
+            width: 120px;
+            height: auto;
+            z-index: 15;
+            display: none;
+            cursor: move;
+            touch-action: none;
+            border: 2px dashed rgba(48, 209, 88, 0.6);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        }
+
+        #floating-overlay img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        .overlay-close-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 24px;
+            height: 24px;
+            background: #ff453a;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            z-index: 20;
+            border: 2px solid white;
+        }
+
+        .overlay-resize-handle {
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            background: #30d158;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            z-index: 20;
+            border: 2px solid white;
         }
         
         #upload-prompt {
@@ -141,6 +198,14 @@
         </div>
 
         <img id="slide-image" src="" style="display: none;">
+        
+        <!-- Draggable Floating Map / Image / Right Tick Overlay Element -->
+        <div id="floating-overlay">
+            <div class="overlay-close-btn" id="overlay-close" title="हटाएं (Remove)"><i class="fas fa-times"></i></div>
+            <img id="floating-overlay-img" src="" alt="Overlay Image">
+            <div class="overlay-resize-handle" id="overlay-resize" title="आकार बदलें (Resize)"></div>
+        </div>
+
         <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
@@ -225,10 +290,12 @@
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[8px]"></i></button>
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
-        <!-- ADD MAP/IMAGE BUTTON -->
-        <button class="dock-btn" id="add-map-btn" title="मैप या इमेज जोड़ें (Add Image)" style="color: #ff9f0a;"><i class="fas fa-image text-[8px]"></i></button>
-        <input type="file" id="map-image-upload" accept="image/*" style="display: none;">
-        <!-- EXISTING BUTTONS -->
+        <!-- Right Tick Button -->
+        <button class="dock-btn" id="add-tick-btn" title="Right Tick जोड़ें (Add Right Tick)" style="color: #30d158;"><i class="fas fa-check text-[10px]"></i></button>
+        <!-- Add Map/Image Button -->
+        <button class="dock-btn" id="add-map-btn" title="मैप या इमेज जोड़ें (Add Map/Image)" style="color: #0a84ff;"><i class="fas fa-map text-[8px]"></i></button>
+        <input type="file" id="map-upload-input" accept="image/*" style="display: none;">
+        <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
         <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[8px]"></i></button>
@@ -237,7 +304,7 @@
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let slideMovableImages = {}; let screenDirty = true;
+        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -251,169 +318,106 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // Map / Image Upload handling
+        // Floating Map / Image / Right Tick Overlay Logic
         const addMapBtn = document.getElementById('add-map-btn');
-        const mapImageUpload = document.getElementById('map-image-upload');
-        const presentationArea = document.getElementById('presentation-area');
+        const addTickBtn = document.getElementById('add-tick-btn');
+        const mapUploadInput = document.getElementById('map-upload-input');
+        const floatingOverlay = document.getElementById('floating-overlay');
+        const floatingOverlayImg = document.getElementById('floating-overlay-img');
+        const overlayClose = document.getElementById('overlay-close');
+        const overlayResize = document.getElementById('overlay-resize');
 
-        addMapBtn.addEventListener('click', () => mapImageUpload.click());
+        // Built-in Clean Green Right Tick SVG Data URI
+        const rightTickSvgDataUri = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%2330d158" d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.203c9.997-9.997 26.206-9.997 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.206-9.997 36.204 0l36.203 36.203c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.4c-9.998 9.997-26.207 9.997-36.204-.001z"/></svg>';
 
-        mapImageUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const imageUrl = URL.createObjectURL(file);
-            createMovableImageElement(imageUrl, '100px', '100px', '250px', 'auto');
-            mapImageUpload.value = '';
+        addTickBtn.addEventListener('click', () => {
+            floatingOverlayImg.src = rightTickSvgDataUri;
+            floatingOverlay.style.width = '80px';
+            floatingOverlay.style.display = 'block';
+            screenDirty = true;
         });
 
-        function createMovableImageElement(src, left = '100px', top = '100px', width = '250px', height = 'auto') {
-            const existing = document.getElementById('movable-image-wrapper');
-            if (existing) existing.remove();
+        addMapBtn.addEventListener('click', () => mapUploadInput.click());
 
-            const wrapper = document.createElement('div');
-            wrapper.id = 'movable-image-wrapper';
-            wrapper.style.position = 'absolute';
-            wrapper.style.left = left;
-            wrapper.style.top = top;
-            wrapper.style.width = width;
-            wrapper.style.height = height;
-            wrapper.style.zIndex = '15';
-            wrapper.style.cursor = 'move';
-            wrapper.style.touchAction = 'none';
-            wrapper.style.border = '2px dashed rgba(10, 132, 255, 0.8)';
-            wrapper.style.background = 'rgba(0,0,0,0.4)';
-            wrapper.style.borderRadius = '6px';
-            wrapper.style.overflow = 'hidden';
-            wrapper.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
-
-            const img = document.createElement('img');
-            img.src = src;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'contain';
-            img.style.display = 'block';
-            wrapper.appendChild(img);
-
-            // Close / Delete button
-            const closeBtn = document.createElement('button');
-            closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-            closeBtn.style.position = 'absolute';
-            closeBtn.style.top = '2px';
-            closeBtn.style.right = '2px';
-            closeBtn.style.background = '#ff453a';
-            closeBtn.style.color = 'white';
-            closeBtn.style.border = 'none';
-            closeBtn.style.borderRadius = '50%';
-            closeBtn.style.width = '20px';
-            closeBtn.style.height = '20px';
-            closeBtn.style.fontSize = '10px';
-            closeBtn.style.cursor = 'pointer';
-            closeBtn.style.display = 'flex';
-            closeBtn.style.alignItems = 'center';
-            closeBtn.style.justifyContent = 'center';
-            closeBtn.style.zIndex = '16';
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                wrapper.remove();
-                delete slideMovableImages[currentSlideIndex];
-                screenDirty = true;
-            });
-            wrapper.appendChild(closeBtn);
-
-            // Resize handle at bottom right
-            const resizeHandle = document.createElement('div');
-            resizeHandle.style.position = 'absolute';
-            resizeHandle.style.bottom = '0';
-            resizeHandle.style.right = '0';
-            resizeHandle.style.width = '15px';
-            resizeHandle.style.height = '15px';
-            resizeHandle.style.background = '#0a84ff';
-            resizeHandle.style.cursor = 'se-resize';
-            resizeHandle.style.zIndex = '16';
-            wrapper.appendChild(resizeHandle);
-
-            let isDraggingImg = false;
-            let isResizingImg = false;
-            let startX, startY, startLeft, startTop, startWidth, startHeight;
-
-            wrapper.addEventListener('pointerdown', (e) => {
-                if (e.target === closeBtn || closeBtn.contains(e.target)) return;
-                if (e.target === resizeHandle) {
-                    isResizingImg = true;
-                    resizeHandle.setPointerCapture(e.pointerId);
-                } else {
-                    isDraggingImg = true;
-                    wrapper.setPointerCapture(e.pointerId);
-                }
-                startX = e.clientX;
-                startY = e.clientY;
-                const rect = wrapper.getBoundingClientRect();
-                const parentRect = presentationArea.getBoundingClientRect();
-                startLeft = rect.left - parentRect.left;
-                startTop = rect.top - parentRect.top;
-                startWidth = rect.width;
-                startHeight = rect.height;
-                e.stopPropagation();
-            });
-
-            wrapper.addEventListener('pointermove', (e) => {
-                if (isDraggingImg) {
-                    const dx = e.clientX - startX;
-                    const dy = e.clientY - startY;
-                    wrapper.style.left = (startLeft + dx) + 'px';
-                    wrapper.style.top = (startTop + dy) + 'px';
-                    screenDirty = true;
-                } else if (isResizingImg) {
-                    const dw = e.clientX - startX;
-                    const dh = e.clientY - startY;
-                    wrapper.style.width = Math.max(100, startWidth + dw) + 'px';
-                    wrapper.style.height = Math.max(100, startHeight + dh) + 'px';
-                    screenDirty = true;
-                }
-            });
-
-            wrapper.addEventListener('pointerup', (e) => {
-                if (isDraggingImg) {
-                    isDraggingImg = false;
-                    try { wrapper.releasePointerCapture(e.pointerId); } catch(err){}
-                }
-                if (isResizingImg) {
-                    isResizingImg = false;
-                    try { resizeHandle.releasePointerCapture(e.pointerId); } catch(err){}
-                }
-                saveCurrentMovableImage();
-                screenDirty = true;
-            });
-
-            presentationArea.appendChild(wrapper);
-            saveCurrentMovableImage();
+        mapUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            floatingOverlayImg.src = url;
+            floatingOverlay.style.width = '250px';
+            floatingOverlay.style.display = 'block';
             screenDirty = true;
-        }
+            mapUploadInput.value = '';
+        });
 
-        function saveCurrentMovableImage() {
-            const wrapper = document.getElementById('movable-image-wrapper');
-            if (wrapper) {
-                slideMovableImages[currentSlideIndex] = {
-                    src: wrapper.querySelector('img').src,
-                    left: wrapper.style.left,
-                    top: wrapper.style.top,
-                    width: wrapper.style.width,
-                    height: wrapper.style.height
-                };
-            } else {
-                delete slideMovableImages[currentSlideIndex];
+        overlayClose.addEventListener('click', () => {
+            floatingOverlay.style.display = 'none';
+            floatingOverlayImg.src = '';
+            screenDirty = true;
+        });
+
+        // Dragging and Resizing for Floating Overlay
+        let isDraggingOverlay = false;
+        let isResizingOverlay = false;
+        let overlayStartX = 0, overlayStartY = 0, overlayStartLeft = 0, overlayStartTop = 0;
+        let overlayStartWidth = 0, overlayStartMouseX = 0;
+
+        floatingOverlay.addEventListener('pointerdown', (e) => {
+            if (e.target === overlayClose || e.target.closest('#overlay-close') || e.target === overlayResize) return;
+            isDraggingOverlay = true;
+            floatingOverlay.setPointerCapture(e.pointerId);
+            const rect = floatingOverlay.getBoundingClientRect();
+            overlayStartX = e.clientX;
+            overlayStartY = e.clientY;
+            overlayStartLeft = rect.left;
+            overlayStartTop = rect.top;
+            e.stopPropagation();
+        });
+
+        floatingOverlay.addEventListener('pointermove', (e) => {
+            if (!isDraggingOverlay) return;
+            const dx = e.clientX - overlayStartX;
+            const dy = e.clientY - overlayStartY;
+            let newLeft = overlayStartLeft + dx;
+            let newTop = overlayStartTop + dy;
+
+            newLeft = Math.max(0, Math.min(window.innerWidth - floatingOverlay.offsetWidth, newLeft));
+            newTop = Math.max(0, Math.min(window.innerHeight - floatingOverlay.offsetHeight, newTop));
+
+            floatingOverlay.style.left = newLeft + 'px';
+            floatingOverlay.style.top = newTop + 'px';
+            screenDirty = true;
+        });
+
+        floatingOverlay.addEventListener('pointerup', (e) => {
+            if (isDraggingOverlay) {
+                isDraggingOverlay = false;
+                try { floatingOverlay.releasePointerCapture(e.pointerId); } catch(err){}
             }
-        }
+        });
 
-        function restoreMovableImage() {
-            const existing = document.getElementById('movable-image-wrapper');
-            if (existing) existing.remove();
+        overlayResize.addEventListener('pointerdown', (e) => {
+            isResizingOverlay = true;
+            overlayResize.setPointerCapture(e.pointerId);
+            overlayStartWidth = floatingOverlay.offsetWidth;
+            overlayStartMouseX = e.clientX;
+            e.stopPropagation();
+        });
 
-            if (slideMovableImages[currentSlideIndex]) {
-                const data = slideMovableImages[currentSlideIndex];
-                createMovableImageElement(data.src, data.left, data.top, data.width, data.height);
+        overlayResize.addEventListener('pointermove', (e) => {
+            if (!isResizingOverlay) return;
+            const dw = e.clientX - overlayStartMouseX;
+            let newWidth = Math.max(40, Math.min(window.innerWidth * 0.9, overlayStartWidth + dw));
+            floatingOverlay.style.width = newWidth + 'px';
+            screenDirty = true;
+        });
+
+        overlayResize.addEventListener('pointerup', (e) => {
+            if (isResizingOverlay) {
+                isResizingOverlay = false;
+                try { overlayResize.releasePointerCapture(e.pointerId); } catch(err){}
             }
-        }
+        });
 
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
@@ -589,18 +593,10 @@
         }
 
         function loadSlide(index) {
-            saveCurrentInk(); 
-            saveCurrentMovableImage();
-            currentSlideIndex = index; 
-            slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             const counterText = `${currentSlideIndex + 1}/${slides.length}`;
             document.getElementById('slide-counter').innerText = counterText; 
-            slideImage.onload = () => { 
-                resizeCanvas(); 
-                restoreInk(); 
-                restoreMovableImage();
-                screenDirty = true; 
-            }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
             if (savePdfBtn) {
@@ -765,7 +761,6 @@
             }
 
             saveCurrentInk();
-            saveCurrentMovableImage();
             loadingScreen.style.display = 'flex';
             loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";
 
@@ -782,7 +777,6 @@
                     tempCtx.fillStyle = '#030305';
                     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-                    // 1. Draw Slide Background
                     if (slides[i]) {
                         await new Promise((resolve) => {
                             const img = new Image();
@@ -801,34 +795,29 @@
                         });
                     }
 
-                    // 2. Draw Movable Map/Image if exists on this slide
-                    if (slideMovableImages[i]) {
+                    // Render floating overlay if visible
+                    if (floatingOverlay.style.display === 'block' && floatingOverlayImg.src) {
                         await new Promise((resolve) => {
-                            const mData = slideMovableImages[i];
-                            const mImg = new Image();
-                            mImg.onload = () => {
-                                // Calculate scale relative to current screen bounds
-                                const pRect = presentationArea.getBoundingClientRect();
-                                let scaleX = tempCanvas.width / pRect.width;
-                                let scaleY = tempCanvas.height / pRect.height;
-                                
-                                // Parse CSS left/top/width/height
-                                let wrapperEl = document.getElementById('movable-image-wrapper');
-                                // If currently active, we can use its actual rect, else parse
-                                let rx = parseFloat(mData.left) * scaleX;
-                                let ry = parseFloat(mData.top) * scaleY;
-                                let rw = parseFloat(mData.width) * scaleX;
-                                let rh = mData.height === 'auto' ? (mImg.naturalHeight * (rw / mImg.naturalWidth)) : parseFloat(mData.height) * scaleY;
-                                
-                                tempCtx.drawImage(mImg, rx, ry, rw, rh);
+                            const overlayImg = new Image();
+                            overlayImg.crossOrigin = "anonymous";
+                            overlayImg.onload = () => {
+                                const overlayRect = floatingOverlay.getBoundingClientRect();
+                                const scaleX = tempCanvas.width / window.innerWidth;
+                                const scaleY = tempCanvas.height / window.innerHeight;
+                                tempCtx.drawImage(
+                                    overlayImg,
+                                    overlayRect.left * scaleX,
+                                    overlayRect.top * scaleY,
+                                    overlayRect.width * scaleX,
+                                    overlayRect.height * scaleY
+                                );
                                 resolve();
                             };
-                            mImg.onerror = resolve;
-                            mImg.src = mData.src;
+                            overlayImg.onerror = resolve;
+                            overlayImg.src = floatingOverlayImg.src;
                         });
                     }
 
-                    // 3. Draw Ink Canvas
                     if (slideInks[i]) {
                         await new Promise((resolve) => {
                             const inkImg = new Image();
@@ -901,14 +890,15 @@
                 let activeSlideImg = new Image();
                 if (slides.length > 0 && slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
 
+                let activeOverlayImg = new Image();
+                if (floatingOverlayImg.src) activeOverlayImg.src = floatingOverlayImg.src;
+
                 recordingLoopActive = true; screenDirty = true;
                 
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
                     if (screenDirty) {
                         recCtx.fillStyle = '#030305'; recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
-                        
-                        // 1. Draw slide background
                         if (slides.length > 0 && slides[currentSlideIndex]) {
                             if (activeSlideImg.src !== slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
                             if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
@@ -918,24 +908,23 @@
                             }
                         }
 
-                        // 2. Draw movable map/image if present
-                        const movableWrapper = document.getElementById('movable-image-wrapper');
-                        if (movableWrapper) {
-                            const mImg = movableWrapper.querySelector('img');
-                            const mRect = movableWrapper.getBoundingClientRect();
-                            const pRect = presentationArea.getBoundingClientRect();
-                            let scaleX = recCanvas.width / pRect.width;
-                            let scaleY = recCanvas.height / pRect.height;
-                            let rx = (mRect.left - pRect.left) * scaleX;
-                            let ry = (mRect.top - pRect.top) * scaleY;
-                            let rw = mRect.width * scaleX;
-                            let rh = mRect.height * scaleY;
-                            if (mImg && mImg.complete && mImg.naturalWidth) {
-                                recCtx.drawImage(mImg, rx, ry, rw, rh);
+                        // Draw Floating Overlay in Recording Frame if visible
+                        if (floatingOverlay.style.display === 'block' && floatingOverlayImg.src) {
+                            if (activeOverlayImg.src !== floatingOverlayImg.src) activeOverlayImg.src = floatingOverlayImg.src;
+                            if (activeOverlayImg.complete && activeOverlayImg.naturalWidth) {
+                                const overlayRect = floatingOverlay.getBoundingClientRect();
+                                const scaleX = recCanvas.width / window.innerWidth;
+                                const scaleY = recCanvas.height / window.innerHeight;
+                                recCtx.drawImage(
+                                    activeOverlayImg,
+                                    overlayRect.left * scaleX,
+                                    overlayRect.top * scaleY,
+                                    overlayRect.width * scaleX,
+                                    overlayRect.height * scaleY
+                                );
                             }
                         }
 
-                        // 3. Draw ink canvas
                         if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         screenDirty = false;
                     }
