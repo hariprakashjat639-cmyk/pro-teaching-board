@@ -34,7 +34,7 @@
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; cursor: default; pointer-events: none;
+            z-index: 10; cursor: default; pointer-events: auto; /* Ensures drawing/pen touches register properly */
         }
 
         /* Draggable & Resizable Image Element on Slide */
@@ -324,7 +324,7 @@
             }
         });
 
-        // Make custom image draggable and movable smoothly across screen
+        // Make custom image draggable, movable, and resizable smoothly across screen
         let isDraggingCustomImg = false;
         let imgStartX, imgStartY, initialImgLeft, initialImgTop;
 
@@ -632,7 +632,6 @@
             if(mode === 'eraser') sizeSlider.value = 40; 
             else if(mode === 'node') {
                 sizeSlider.value = 8;
-                // Cycle through node pen ink colors when clicked or active
                 currentColor = nodePenSlots[currentNodeSlotIndex];
                 colorBtn.style.background = currentColor;
                 colorPicker.value = currentColor;
@@ -662,9 +661,10 @@
             screenDirty = true; 
         });
 
-        // Pointer events for drawing on canvas
+        // Fixed Pointer/Touch drawing event listeners so pens and brushes work reliably
         canvas.addEventListener('pointerdown', (e) => { 
             isDrawing = true; 
+            try { canvas.setPointerCapture(e.pointerId); } catch(err){}
             points = [{x: e.clientX, y: e.clientY}]; 
             ctx.beginPath(); 
             ctx.moveTo(e.clientX, e.clientY); 
@@ -714,7 +714,24 @@
             screenDirty = true;
         });
 
-        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
+        canvas.addEventListener('pointerup', (e) => { 
+            if (isDrawing) {
+                isDrawing = false; 
+                try { canvas.releasePointerCapture(e.pointerId); } catch(err){}
+                points = []; 
+                saveCurrentInk(); 
+                screenDirty = true; 
+            }
+        });
+
+        canvas.addEventListener('pointercancel', (e) => {
+            if (isDrawing) {
+                isDrawing = false;
+                points = [];
+                saveCurrentInk();
+                screenDirty = true;
+            }
+        });
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { 
