@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Right Tick Edition</title>
+    <title>Pro EduCreator Studio - Smart Stamp Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -37,61 +37,75 @@
             z-index: 10; cursor: default; 
         }
 
-        /* Draggable Custom Floating Map / Image / Tick Overlay Container */
-        #floating-overlay {
-            position: absolute;
-            top: 100px;
-            left: 100px;
-            width: 120px;
-            height: auto;
-            z-index: 15;
-            display: none;
-            cursor: move;
-            touch-action: none;
-            border: 2px dashed rgba(48, 209, 88, 0.6);
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.2);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        /* Container for Stamped / Draggable Elements & Text Notes */
+        #stamps-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 12; pointer-events: none;
         }
 
-        #floating-overlay img {
-            width: 100%;
-            height: auto;
-            display: block;
+        .active-stamp {
+            position: absolute;
+            pointer-events: auto;
+            cursor: move;
+            touch-action: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border: 1.5px dashed rgba(255, 255, 255, 0.4);
             border-radius: 6px;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transform-origin: center center;
+        }
+
+        .active-stamp.selected {
+            border-color: #0a84ff;
+            background: rgba(10, 132, 255, 0.15);
+        }
+
+        .active-stamp img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            flex-shrink: 0;
             pointer-events: none;
         }
 
-        .overlay-close-btn {
+        .active-stamp .stamp-text-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            outline: none;
+            width: 120px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            font-family: inherit;
+        }
+
+        .stamp-delete-btn {
             position: absolute;
-            top: -10px;
-            right: -10px;
-            width: 24px;
-            height: 24px;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
             background: #ff453a;
             color: white;
             border-radius: 50%;
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
-            font-size: 11px;
+            font-size: 10px;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-            z-index: 20;
-            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 25;
+            border: 1.5px solid white;
         }
 
-        .overlay-resize-handle {
-            position: absolute;
-            bottom: -6px;
-            right: -6px;
-            width: 18px;
-            height: 18px;
-            background: #30d158;
-            border-radius: 50%;
-            cursor: nwse-resize;
-            z-index: 20;
-            border: 2px solid white;
+        .active-stamp.selected .stamp-delete-btn {
+            display: flex;
         }
         
         #upload-prompt {
@@ -199,12 +213,8 @@
 
         <img id="slide-image" src="" style="display: none;">
         
-        <!-- Draggable Floating Map / Image / Right Tick Overlay Element -->
-        <div id="floating-overlay">
-            <div class="overlay-close-btn" id="overlay-close" title="हटाएं (Remove)"><i class="fas fa-times"></i></div>
-            <img id="floating-overlay-img" src="" alt="Overlay Image">
-            <div class="overlay-resize-handle" id="overlay-resize" title="आकार बदलें (Resize)"></div>
-        </div>
+        <!-- Container where Right Tick, Wrong Cross, and text boxes are added -->
+        <div id="stamps-container"></div>
 
         <canvas id="drawing-canvas"></canvas>
 
@@ -291,10 +301,9 @@
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
         <!-- Right Tick Button -->
-        <button class="dock-btn" id="add-tick-btn" title="Right Tick जोड़ें (Add Right Tick)" style="color: #30d158;"><i class="fas fa-check text-[10px]"></i></button>
-        <!-- Add Map/Image Button -->
-        <button class="dock-btn" id="add-map-btn" title="मैप या इमेज जोड़ें (Add Map/Image)" style="color: #0a84ff;"><i class="fas fa-map text-[8px]"></i></button>
-        <input type="file" id="map-upload-input" accept="image/*" style="display: none;">
+        <button class="dock-btn" id="add-right-tick-btn" title="सही का निशान (Right Tick)" style="color: #30d158;"><i class="fas fa-check text-[10px]"></i></button>
+        <!-- Wrong Cross Button -->
+        <button class="dock-btn" id="add-wrong-cross-btn" title="गलत का निशान (Wrong Cross)" style="color: #ff453a;"><i class="fas fa-times text-[10px]"></i></button>
         <div class="dock-divider"></div>
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
@@ -304,7 +313,7 @@
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
+        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let slideStamps = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -318,106 +327,216 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // Floating Map / Image / Right Tick Overlay Logic
-        const addMapBtn = document.getElementById('add-map-btn');
-        const addTickBtn = document.getElementById('add-tick-btn');
-        const mapUploadInput = document.getElementById('map-upload-input');
-        const floatingOverlay = document.getElementById('floating-overlay');
-        const floatingOverlayImg = document.getElementById('floating-overlay-img');
-        const overlayClose = document.getElementById('overlay-close');
-        const overlayResize = document.getElementById('overlay-resize');
+        // Built-in Clean SVG Data URIs for Right Tick and Wrong Cross
+        const rightTickSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%2330d158" d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.203c9.997-9.997 26.206-9.997 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.206-9.997 36.204 0l36.203 36.203c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.4c-9.998 9.997-26.207 9.997-36.204-.001z"/></svg>';
+        const wrongCrossSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%23ff453a" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65.1-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65.1 65.6 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"/></svg>';
 
-        // Built-in Clean Green Right Tick SVG Data URI
-        const rightTickSvgDataUri = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%2330d158" d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.203c9.997-9.997 26.206-9.997 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.206-9.997 36.204 0l36.203 36.203c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.4c-9.998 9.997-26.207 9.997-36.204-.001z"/></svg>';
+        const stampsContainer = document.getElementById('stamps-container');
+        const addRightTickBtn = document.getElementById('add-right-tick-btn');
+        const addWrongCrossBtn = document.getElementById('add-wrong-cross-btn');
 
-        addTickBtn.addEventListener('click', () => {
-            floatingOverlayImg.src = rightTickSvgDataUri;
-            floatingOverlay.style.width = '80px';
-            floatingOverlay.style.display = 'block';
+        function createStamp(imgSrc, defaultText = '') {
+            const stampEl = document.createElement('div');
+            stampEl.className = 'active-stamp';
+            // Default center position on screen
+            stampEl.style.left = (window.innerWidth / 2 - 80) + 'px';
+            stampEl.style.top = (window.innerHeight / 2 - 30) + 'px';
+
+            const img = document.createElement('img');
+            img.src = imgSrc;
+            stampEl.appendChild(img);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'stamp-text-input';
+            input.value = defaultText;
+            input.placeholder = 'लिखें...';
+            stampEl.appendChild(input);
+
+            const delBtn = document.createElement('div');
+            delBtn.className = 'stamp-delete-btn';
+            delBtn.innerHTML = '<i class="fas fa-times"></i>';
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                stampEl.remove();
+                saveCurrentStamps();
+                screenDirty = true;
+            });
+            stampEl.appendChild(delBtn);
+
+            // Dragging Logic for the Stamp
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            stampEl.addEventListener('pointerdown', (e) => {
+                if (e.target === input || e.target === delBtn || e.target.closest('.stamp-delete-btn')) return;
+                isDragging = true;
+                stampEl.setPointerCapture(e.pointerId);
+                
+                // Select this stamp and deselect others
+                document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
+                stampEl.classList.add('selected');
+
+                const rect = stampEl.getBoundingClientRect();
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = rect.left;
+                startTop = rect.top;
+                e.stopPropagation();
+            });
+
+            stampEl.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                let newLeft = startLeft + dx;
+                let newTop = startTop + dy;
+
+                newLeft = Math.max(0, Math.min(window.innerWidth - stampEl.offsetWidth, newLeft));
+                newTop = Math.max(0, Math.min(window.innerHeight - stampEl.offsetHeight, newTop));
+
+                stampEl.style.left = newLeft + 'px';
+                stampEl.style.top = newTop + 'px';
+                screenDirty = true;
+            });
+
+            stampEl.addEventListener('pointerup', (e) => {
+                if (isDragging) {
+                    isDragging = false;
+                    try { stampEl.releasePointerCapture(e.pointerId); } catch(err){}
+                    saveCurrentStamps();
+                }
+            });
+
+            input.addEventListener('input', () => {
+                saveCurrentStamps();
+                screenDirty = true;
+            });
+
+            input.addEventListener('focus', () => {
+                document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
+                stampEl.classList.add('selected');
+            });
+
+            stampsContainer.appendChild(stampEl);
+            stampEl.classList.add('selected');
+            saveCurrentStamps();
             screenDirty = true;
+        }
+
+        addRightTickBtn.addEventListener('click', () => {
+            createStamp(rightTickSvg);
         });
 
-        addMapBtn.addEventListener('click', () => mapUploadInput.click());
-
-        mapUploadInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const url = URL.createObjectURL(file);
-            floatingOverlayImg.src = url;
-            floatingOverlay.style.width = '250px';
-            floatingOverlay.style.display = 'block';
-            screenDirty = true;
-            mapUploadInput.value = '';
+        addWrongCrossBtn.addEventListener('click', () => {
+            createStamp(wrongCrossSvg);
         });
 
-        overlayClose.addEventListener('click', () => {
-            floatingOverlay.style.display = 'none';
-            floatingOverlayImg.src = '';
-            screenDirty = true;
-        });
-
-        // Dragging and Resizing for Floating Overlay
-        let isDraggingOverlay = false;
-        let isResizingOverlay = false;
-        let overlayStartX = 0, overlayStartY = 0, overlayStartLeft = 0, overlayStartTop = 0;
-        let overlayStartWidth = 0, overlayStartMouseX = 0;
-
-        floatingOverlay.addEventListener('pointerdown', (e) => {
-            if (e.target === overlayClose || e.target.closest('#overlay-close') || e.target === overlayResize) return;
-            isDraggingOverlay = true;
-            floatingOverlay.setPointerCapture(e.pointerId);
-            const rect = floatingOverlay.getBoundingClientRect();
-            overlayStartX = e.clientX;
-            overlayStartY = e.clientY;
-            overlayStartLeft = rect.left;
-            overlayStartTop = rect.top;
-            e.stopPropagation();
-        });
-
-        floatingOverlay.addEventListener('pointermove', (e) => {
-            if (!isDraggingOverlay) return;
-            const dx = e.clientX - overlayStartX;
-            const dy = e.clientY - overlayStartY;
-            let newLeft = overlayStartLeft + dx;
-            let newTop = overlayStartTop + dy;
-
-            newLeft = Math.max(0, Math.min(window.innerWidth - floatingOverlay.offsetWidth, newLeft));
-            newTop = Math.max(0, Math.min(window.innerHeight - floatingOverlay.offsetHeight, newTop));
-
-            floatingOverlay.style.left = newLeft + 'px';
-            floatingOverlay.style.top = newTop + 'px';
-            screenDirty = true;
-        });
-
-        floatingOverlay.addEventListener('pointerup', (e) => {
-            if (isDraggingOverlay) {
-                isDraggingOverlay = false;
-                try { floatingOverlay.releasePointerCapture(e.pointerId); } catch(err){}
+        // Click outside stamps to deselect
+        document.getElementById('presentation-area').addEventListener('pointerdown', (e) => {
+            if (!e.target.closest('.active-stamp') && !e.target.closest('#toolbar')) {
+                document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
             }
         });
 
-        overlayResize.addEventListener('pointerdown', (e) => {
-            isResizingOverlay = true;
-            overlayResize.setPointerCapture(e.pointerId);
-            overlayStartWidth = floatingOverlay.offsetWidth;
-            overlayStartMouseX = e.clientX;
-            e.stopPropagation();
-        });
+        function saveCurrentStamps() {
+            if (slides.length === 0) return;
+            const stampDataList = [];
+            document.querySelectorAll('.active-stamp').forEach(el => {
+                const img = el.querySelector('img');
+                const input = el.querySelector('input');
+                stampDataList.push({
+                    left: el.style.left,
+                    top: el.style.top,
+                    imgSrc: img.src,
+                    text: input.value
+                });
+            });
+            slideStamps[currentSlideIndex] = stampDataList;
+        }
 
-        overlayResize.addEventListener('pointermove', (e) => {
-            if (!isResizingOverlay) return;
-            const dw = e.clientX - overlayStartMouseX;
-            let newWidth = Math.max(40, Math.min(window.innerWidth * 0.9, overlayStartWidth + dw));
-            floatingOverlay.style.width = newWidth + 'px';
-            screenDirty = true;
-        });
+        function restoreStamps() {
+            stampsContainer.innerHTML = '';
+            const stampDataList = slideStamps[currentSlideIndex] || [];
+            stampDataList.forEach(data => {
+                const stampEl = document.createElement('div');
+                stampEl.className = 'active-stamp';
+                stampEl.style.left = data.left;
+                stampEl.style.top = data.top;
 
-        overlayResize.addEventListener('pointerup', (e) => {
-            if (isResizingOverlay) {
-                isResizingOverlay = false;
-                try { overlayResize.releasePointerCapture(e.pointerId); } catch(err){}
-            }
-        });
+                const img = document.createElement('img');
+                img.src = data.imgSrc;
+                stampEl.appendChild(img);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'stamp-text-input';
+                input.value = data.text;
+                input.placeholder = 'लिखें...';
+                stampEl.appendChild(input);
+
+                const delBtn = document.createElement('div');
+                delBtn.className = 'stamp-delete-btn';
+                delBtn.innerHTML = '<i class="fas fa-times"></i>';
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    stampEl.remove();
+                    saveCurrentStamps();
+                    screenDirty = true;
+                });
+                stampEl.appendChild(delBtn);
+
+                let isDragging = false;
+                let startX, startY, startLeft, startTop;
+
+                stampEl.addEventListener('pointerdown', (e) => {
+                    if (e.target === input || e.target === delBtn || e.target.closest('.stamp-delete-btn')) return;
+                    isDragging = true;
+                    stampEl.setPointerCapture(e.pointerId);
+                    document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
+                    stampEl.classList.add('selected');
+                    const rect = stampEl.getBoundingClientRect();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    e.stopPropagation();
+                });
+
+                stampEl.addEventListener('pointermove', (e) => {
+                    if (!isDragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    let newLeft = startLeft + dx;
+                    let newTop = startTop + dy;
+                    newLeft = Math.max(0, Math.min(window.innerWidth - stampEl.offsetWidth, newLeft));
+                    newTop = Math.max(0, Math.min(window.innerHeight - stampEl.offsetHeight, newTop));
+                    stampEl.style.left = newLeft + 'px';
+                    stampEl.style.top = newTop + 'px';
+                    screenDirty = true;
+                });
+
+                stampEl.addEventListener('pointerup', (e) => {
+                    if (isDragging) {
+                        isDragging = false;
+                        try { stampEl.releasePointerCapture(e.pointerId); } catch(err){}
+                        saveCurrentStamps();
+                    }
+                });
+
+                input.addEventListener('input', () => {
+                    saveCurrentStamps();
+                    screenDirty = true;
+                });
+
+                input.addEventListener('focus', () => {
+                    document.querySelectorAll('.active-stamp').forEach(s => s.classList.remove('selected'));
+                    stampEl.classList.add('selected');
+                });
+
+                stampsContainer.appendChild(stampEl);
+            });
+        }
 
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
@@ -593,10 +712,11 @@
         }
 
         function loadSlide(index) {
-            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); saveCurrentStamps(); 
+            currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             const counterText = `${currentSlideIndex + 1}/${slides.length}`;
             document.getElementById('slide-counter').innerText = counterText; 
-            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); restoreStamps(); screenDirty = true; }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
             if (savePdfBtn) {
@@ -650,6 +770,7 @@
                 leftNav.style.display = 'none';
                 rightNav.style.display = 'none';
                 recorderUi.style.display = 'none';
+                document.querySelectorAll('.active-stamp .stamp-delete-btn').forEach(b => b.style.display = 'none');
                 Array.from(toolbar.children).forEach(child => {
                     if (child !== hideUiBtn && child !== slideCounter && child !== dockPrevBtn && child !== dockNextBtn && child !== smoothPenBtn && child !== normalPenBtn && child !== eraserBtn && !child.classList.contains('dock-divider')) {
                         child.style.display = 'none';
@@ -761,6 +882,7 @@
             }
 
             saveCurrentInk();
+            saveCurrentStamps();
             loadingScreen.style.display = 'flex';
             loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";
 
@@ -795,26 +917,40 @@
                         });
                     }
 
-                    // Render floating overlay if visible
-                    if (floatingOverlay.style.display === 'block' && floatingOverlayImg.src) {
+                    // Render Stamps & Text Notes for slide i
+                    const stampList = slideStamps[i] || [];
+                    for (let sData of stampList) {
                         await new Promise((resolve) => {
-                            const overlayImg = new Image();
-                            overlayImg.crossOrigin = "anonymous";
-                            overlayImg.onload = () => {
-                                const overlayRect = floatingOverlay.getBoundingClientRect();
+                            const stampImg = new Image();
+                            stampImg.crossOrigin = "anonymous";
+                            stampImg.onload = () => {
+                                // Create a temporary DOM element to measure position accurately
+                                const tempEl = document.createElement('div');
+                                tempEl.style.cssText = `position:absolute; left:${sData.left}; top:${sData.top}; visibility:hidden; display:inline-flex; align-items:center; gap:4px; padding:4px 8px;`;
+                                document.body.appendChild(tempEl);
+                                const rect = tempEl.getBoundingClientRect();
+                                document.body.removeChild(tempEl);
+
                                 const scaleX = tempCanvas.width / window.innerWidth;
                                 const scaleY = tempCanvas.height / window.innerHeight;
-                                tempCtx.drawImage(
-                                    overlayImg,
-                                    overlayRect.left * scaleX,
-                                    overlayRect.top * scaleY,
-                                    overlayRect.width * scaleX,
-                                    overlayRect.height * scaleY
-                                );
+
+                                const renderX = parseFloat(sData.left) * scaleX;
+                                const renderY = parseFloat(sData.top) * scaleY;
+
+                                tempCtx.drawImage(stampImg, renderX + 4, renderY + 4, 28 * scaleX, 28 * scaleY);
+
+                                if (sData.text) {
+                                    tempCtx.font = `600 ${Math.round(16 * scaleY)}px sans-serif`;
+                                    tempCtx.fillStyle = '#ffffff';
+                                    tempCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                                    tempCtx.shadowBlur = 4;
+                                    tempCtx.fillText(sData.text, renderX + 36 * scaleX, renderY + 24 * scaleY);
+                                    tempCtx.shadowBlur = 0;
+                                }
                                 resolve();
                             };
-                            overlayImg.onerror = resolve;
-                            overlayImg.src = floatingOverlayImg.src;
+                            stampImg.onerror = resolve;
+                            stampImg.src = sData.imgSrc;
                         });
                     }
 
@@ -845,7 +981,7 @@
                     }
                 }
 
-                pdf.save(`Class_Notes_With_Inks_${new Date().getTime()}.pdf`);
+                pdf.save(`Class_Notes_With_Stamps_${new Date().getTime()}.pdf`);
             } catch (err) {
                 alert("PDF सेव करने में समस्या आई: " + err.message);
             } finally {
@@ -890,9 +1026,6 @@
                 let activeSlideImg = new Image();
                 if (slides.length > 0 && slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
 
-                let activeOverlayImg = new Image();
-                if (floatingOverlayImg.src) activeOverlayImg.src = floatingOverlayImg.src;
-
                 recordingLoopActive = true; screenDirty = true;
                 
                 function drawRecordingFrame() {
@@ -908,22 +1041,29 @@
                             }
                         }
 
-                        // Draw Floating Overlay in Recording Frame if visible
-                        if (floatingOverlay.style.display === 'block' && floatingOverlayImg.src) {
-                            if (activeOverlayImg.src !== floatingOverlayImg.src) activeOverlayImg.src = floatingOverlayImg.src;
-                            if (activeOverlayImg.complete && activeOverlayImg.naturalWidth) {
-                                const overlayRect = floatingOverlay.getBoundingClientRect();
-                                const scaleX = recCanvas.width / window.innerWidth;
-                                const scaleY = recCanvas.height / window.innerHeight;
-                                recCtx.drawImage(
-                                    activeOverlayImg,
-                                    overlayRect.left * scaleX,
-                                    overlayRect.top * scaleY,
-                                    overlayRect.width * scaleX,
-                                    overlayRect.height * scaleY
-                                );
+                        // Draw stamps & text on recording frame
+                        const stampList = slideStamps[currentSlideIndex] || [];
+                        const scaleX = recCanvas.width / window.innerWidth;
+                        const scaleY = recCanvas.height / window.innerHeight;
+
+                        // We can render stamps synchronously during recording if preloaded, or iterate
+                        stampList.forEach(sData => {
+                            const cachedImg = new Image();
+                            cachedImg.src = sData.imgSrc;
+                            if (cachedImg.complete && cachedImg.naturalWidth) {
+                                const renderX = parseFloat(sData.left) * scaleX;
+                                const renderY = parseFloat(sData.top) * scaleY;
+                                recCtx.drawImage(cachedImg, renderX + 4, renderY + 4, 28 * scaleX, 28 * scaleY);
+                                if (sData.text) {
+                                    recCtx.font = `600 ${Math.round(16 * scaleY)}px sans-serif`;
+                                    recCtx.fillStyle = '#ffffff';
+                                    recCtx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                                    recCtx.shadowBlur = 4;
+                                    recCtx.fillText(sData.text, renderX + 36 * scaleX, renderY + 24 * scaleY);
+                                    recCtx.shadowBlur = 0;
+                                }
                             }
-                        }
+                        });
 
                         if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         screenDirty = false;
