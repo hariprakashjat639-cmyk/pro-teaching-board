@@ -574,7 +574,6 @@
             };
             wrapper.appendChild(deleteBtn);
 
-            // Drag & Move logic for Touch and Mouse
             let isDraggingImg = false;
             let startX, startY;
 
@@ -584,7 +583,6 @@
                 startX = e.clientX - wrapper.offsetLeft;
                 startY = e.clientY - wrapper.offsetTop;
                 
-                // Unselect others
                 document.querySelectorAll('.draggable-img-wrapper').forEach(w => w.classList.remove('selected'));
                 wrapper.classList.add('selected');
                 e.stopPropagation();
@@ -613,7 +611,6 @@
             screenDirty = true;
         }
 
-        // Permanent Bake Image & Inks onto the slide base image
         bakeImageBtn.addEventListener('click', async () => {
             if (!slides[currentSlideIndex]) return;
             
@@ -626,7 +623,6 @@
                 tempCanvas.height = 720;
                 const tempCtx = tempCanvas.getContext('2d');
 
-                // 1. Draw base slide image
                 await new Promise((resolve) => {
                     const bgImg = new Image();
                     bgImg.onload = () => {
@@ -637,14 +633,12 @@
                     bgImg.src = slides[currentSlideIndex];
                 });
 
-                // 2. Draw overlay images
                 const wrappers = overlayContainer.querySelectorAll('.draggable-img-wrapper');
                 for (let wrap of wrappers) {
                     const imgEl = wrap.querySelector('img');
                     const rect = wrap.getBoundingClientRect();
                     const containerRect = overlayContainer.getBoundingClientRect();
                     
-                    // Scale coordinates relative to 1280x720 canvas
                     let scaleX = 1280 / containerRect.width;
                     let scaleY = 720 / containerRect.height;
 
@@ -664,12 +658,10 @@
                     });
                 }
 
-                // 3. Draw ink canvas
                 if (canvas) {
                     tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, 1280, 720);
                 }
 
-                // Update current slide source and clear overlays & inks
                 slides[currentSlideIndex] = tempCanvas.toDataURL('image/png', 0.95);
                 slideOverlays[currentSlideIndex] = [];
                 slideInks[currentSlideIndex] = null;
@@ -684,30 +676,60 @@
         });
 
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
-        let isDrawing = false, points = [], currentMode = 'smooth', currentColor = '#ffff00';
-        const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
+        let isDrawing = false, points = [], currentMode = 'smooth';
+        
+        // --- SEPARATE PENS CONFIG (Smooth & Normal) ---
+        let penConfigs = {
+            'smooth': { color: '#ffff00', size: 6 },
+            'normal': { color: '#00ffcc', size: 6 }
+        };
+
+        const sizeSlider = document.getElementById('pen-size'); 
+        const colorPicker = document.getElementById('color-picker'); 
+        const colorBtn = document.getElementById('color-btn');
         const tools = { 'smooth': smoothPenBtn, 'normal': normalPenBtn, 'eraser': eraserBtn };
 
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreState(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
 
         function setActiveTool(mode) {
-            currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
-            if(mode === 'eraser') sizeSlider.value = 40; else sizeSlider.value = 6;
+            currentMode = mode; 
+            Object.values(tools).forEach(btn => btn.classList.remove('active')); 
+            tools[mode].classList.add('active');
+
+            if (mode === 'eraser') {
+                sizeSlider.value = 40;
+                colorBtn.style.background = '#ffffff';
+            } else if (mode === 'smooth' || mode === 'normal') {
+                sizeSlider.value = penConfigs[mode].size;
+                colorPicker.value = penConfigs[mode].color;
+                colorBtn.style.background = penConfigs[mode].color;
+            }
         }
         setActiveTool('smooth');
 
-        colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
+        colorPicker.addEventListener('input', (e) => {
+            let col = e.target.value;
+            colorBtn.style.background = col;
+            if (currentMode === 'smooth' || currentMode === 'normal') {
+                penConfigs[currentMode].color = col;
+            }
+        });
+
+        sizeSlider.addEventListener('input', (e) => {
+            let val = e.target.value;
+            if (currentMode === 'smooth' || currentMode === 'normal') {
+                penConfigs[currentMode].size = val;
+            }
+        });
+
         tools['smooth'].addEventListener('click', () => setActiveTool('smooth')); 
         tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
         tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
         document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentState(); screenDirty = true; });
 
-        // Let drawing occur only when clicking on canvas or outside overlays
         canvas.addEventListener('pointerdown', (e) => { 
-            // Deselect image wrappers if clicking background
             document.querySelectorAll('.draggable-img-wrapper').forEach(w => w.classList.remove('selected'));
-
             isDrawing = true; 
             points = [{x: e.clientX, y: e.clientY}]; 
             ctx.beginPath(); 
@@ -721,6 +743,8 @@
             if (points.length < 3) return;
 
             let baseSize = parseInt(sizeSlider.value);
+            let activeColor = (currentMode === 'smooth' || currentMode === 'normal') ? penConfigs[currentMode].color : '#ffffff';
+
             const cp = points[points.length - 2];
             const ep = { 
                 x: (points[points.length - 2].x + points[points.length - 1].x) / 2, 
@@ -741,7 +765,7 @@
             } 
             else if (currentMode === 'smooth') {
                 ctx.lineWidth = baseSize;
-                ctx.strokeStyle = currentColor;
+                ctx.strokeStyle = activeColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
                 ctx.beginPath();
@@ -749,7 +773,7 @@
             } 
             else { 
                 ctx.lineWidth = baseSize;
-                ctx.strokeStyle = currentColor;
+                ctx.strokeStyle = activeColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
                 ctx.beginPath();
@@ -764,7 +788,6 @@
             if(slides.length > 0) {
                 slideInks[currentSlideIndex] = canvas.toDataURL();
                 
-                // Save overlay images data
                 const wrappers = overlayContainer.querySelectorAll('.draggable-img-wrapper');
                 const overlayData = [];
                 wrappers.forEach(w => {
@@ -783,7 +806,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             ctx.shadowBlur = 0; 
             
-            // Restore Ink
             if (slideInks[currentSlideIndex]) { 
                 let img = new Image(); 
                 img.src = slideInks[currentSlideIndex]; 
@@ -793,7 +815,6 @@
                 }; 
             }
 
-            // Restore Overlays
             overlayContainer.innerHTML = '';
             if (slideOverlays[currentSlideIndex]) {
                 slideOverlays[currentSlideIndex].forEach(item => {
@@ -826,7 +847,6 @@
                     tempCtx.fillStyle = '#030305';
                     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-                    // 1. Base slide image
                     if (slides[i]) {
                         await new Promise((resolve) => {
                             const img = new Image();
@@ -845,7 +865,6 @@
                         });
                     }
 
-                    // 2. Overlay images for slide i
                     if (slideOverlays[i]) {
                         for (let ov of slideOverlays[i]) {
                             await new Promise((resolve) => {
@@ -865,7 +884,6 @@
                         }
                     }
 
-                    // 3. Inks for slide i
                     if (slideInks[i]) {
                         await new Promise((resolve) => {
                             const inkImg = new Image();
@@ -952,9 +970,6 @@
                                 recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
                             }
                         }
-                        // Draw overlay images on recording
-                        const wrappers = overlayContainer.querySelectorAll('.draggable-img-wrapper');
-                        // Note: For simplicity in recording loop, they render via DOM capture or can be handled directly if needed.
                         if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         screenDirty = false;
                     }
