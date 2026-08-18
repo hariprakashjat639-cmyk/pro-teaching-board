@@ -31,36 +31,21 @@
             object-fit: contain; z-index: 1; border-radius: 4px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
         }
-
-        /* Slide Images Container for Draggable Overlays */
-        #slide-overlay-container {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 5; pointer-events: none; display: flex; justify-content: center; align-items: center;
-        }
-
-        .draggable-img-wrapper {
-            position: absolute; cursor: move; pointer-events: auto;
-            border: 2px dashed transparent; display: inline-block; touch-action: none;
-        }
-        .draggable-img-wrapper:hover, .draggable-img-wrapper.selected {
-            border-color: #0a84ff;
-        }
-        .draggable-img-wrapper img {
-            display: block; max-width: 300px; max-height: 300px; pointer-events: none;
-        }
-        .img-delete-btn {
-            position: absolute; top: -10px; right: -10px; background: #ff453a; color: white;
-            border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;
-            align-items: center; justify-content: center; cursor: pointer; z-index: 20;
-        }
-        .draggable-img-wrapper:hover .img-delete-btn, .draggable-img-wrapper.selected .img-delete-btn {
-            display: flex;
-        }
         
         #drawing-canvas { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             z-index: 10; cursor: default; 
         }
+
+        /* Movable Floating Icon Style */
+        #movable-icon {
+            position: absolute; bottom: 80px; left: 30px; width: 60px; height: 60px;
+            z-index: 15; cursor: move; touch-action: none; display: none;
+            background: rgba(255, 255, 255, 0.1); border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        #movable-icon img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; pointer-events: none; }
         
         #upload-prompt {
             position: absolute; z-index: 1000; display: flex; flex-direction: column;
@@ -166,7 +151,12 @@
         </div>
 
         <img id="slide-image" src="" style="display: none;">
-        <div id="slide-overlay-container"></div>
+        
+        <!-- Movable Small Icon Element -->
+        <div id="movable-icon" title="Drag to move icon">
+            <img id="movable-icon-img" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Icon">
+        </div>
+
         <canvas id="drawing-canvas"></canvas>
 
         <button class="side-nav-btn" id="left-nav"><i class="fas fa-chevron-left"></i></button>
@@ -242,12 +232,6 @@
         <button class="dock-btn" id="dock-prev-btn" title="Previous Slide"><i class="fas fa-chevron-left text-[9px]"></i></button>
         <button class="dock-btn" id="dock-next-btn" title="Next Slide"><i class="fas fa-chevron-right text-[9px]"></i></button>
         <div class="dock-divider"></div>
-        <!-- Add Image Button Icon Only -->
-        <button class="dock-btn" id="add-image-btn" title="स्लाइड पर इमेज जोड़ें (Add Image)" style="color: #30d158;"><i class="fas fa-image text-[8px]"></i></button>
-        <input type="file" id="slide-image-upload" accept="image/*" style="display: none;">
-        <!-- Permanent Bake Image Button -->
-        <button class="dock-btn" id="bake-image-btn" title="इमेज और ड्राइंग को स्लाइड में स्थायी रूप से जोड़ें (Bake Permanent)" style="color: #0a84ff;"><i class="fas fa-lock text-[8px]"></i></button>
-        <div class="dock-divider"></div>
         <div class="color-picker-wrapper" title="रंग बदलें (Color)">
             <input type="color" id="color-picker" value="#ffff00">
             <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[7px]"></i></button>
@@ -257,6 +241,9 @@
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[8px]"></i></button>
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
+        <!-- Add Icon Button -->
+        <button class="dock-btn" id="add-icon-btn" title="चोट्टी आइकन इमेज जोड़ें" style="color: #ff9f0a;"><i class="fas fa-image text-[8px]"></i></button>
+        <input type="file" id="icon-upload-input" accept="image/*" style="display: none;">
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
         <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[8px]"></i></button>
@@ -265,7 +252,7 @@
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let slideOverlays = {}; let screenDirty = true;
+        let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
@@ -278,6 +265,57 @@
 
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
+
+        // Movable Icon Drag Logic
+        const movableIcon = document.getElementById('movable-icon');
+        const movableIconImg = document.getElementById('movable-icon-img');
+        const addIconBtn = document.getElementById('add-icon-btn');
+        const iconUploadInput = document.getElementById('icon-upload-input');
+
+        addIconBtn.addEventListener('click', () => iconUploadInput.click());
+        iconUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                movableIconImg.src = url;
+                movableIcon.style.display = 'flex';
+                screenDirty = true;
+            }
+        });
+
+        let isDraggingIcon = false;
+        let iconStartX, iconStartY, iconInitialLeft, iconInitialTop;
+
+        movableIcon.addEventListener('pointerdown', (e) => {
+            isDraggingIcon = true;
+            movableIcon.setPointerCapture(e.pointerId);
+            const rect = movableIcon.getBoundingClientRect();
+            iconStartX = e.clientX;
+            iconStartY = e.clientY;
+            iconInitialLeft = rect.left;
+            iconInitialTop = rect.top;
+            e.stopPropagation();
+        });
+
+        movableIcon.addEventListener('pointermove', (e) => {
+            if (!isDraggingIcon) return;
+            const dx = e.clientX - iconStartX;
+            const dy = e.clientY - iconStartY;
+            let newLeft = iconInitialLeft + dx;
+            let newTop = iconInitialTop + dy;
+
+            movableIcon.style.left = newLeft + 'px';
+            movableIcon.style.top = newTop + 'px';
+            movableIcon.style.bottom = 'auto';
+            screenDirty = true;
+        });
+
+        movableIcon.addEventListener('pointerup', (e) => {
+            if (isDraggingIcon) {
+                isDraggingIcon = false;
+                try { movableIcon.releasePointerCapture(e.pointerId); } catch(err){}
+            }
+        });
 
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
@@ -449,16 +487,15 @@
             document.getElementById('recorder-ui').style.display = 'flex';
             document.getElementById('left-nav').style.display = 'flex';
             document.getElementById('right-nav').style.display = 'flex';
+            movableIcon.style.display = 'flex';
             loadSlide(0);
         }
 
         function loadSlide(index) {
-            saveCurrentState(); 
-            currentSlideIndex = index; 
-            slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             const counterText = `${currentSlideIndex + 1}/${slides.length}`;
             document.getElementById('slide-counter').innerText = counterText; 
-            slideImage.onload = () => { resizeCanvas(); restoreState(); screenDirty = true; }; 
+            slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
 
             const savePdfBtn = document.getElementById('save-pdf-btn');
             if (savePdfBtn) {
@@ -534,207 +571,27 @@
             screenDirty = true;
         });
 
-        // --- ADD & MOVE IMAGE FUNCTIONALITY ---
-        const addImageBtn = document.getElementById('add-image-btn');
-        const slideImageUpload = document.getElementById('slide-image-upload');
-        const overlayContainer = document.getElementById('slide-overlay-container');
-        const bakeImageBtn = document.getElementById('bake-image-btn');
-
-        addImageBtn.addEventListener('click', () => slideImageUpload.click());
-
-        slideImageUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                createDraggableImage(event.target.result);
-            };
-            reader.readAsDataURL(file);
-            slideImageUpload.value = '';
-        });
-
-        function createDraggableImage(src, initialX = 100, initialY = 100) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'draggable-img-wrapper selected';
-            wrapper.style.left = initialX + 'px';
-            wrapper.style.top = initialY + 'px';
-
-            const img = document.createElement('img');
-            img.src = src;
-            wrapper.appendChild(img);
-
-            const deleteBtn = document.createElement('div');
-            deleteBtn.className = 'img-delete-btn';
-            deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-            deleteBtn.onclick = (e) => {
-                e.stopPropagation();
-                wrapper.remove();
-                saveCurrentState();
-                screenDirty = true;
-            };
-            wrapper.appendChild(deleteBtn);
-
-            let isDraggingImg = false;
-            let startX, startY;
-
-            wrapper.addEventListener('pointerdown', (e) => {
-                isDraggingImg = true;
-                wrapper.setPointerCapture(e.pointerId);
-                startX = e.clientX - wrapper.offsetLeft;
-                startY = e.clientY - wrapper.offsetTop;
-                
-                document.querySelectorAll('.draggable-img-wrapper').forEach(w => w.classList.remove('selected'));
-                wrapper.classList.add('selected');
-                e.stopPropagation();
-            });
-
-            wrapper.addEventListener('pointermove', (e) => {
-                if (!isDraggingImg) return;
-                let newX = e.clientX - startX;
-                let newY = e.clientY - startY;
-                wrapper.style.left = newX + 'px';
-                wrapper.style.top = newY + 'px';
-                screenDirty = true;
-            });
-
-            wrapper.addEventListener('pointerup', (e) => {
-                if (isDraggingImg) {
-                    isDraggingImg = false;
-                    try { wrapper.releasePointerCapture(e.pointerId); } catch(err){}
-                    saveCurrentState();
-                    screenDirty = true;
-                }
-            });
-
-            overlayContainer.appendChild(wrapper);
-            saveCurrentState();
-            screenDirty = true;
-        }
-
-        bakeImageBtn.addEventListener('click', async () => {
-            if (!slides[currentSlideIndex]) return;
-            
-            loadingScreen.style.display = 'flex';
-            loadingText.innerText = "इमेज और लिखावट को स्लाइड पर स्थायी रूप से जोड़ा जा रहा है...";
-
-            try {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 1280;
-                tempCanvas.height = 720;
-                const tempCtx = tempCanvas.getContext('2d');
-
-                await new Promise((resolve) => {
-                    const bgImg = new Image();
-                    bgImg.onload = () => {
-                        tempCtx.drawImage(bgImg, 0, 0, 1280, 720);
-                        resolve();
-                    };
-                    bgImg.onerror = resolve;
-                    bgImg.src = slides[currentSlideIndex];
-                });
-
-                const wrappers = overlayContainer.querySelectorAll('.draggable-img-wrapper');
-                for (let wrap of wrappers) {
-                    const imgEl = wrap.querySelector('img');
-                    const rect = wrap.getBoundingClientRect();
-                    const containerRect = overlayContainer.getBoundingClientRect();
-                    
-                    let scaleX = 1280 / containerRect.width;
-                    let scaleY = 720 / containerRect.height;
-
-                    let x = (rect.left - containerRect.left) * scaleX;
-                    let y = (rect.top - containerRect.top) * scaleY;
-                    let w = rect.width * scaleX;
-                    let h = rect.height * scaleY;
-
-                    await new Promise((resolve) => {
-                        const ovImg = new Image();
-                        ovImg.onload = () => {
-                            tempCtx.drawImage(ovImg, x, y, w, h);
-                            resolve();
-                        };
-                        ovImg.onerror = resolve;
-                        ovImg.src = imgEl.src;
-                    });
-                }
-
-                if (canvas) {
-                    tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, 1280, 720);
-                }
-
-                slides[currentSlideIndex] = tempCanvas.toDataURL('image/png', 0.95);
-                slideOverlays[currentSlideIndex] = [];
-                slideInks[currentSlideIndex] = null;
-
-                loadSlide(currentSlideIndex);
-                alert("इमेज और लिखावट सफलतापूर्वक स्लाइड पर स्थायी रूप से जुड़ गई है!");
-            } catch (err) {
-                alert("स्थायी रूप से जोड़ने में समस्या आई: " + err.message);
-            } finally {
-                loadingScreen.style.display = 'none';
-            }
-        });
-
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
-        let isDrawing = false, points = [], currentMode = 'smooth';
-        
-        let penConfigs = {
-            'smooth': { color: '#ffff00', size: 6 },
-            'normal': { color: '#00ffcc', size: 6 }
-        };
-
-        const sizeSlider = document.getElementById('pen-size'); 
-        const colorPicker = document.getElementById('color-picker'); 
-        const colorBtn = document.getElementById('color-btn');
+        let isDrawing = false, points = [], currentMode = 'smooth', currentColor = '#ffff00';
+        const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
         const tools = { 'smooth': smoothPenBtn, 'normal': normalPenBtn, 'eraser': eraserBtn };
 
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreState(); screenDirty = true; }
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
         window.addEventListener('resize', resizeCanvas);
 
         function setActiveTool(mode) {
-            currentMode = mode; 
-            Object.values(tools).forEach(btn => btn.classList.remove('active')); 
-            tools[mode].classList.add('active');
-
-            if (mode === 'eraser') {
-                sizeSlider.value = 40;
-                colorBtn.style.background = '#ffffff';
-            } else if (mode === 'smooth' || mode === 'normal') {
-                sizeSlider.value = penConfigs[mode].size;
-                colorPicker.value = penConfigs[mode].color;
-                colorBtn.style.background = penConfigs[mode].color;
-            }
+            currentMode = mode; Object.values(tools).forEach(btn => btn.classList.remove('active')); tools[mode].classList.add('active');
+            if(mode === 'eraser') sizeSlider.value = 40; else sizeSlider.value = 6;
         }
         setActiveTool('smooth');
 
-        colorPicker.addEventListener('input', (e) => {
-            let col = e.target.value;
-            colorBtn.style.background = col;
-            if (currentMode === 'smooth' || currentMode === 'normal') {
-                penConfigs[currentMode].color = col;
-            }
-        });
-
-        sizeSlider.addEventListener('input', (e) => {
-            let val = e.target.value;
-            if (currentMode === 'smooth' || currentMode === 'normal') {
-                penConfigs[currentMode].size = val;
-            }
-        });
-
+        colorPicker.addEventListener('input', (e) => { currentColor = e.target.value; colorBtn.style.background = currentColor; });
         tools['smooth'].addEventListener('click', () => setActiveTool('smooth')); 
         tools['normal'].addEventListener('click', () => setActiveTool('normal')); 
         tools['eraser'].addEventListener('click', () => setActiveTool('eraser'));
-        document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentState(); screenDirty = true; });
+        document.getElementById('clear-btn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveCurrentInk(); screenDirty = true; });
 
-        canvas.addEventListener('pointerdown', (e) => { 
-            document.querySelectorAll('.draggable-img-wrapper').forEach(w => w.classList.remove('selected'));
-            isDrawing = true; 
-            points = [{x: e.clientX, y: e.clientY}]; 
-            ctx.beginPath(); 
-            ctx.moveTo(e.clientX, e.clientY); 
-            screenDirty = true; 
-        });
+        canvas.addEventListener('pointerdown', (e) => { isDrawing = true; points = [{x: e.clientX, y: e.clientY}]; ctx.beginPath(); ctx.moveTo(e.clientX, e.clientY); screenDirty = true; });
         
         canvas.addEventListener('pointermove', (e) => {
             if (!isDrawing) return; 
@@ -742,8 +599,6 @@
             if (points.length < 3) return;
 
             let baseSize = parseInt(sizeSlider.value);
-            let activeColor = (currentMode === 'smooth' || currentMode === 'normal') ? penConfigs[currentMode].color : '#ffffff';
-
             const cp = points[points.length - 2];
             const ep = { 
                 x: (points[points.length - 2].x + points[points.length - 1].x) / 2, 
@@ -764,7 +619,7 @@
             } 
             else if (currentMode === 'smooth') {
                 ctx.lineWidth = baseSize;
-                ctx.strokeStyle = activeColor;
+                ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
                 ctx.stroke();
                 ctx.beginPath();
@@ -772,39 +627,19 @@
             } 
             else { 
                 ctx.lineWidth = baseSize;
-                ctx.strokeStyle = activeColor;
-                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
+                ctx.strokeStyle = currentColor;
+                ctx.lineTo(e.clientX, e.clientY);
                 ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(ep.x, ep.y);
             }
             screenDirty = true;
         });
 
-        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentState(); screenDirty = true; });
+        canvas.addEventListener('pointerup', () => { isDrawing = false; points = []; saveCurrentInk(); screenDirty = true; });
 
-        function saveCurrentState() { 
-            if(slides.length > 0) {
-                slideInks[currentSlideIndex] = canvas.toDataURL();
-                
-                const wrappers = overlayContainer.querySelectorAll('.draggable-img-wrapper');
-                const overlayData = [];
-                wrappers.forEach(w => {
-                    const img = w.querySelector('img');
-                    overlayData.push({
-                        src: img.src,
-                        left: w.style.left,
-                        top: w.style.top
-                    });
-                });
-                slideOverlays[currentSlideIndex] = overlayData;
-            } 
-        }
-
-        function restoreState() { 
+        function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
+        function restoreInk() { 
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             ctx.shadowBlur = 0; 
-            
             if (slideInks[currentSlideIndex]) { 
                 let img = new Image(); 
                 img.src = slideInks[currentSlideIndex]; 
@@ -812,14 +647,7 @@
                     ctx.drawImage(img, 0, 0); 
                     screenDirty = true; 
                 }; 
-            }
-
-            overlayContainer.innerHTML = '';
-            if (slideOverlays[currentSlideIndex]) {
-                slideOverlays[currentSlideIndex].forEach(item => {
-                    createDraggableImage(item.src, parseInt(item.left) || 100, parseInt(item.top) || 100);
-                });
-            }
+            } 
         }
 
         const savePdfBtn = document.getElementById('save-pdf-btn');
@@ -829,7 +657,7 @@
                 return;
             }
 
-            saveCurrentState();
+            saveCurrentInk();
             loadingScreen.style.display = 'flex';
             loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";
 
@@ -864,23 +692,21 @@
                         });
                     }
 
-                    if (slideOverlays[i]) {
-                        for (let ov of slideOverlays[i]) {
-                            await new Promise((resolve) => {
-                                const ovImg = new Image();
-                                ovImg.onload = () => {
-                                    const containerRect = overlayContainer.getBoundingClientRect();
-                                    let scaleX = tempCanvas.width / (containerRect.width || window.innerWidth);
-                                    let scaleY = tempCanvas.height / (containerRect.height || window.innerHeight);
-                                    let x = (parseInt(ov.left) || 0) * scaleX;
-                                    let y = (parseInt(ov.top) || 0) * scaleY;
-                                    tempCtx.drawImage(ovImg, x, y, ovImg.naturalWidth * 0.5 * scaleX, ovImg.naturalHeight * 0.5 * scaleY);
-                                    resolve();
-                                };
-                                ovImg.onerror = resolve;
-                                ovImg.src = ov.src;
-                            });
-                        }
+                    // Render Movable Icon on PDF if visible
+                    if (movableIcon.style.display !== 'none') {
+                        await new Promise((resolve) => {
+                            const iconImg = new Image();
+                            iconImg.crossOrigin = "anonymous";
+                            iconImg.onload = () => {
+                                const rect = movableIcon.getBoundingClientRect();
+                                const scaleX = tempCanvas.width / window.innerWidth;
+                                const scaleY = tempCanvas.height / window.innerHeight;
+                                tempCtx.drawImage(iconImg, rect.left * scaleX, rect.top * scaleY, rect.width * scaleX, rect.height * scaleY);
+                                resolve();
+                            };
+                            iconImg.onerror = resolve;
+                            iconImg.src = movableIconImg.src;
+                        });
                     }
 
                     if (slideInks[i]) {
@@ -957,6 +783,9 @@
 
                 recordingLoopActive = true; screenDirty = true;
                 
+                let activeIconImg = new Image();
+                if(movableIcon.style.display !== 'none') activeIconImg.src = movableIconImg.src;
+
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
                     if (screenDirty) {
@@ -969,6 +798,15 @@
                                 recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
                             }
                         }
+
+                        // Draw Movable Icon in Recording
+                        if (movableIcon.style.display !== 'none' && activeIconImg.complete) {
+                            const rect = movableIcon.getBoundingClientRect();
+                            const scaleX = recCanvas.width / window.innerWidth;
+                            const scaleY = recCanvas.height / window.innerHeight;
+                            recCtx.drawImage(activeIconImg, rect.left * scaleX, rect.top * scaleY, rect.width * scaleX, rect.height * scaleY);
+                        }
+
                         if (canvas) recCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, recCanvas.width, recCanvas.height);
                         screenDirty = false;
                     }
