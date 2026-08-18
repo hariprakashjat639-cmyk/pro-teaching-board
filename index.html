@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pro EduCreator Studio - Image Edition</title>
+    <title>Pro EduCreator Studio - Clean Audio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
@@ -121,19 +121,23 @@
 
     <div id="loading-screen">
         <div class="spinner mb-3"></div>
-        <h2 id="loading-text" class="text-sm font-medium text-white">इमेज लोड हो रही है...</h2>
+        <h2 id="loading-text" class="text-sm font-medium text-white">फाइल हाई-क्वालिटी में प्रोसेस हो रही है...[cite: 6]</h2>
     </div>
 
     <div id="presentation-area">
         <div id="upload-prompt">
-            <i class="fas fa-image text-4xl mb-3 text-[#0a84ff]"></i>
-            <h2 class="text-lg font-bold mb-2 text-white">अपनी इमेज चुनें</h2>
+            <i class="fas fa-file-powerpoint text-4xl mb-3 text-[#ff453a]"></i>
+            <h2 class="text-lg font-bold mb-2 text-white">क्लास नोट्स या PDF/Images चुनें[cite: 6]</h2>
             <div class="flex flex-col gap-2 w-full mt-3">
                 <button type="button" id="browse-btn" class="bg-[#0a84ff] text-white text-xs px-4 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 transition font-semibold shadow-lg">
-                    <i class="fas fa-folder-open mr-2"></i> इमेज चुनें (Images Only)
+                    <i class="fas fa-folder-open mr-2"></i> फाइल चुनें (PDF / PPTX / Images)[cite: 6]
+                </button>
+                <button type="button" id="ppt-to-pdf-btn" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs px-4 py-2.5 rounded-xl cursor-pointer hover:opacity-90 transition font-semibold shadow-lg">
+                    <i class="fas fa-wand-magic-sparkles mr-2"></i> PPT को PDF में बदलें (Converter)[cite: 6]
                 </button>
             </div>
-            <input type="file" id="slide-upload" accept="image/*" multiple style="display: none;">
+            <input type="file" id="slide-upload" accept=".pdf, .ppt, .pptx, image/*" multiple style="display: none;">
+            <input type="file" id="converter-upload" accept=".pptx, .ppt" style="display: none;">
         </div>
 
         <img id="slide-image" src="" style="display: none;">
@@ -149,32 +153,58 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
+        <!-- RECORDING SETTINGS & CLEAN AUDIO MENU -->
         <div id="rec-settings-menu">
-            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स</div>
+            <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स[cite: 6]</div>
             <div class="rec-setting-item">
-                <span>माइक्रोफोन (Mic Audio):</span>
+                <span>माइक्रोफोन (Mic Audio):[cite: 6]</span>
                 <input type="checkbox" id="setting-mic" checked>
             </div>
             <div class="rec-setting-item">
-                <span>वीडियो क्वालिटी:</span>
+                <span>वीडियो क्वालिटी:[cite: 6]</span>
                 <select id="setting-quality">
-                    <option value="high">1080p (FHD)</option>
-                    <option value="medium" selected>720p (HD)</option>
+                    <option value="high">1080p (FHD)[cite: 6]</option>
+                    <option value="medium" selected>720p (HD)[cite: 6]</option>
                 </select>
             </div>
             
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-sliders"></i> ऑडियो फिल्टर्स</div>
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-sliders"></i> ऑडियो फिल्टर्स (केवल 2 जरूरी)[cite: 6]</div>
+            <div class="setting-desc">शुरुआत में सब ऑफ रहता है (Raw Audio)। जरूरत पड़ने पर टिक करें।[cite: 6]</div>
+
+            <!-- Filter 1: Background Noise Removal -->
             <div class="rec-setting-item">
-                <span class="font-semibold text-blue-400">Background Noise Remove:</span>
+                <span class="font-semibold text-blue-400">Background Noise Remove:[cite: 6]</span>
                 <input type="checkbox" id="setting-noise-remove">
             </div>
+            <div class="setting-desc">पंखे या आस-पास के बैकग्राउंड शोर को हटाकर आवाज़ साफ़ करता है।[cite: 6]</div>
+
+            <!-- Filter 2: Audio Smooth & Vocal Natural -->
             <div class="rec-setting-item">
-                <span class="font-semibold text-green-400">Audio Smooth & Natural:</span>
+                <span class="font-semibold text-green-400">Audio Smooth & Natural:[cite: 6]</span>
                 <input type="checkbox" id="setting-audio-smooth">
+            </div>
+            <div class="setting-desc">आवाज़ को बिना बदले बेहद नेचुरल, सॉफ्ट और क्रिस्प बनाता है।[cite: 6]</div>
+
+            <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस[cite: 6]</div>
+            <div class="rec-setting-item">
+                <span>फ्रेम रेट (FPS):[cite: 6]</span>
+                <select id="setting-fps">
+                    <option value="15">15 FPS (Ultra Low CPU)[cite: 6]</option>
+                    <option value="30" selected>30 FPS (Standard)[cite: 6]</option>
+                    <option value="60">60 FPS (Smooth)[cite: 6]</option>
+                </select>
+            </div>
+            <div class="rec-setting-item">
+                <span>बिटरेट (Bitrate):[cite: 6]</span>
+                <select id="setting-bitrate">
+                    <option value="1.5">1.5 Mbps[cite: 6]</option>
+                    <option value="3" selected>3.0 Mbps[cite: 6]</option>
+                    <option value="5">5.0 Mbps[cite: 6]</option>
+                </select>
             </div>
 
             <button id="btn-request-permission" class="mt-2 w-full bg-[#0a84ff] text-white text-[10px] py-1.5 rounded font-semibold hover:bg-blue-600 transition">
-                <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें
+                <i class="fas fa-microphone mr-1"></i> माइक परमिशन दें[cite: 6]
             </button>
         </div>
     </div>
@@ -183,8 +213,8 @@
     <div class="ipad-dock" id="toolbar">
         <span id="slide-counter" class="text-white text-[9px] font-bold px-1 tracking-wider">1/1</span>
         <div class="dock-divider"></div>
-        <button class="dock-btn" id="dock-prev-btn" title="Previous Image"><i class="fas fa-chevron-left text-[9px]"></i></button>
-        <button class="dock-btn" id="dock-next-btn" title="Next Image"><i class="fas fa-chevron-right text-[9px]"></i></button>
+        <button class="dock-btn" id="dock-prev-btn" title="Previous Slide"><i class="fas fa-chevron-left text-[9px]"></i></button>
+        <button class="dock-btn" id="dock-next-btn" title="Next Slide"><i class="fas fa-chevron-right text-[9px]"></i></button>
         <div class="dock-divider"></div>
         <div class="color-picker-wrapper" title="रंग बदलें (Color)">
             <input type="color" id="color-picker" value="#ffff00">
@@ -195,23 +225,27 @@
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[8px]"></i></button>
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
-        <button class="dock-btn" id="clear-btn" title="Clear Ink" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
+        <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
         <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[8px]"></i></button>
-        <button class="dock-btn" id="save-pdf-btn" title="इमेज और लिखावट सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[8px]"></i></button>
+        <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[8px]"></i></button>
     </div>
 
     <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         let slides = []; let currentSlideIndex = 0; let slideInks = {}; let screenDirty = true;
         
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
+        const pptToPdfBtn = document.getElementById('ppt-to-pdf-btn');
+        const converterUpload = document.getElementById('converter-upload');
         const slideImage = document.getElementById('slide-image');
         const uploadPrompt = document.getElementById('upload-prompt');
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
 
         browseBtn.addEventListener('click', () => uploadInput.click());
+        pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
         const toolbar = document.getElementById('toolbar');
         let isDraggingToolbar = false;
@@ -255,26 +289,130 @@
             }
         });
 
-        uploadInput.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
+        converterUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
             uploadPrompt.style.display = 'none'; 
             loadingScreen.style.display = 'flex';
-            loadingText.innerText = "इमेजेज लोड हो रही हैं...";
-            
+            loadingText.innerText = "PPTX फाइल को PDF में कन्वर्ट किया जा रहा है...";[cite: 6]
+
             try {
-                slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
-                startApp();
+                const arrayBuffer = await file.arrayBuffer();
+                const zip = new JSZip();
+                const zipContent = await zip.loadAsync(arrayBuffer);
+
+                const imageFiles = [];
+                zipContent.forEach((relativePath, zipEntry) => {
+                    if (relativePath.startsWith('ppt/media/') && !zipEntry.dir) {
+                        imageFiles.push(zipEntry);
+                    }
+                });
+
+                if (imageFiles.length === 0) {
+                    throw new Error("इस PPTX में कोई इमेजेज नहीं मिलीं!");[cite: 6]
+                }
+
+                imageFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [1280, 720]
+                });
+
+                for (let i = 0; i < imageFiles.length; i++) {
+                    const imgBlob = await imageFiles[i].async('blob');
+                    const imgDataUrl = await blobToDataURL(imgBlob);
+                    
+                    if (i > 0) pdf.addPage([1280, 720], 'landscape');
+                    pdf.addImage(imgDataUrl, 'JPEG', 0, 0, 1280, 720);
+                }
+
+                const pdfBlob = pdf.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                
+                const a = document.createElement('a');
+                a.href = pdfUrl;
+                a.download = `${file.name.replace(/\.[^/.]+$/, "")}_Converted.pdf`;
+                a.click();
+
+                loadingText.innerText = "PDF slides लोड की जा रही हैं...";[cite: 6]
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+                    const pdfDoc = await loadingTask.promise;
+                    slides = [];
+                    for (let i = 1; i <= pdfDoc.numPages; i++) {
+                        const page = await pdfDoc.getPage(i);
+                        const viewport = page.getViewport({ scale: 2.0 }); 
+                        const canvasTemp = document.createElement('canvas');
+                        canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
+                        const contextTemp = canvasTemp.getContext('2d');
+                        await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                        slides.push(canvasTemp.toDataURL('image/png', 0.9));
+                    }
+                    startApp();
+                };
+                fileReader.readAsArrayBuffer(pdfBlob);
+
             } catch (err) {
-                alert("इमेज इम्पोर्ट करने में समस्या आई।");
+                alert("त्रुटि: " + err.message);[cite: 6]
                 loadingScreen.style.display = 'none'; 
                 uploadPrompt.style.display = 'flex';
             }
         });
 
+        function blobToDataURL(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        uploadInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            uploadPrompt.style.display = 'none'; loadingScreen.style.display = 'flex';
+            
+            try {
+                const firstFile = files[0]; const fileName = firstFile.name.toLowerCase();
+                if (firstFile.type === 'application/pdf' || fileName.endsWith('.pdf')) {
+                    loadingText.innerText = "PDF को High Quality Slides में बदला जा रहा है...";[cite: 6]
+                    const fileReader = new FileReader();
+                    fileReader.onload = async function() {
+                        const typedarray = new Uint8Array(this.result);
+                        const loadingTask = pdfjsLib.getDocument({ data: typedarray });
+                        const pdf = await loadingTask.promise;
+                        slides = [];
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const viewport = page.getViewport({ scale: 2.0 }); 
+                            const canvasTemp = document.createElement('canvas');
+                            canvasTemp.height = viewport.height; canvasTemp.width = viewport.width;
+                            const contextTemp = canvasTemp.getContext('2d');
+                            await page.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                            slides.push(canvasTemp.toDataURL('image/png', 0.9));
+                        }
+                        startApp();
+                    };
+                    fileReader.readAsArrayBuffer(firstFile);
+                } else {
+                    slides = files.sort((a,b) => a.name.localeCompare(b.name)).map(f => URL.createObjectURL(f));
+                    startApp();
+                }
+            } catch (err) {
+                alert("फाइल इम्पोर्ट करने में समस्या आई।");[cite: 6]
+                loadingScreen.style.display = 'none'; uploadPrompt.style.display = 'flex';
+            }
+        });
+
         function startApp() {
-            loadingScreen.style.display = 'none'; 
-            slideImage.style.display = 'block';
+            loadingScreen.style.display = 'none'; slideImage.style.display = 'block';
             document.getElementById('toolbar').style.display = 'flex';
             document.getElementById('recorder-ui').style.display = 'flex';
             document.getElementById('left-nav').style.display = 'flex';
@@ -283,12 +421,21 @@
         }
 
         function loadSlide(index) {
-            saveCurrentInk(); 
-            currentSlideIndex = index; 
-            slideImage.src = slides[currentSlideIndex]; 
+            saveCurrentInk(); currentSlideIndex = index; slideImage.src = slides[currentSlideIndex]; 
             const counterText = `${currentSlideIndex + 1}/${slides.length}`;
             document.getElementById('slide-counter').innerText = counterText; 
             slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
+
+            const savePdfBtn = document.getElementById('save-pdf-btn');
+            if (savePdfBtn) {
+                if (currentSlideIndex === slides.length - 1) {
+                    savePdfBtn.style.border = "1px solid #30d158";
+                    savePdfBtn.style.boxShadow = "0 0 8px rgba(48, 209, 88, 0.6)";
+                } else {
+                    savePdfBtn.style.border = "none";
+                    savePdfBtn.style.boxShadow = "none";
+                }
+            }
         }
 
         const handlePrevSlide = () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); };
@@ -338,6 +485,7 @@
                 });
                 hideUiBtn.innerHTML = '<i class="fas fa-eye text-[8px]"></i>';
                 hideUiBtn.style.color = '#ff453a';
+                hideUiBtn.title = "Show UI";
             } else {
                 leftNav.style.display = 'flex';
                 rightNav.style.display = 'flex';
@@ -347,16 +495,14 @@
                 });
                 hideUiBtn.innerHTML = '<i class="fas fa-eye-slash text-[8px]"></i>';
                 hideUiBtn.style.color = '#0a84ff';
+                hideUiBtn.title = "Hide/Show UI";
             }
             screenDirty = true;
         });
 
-        const canvas = document.getElementById('drawing-canvas'); 
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
         let isDrawing = false, points = [], currentMode = 'smooth', currentColor = '#ffff00';
-        const sizeSlider = document.getElementById('pen-size'); 
-        const colorPicker = document.getElementById('color-picker'); 
-        const colorBtn = document.getElementById('color-btn');
+        const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
         const tools = { 'smooth': smoothPenBtn, 'normal': normalPenBtn, 'eraser': eraserBtn };
 
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; restoreInk(); screenDirty = true; }
@@ -399,7 +545,16 @@
                 ctx.stroke();
                 ctx.beginPath();
                 ctx.moveTo(ep.x, ep.y);
-            } else {
+            } 
+            else if (currentMode === 'smooth') {
+                ctx.lineWidth = baseSize;
+                ctx.strokeStyle = currentColor;
+                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(ep.x, ep.y);
+            } 
+            else { 
                 ctx.lineWidth = baseSize;
                 ctx.strokeStyle = currentColor;
                 ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
@@ -429,13 +584,13 @@
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
             if (slides.length === 0) {
-                alert("कोई इमेज उपलब्ध नहीं है!");
+                alert("कोई स्लाइड उपलब्ध नहीं है!");[cite: 6]
                 return;
             }
 
             saveCurrentInk();
             loadingScreen.style.display = 'flex';
-            loadingText.innerText = "PDF तैयार की जा रही है...";
+            loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";[cite: 6]
 
             try {
                 const { jsPDF } = window.jspdf;
@@ -495,19 +650,17 @@
                     }
                 }
 
-                pdf.save(`Images_With_Writing_${new Date().getTime()}.pdf`);
+                pdf.save(`Class_Notes_With_Inks_${new Date().getTime()}.pdf`);
             } catch (err) {
-                alert("PDF सेव करने में समस्या आई: " + err.message);
+                alert("PDF सेव करने में समस्या आई: " + err.message);[cite: 6]
             } finally {
                 loadingScreen.style.display = 'none';
             }
         });
 
-        const btnSettings = document.getElementById('btn-settings'); 
-        const recSettingsMenu = document.getElementById('rec-settings-menu');
+        const btnSettings = document.getElementById('btn-settings'); const recSettingsMenu = document.getElementById('rec-settings-menu');
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
-        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); 
-        recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
+        window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
         const btnRequestPermission = document.getElementById('btn-request-permission');
         if(btnRequestPermission) {
@@ -515,50 +668,45 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                     stream.getTracks().forEach(track => track.stop());
-                    alert("माइक्रोफोन की अनुमति मिल गई है!");
+                    alert("माइक्रोफोन की अनुमति मिल गई है!");[cite: 6]
                 } catch (err) {
-                    alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
+                    alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");[cite: 6]
                 }
             });
         }
 
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
         
-        const btnStart = document.getElementById('btn-start'); 
-        const btnStop = document.getElementById('btn-stop'); 
-        const timerText = document.getElementById('timer-text');
+        const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
 
         btnStart.addEventListener('click', async () => {
             try {
                 const useMic = document.getElementById('setting-mic').checked;
                 const quality = document.getElementById('setting-quality').value;
+                const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
+                const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
+                
+                // Only 2 Selected Audio Filters
                 const useNoiseRemove = document.getElementById('setting-noise-remove').checked;
                 const useAudioSmooth = document.getElementById('setting-audio-smooth').checked;
 
-                const recCanvas = document.createElement('canvas'); 
-                const recCtx = recCanvas.getContext('2d', { alpha: false });
-                recCanvas.width = quality === 'high' ? 1920 : 1280; 
-                recCanvas.height = quality === 'high' ? 1080 : 720;
+                const recCanvas = document.createElement('canvas'); const recCtx = recCanvas.getContext('2d', { alpha: false });
+                recCanvas.width = quality === 'high' ? 1920 : 1280; recCanvas.height = quality === 'high' ? 1080 : 720;
 
                 let activeSlideImg = new Image();
                 if (slides.length > 0 && slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
 
-                recordingLoopActive = true; 
-                screenDirty = true;
+                recordingLoopActive = true; screenDirty = true;
                 
                 function drawRecordingFrame() {
                     if (!recordingLoopActive) return;
                     if (screenDirty) {
-                        recCtx.fillStyle = '#030305'; 
-                        recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+                        recCtx.fillStyle = '#030305'; recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
                         if (slides.length > 0 && slides[currentSlideIndex]) {
                             if (activeSlideImg.src !== slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
                             if (activeSlideImg.complete && activeSlideImg.naturalWidth) {
-                                let hRatio = recCanvas.width / activeSlideImg.naturalWidth; 
-                                let vRatio = recCanvas.height / activeSlideImg.naturalHeight; 
-                                let ratio = Math.min(hRatio, vRatio);
-                                let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2; 
-                                let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
+                                let hRatio = recCanvas.width / activeSlideImg.naturalWidth; let vRatio = recCanvas.height / activeSlideImg.naturalHeight; let ratio = Math.min(hRatio, vRatio);
+                                let centerShiftX = (recCanvas.width - activeSlideImg.naturalWidth * ratio) / 2; let centerShiftY = (recCanvas.height - activeSlideImg.naturalHeight * ratio) / 2;
                                 recCtx.drawImage(activeSlideImg, 0, 0, activeSlideImg.naturalWidth, activeSlideImg.naturalHeight, centerShiftX, centerShiftY, activeSlideImg.naturalWidth * ratio, activeSlideImg.naturalHeight * ratio);
                             }
                         }
@@ -569,7 +717,7 @@
                 }
                 drawRecordingFrame();
 
-                const videoStream = recCanvas.captureStream(30);
+                const videoStream = recCanvas.captureStream(targetFps);
                 const finalStream = new MediaStream();
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
@@ -587,6 +735,7 @@
 
                     let currentNode = source;
 
+                    // 1. Background Noise Removal Filter (Gentle Noise Gate)
                     if (useNoiseRemove) {
                         const noiseGate = audioCtx.createDynamicsCompressor();
                         noiseGate.threshold.value = -45;
@@ -596,6 +745,7 @@
                         currentNode = noiseGate;
                     }
 
+                    // 2. Audio Smooth & Natural Vocal Filter (Soft Highpass + Gentle Warmth)
                     if (useAudioSmooth) {
                         const highPass = audioCtx.createBiquadFilter();
                         highPass.type = 'highpass';
@@ -616,59 +766,40 @@
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
-                let mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; 
-                let fileExtension = 'mp4';
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    if (MediaRecorder.isTypeSupported('video/mp4')) {
-                        mimeType = 'video/mp4';
-                    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
-                        mimeType = 'video/webm;codecs=vp9,opus'; 
-                        fileExtension = 'webm';
-                    } else {
-                        mimeType = 'video/webm'; 
-                        fileExtension = 'webm';
-                    }
-                }
+                let mimeType = 'video/webm;codecs=vp9,opus'; let fileExtension = 'webm';
+                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4'; } 
+                else if (MediaRecorder.isTypeSupported('video/mp4')) { mimeType = 'video/mp4'; fileExtension = 'mp4'; } 
+                else if (!MediaRecorder.isTypeSupported(mimeType)) { mimeType = 'video/webm'; }
 
-                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: 3000000 });
+                mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: bitrateMbps * 1000000 });
                 recordedChunks = [];
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
 
                 mediaRecorder.onstop = () => {
-                    recordingLoopActive = false; 
-                    clearInterval(timerInterval);
-                    timerText.style.display = 'none'; 
-                    btnStart.style.display = 'flex'; 
-                    btnStop.style.display = 'none';
-                    seconds = 0; 
-                    timerText.innerText = "00:00";
+                    recordingLoopActive = false; clearInterval(timerInterval);
+                    timerText.style.display = 'none'; btnStart.style.display = 'flex'; btnStop.style.display = 'none';
+                    seconds = 0; timerText.innerText = "00:00";
 
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a'); 
-                    a.href = url;
-                    a.download = `Pro_Image_Recording_${new Date().getTime()}.${fileExtension}`;
-                    a.click(); 
-                    URL.revokeObjectURL(url);
+                    const a = document.createElement('a'); a.href = url;
+                    a.download = `Pro_Class_Recording_${new Date().getTime()}.${fileExtension}`;
+                    a.click(); URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
                 };
 
                 mediaRecorder.start(1000); 
-                btnStart.style.display = 'none'; 
-                btnStop.style.display = 'flex'; 
-                timerText.style.display = 'block';
+                btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
                 
                 timerInterval = setInterval(() => {
                     seconds++;
-                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0'); 
-                    const secs = String(seconds % 60).padStart(2, '0');
+                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0'); const secs = String(seconds % 60).padStart(2, '0');
                     timerText.innerText = `${mins}:${secs}`;
                 }, 1000);
 
             } catch (err) {
-                alert("रिकॉर्डिंग शुरू करने में समस्या आई: " + err.message);
-                btnStart.style.display = 'flex'; 
-                btnStop.style.display = 'none';
+                alert("रिकॉर्डिंग शुरू करने में समस्या आई: " + err.message);[cite: 6]
+                btnStart.style.display = 'flex'; btnStop.style.display = 'none';
             }
         });
 
