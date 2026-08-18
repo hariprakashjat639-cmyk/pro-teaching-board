@@ -32,17 +32,12 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
         }
         
-        #drawing-canvas { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; cursor: default; pointer-events: auto; 
-        }
-
-        /* Draggable & Resizable Image Element on Slide */
+        /* Draggable & Resizable Image Element on Slide (Canvas के नीचे ताकि अनलॉक होने पर मूव/रिसाइज हो सके) */
         #slide-custom-image-container {
             position: absolute;
             top: 100px; left: 100px;
             width: 150px; height: 150px;
-            z-index: 15;
+            z-index: 5;
             display: none;
             resize: both;
             overflow: hidden;
@@ -54,12 +49,19 @@
         #slide-custom-image-container.locked {
             border: none;
             resize: none;
+            pointer-events: none; /* लॉक होने पर टच/माउस इवेंट कैनवास पर चले जाएंगे ताकि ऊपर लिख सकें */
         }
         #slide-custom-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
             pointer-events: none;
+        }
+
+        /* Drawing canvas हमेशा ऊपर रहेगा ताकि लॉक इमेज या स्लाइड पर कहीं भी लिख सकें */
+        #drawing-canvas { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; cursor: default; pointer-events: auto; 
         }
         
         #upload-prompt {
@@ -275,6 +277,15 @@
         let nodePenSlots = ['#ffff00', '#00ffcc', '#ff3b30', '#30d158'];
         let currentNodeSlotIndex = 0;
 
+        let toolSettings = {
+            'smooth': { color: '#ffff00', size: 6 },
+            'normal': { color: '#00ffcc', size: 4 },
+            'node': { color: '#ff3b30', size: 8 },
+            'eraser': { color: '#000000', size: 40 }
+        };
+        let currentMode = 'smooth';
+        let currentColor = '#ffff00';
+
         const browseBtn = document.getElementById('browse-btn');
         const uploadInput = document.getElementById('slide-upload');
         const pptToPdfBtn = document.getElementById('ppt-to-pdf-btn');
@@ -284,7 +295,6 @@
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
 
-        // Custom Image elements
         const addImageBtn = document.getElementById('add-image-btn');
         const lockImageBtn = document.getElementById('lock-image-btn');
         const customImageUpload = document.getElementById('custom-image-upload');
@@ -607,7 +617,7 @@
         });
 
         const canvas = document.getElementById('drawing-canvas'); const ctx = canvas.getContext('2d');
-        let isDrawing = false, lastX = 0, lastY = 0, currentMode = 'smooth', currentColor = '#ffff00';
+        let isDrawing = false, lastX = 0, lastY = 0;
         const sizeSlider = document.getElementById('pen-size'); const colorPicker = document.getElementById('color-picker'); const colorBtn = document.getElementById('color-btn');
         const tools = { 'smooth': smoothPenBtn, 'normal': normalPenBtn, 'node': nodePenBtn, 'eraser': eraserBtn };
 
@@ -622,18 +632,20 @@
         window.addEventListener('resize', resizeCanvas);
 
         function setActiveTool(mode) {
+            toolSettings[currentMode].color = currentColor;
+            toolSettings[currentMode].size = parseInt(sizeSlider.value);
+
             currentMode = mode; 
             Object.values(tools).forEach(btn => btn.classList.remove('active')); 
             if(tools[mode]) tools[mode].classList.add('active');
-            if(mode === 'eraser') sizeSlider.value = 40; 
-            else if(mode === 'node') {
-                sizeSlider.value = 8;
-                currentColor = nodePenSlots[currentNodeSlotIndex];
-                colorBtn.style.background = currentColor;
-                colorPicker.value = currentColor;
+
+            currentColor = toolSettings[currentMode].color;
+            sizeSlider.value = toolSettings[currentMode].size;
+            colorPicker.value = currentColor;
+            colorBtn.style.background = currentColor;
+
+            if(mode === 'node') {
                 currentNodeSlotIndex = (currentNodeSlotIndex + 1) % nodePenSlots.length;
-            } else {
-                sizeSlider.value = 6;
             }
         }
         setActiveTool('smooth');
@@ -641,9 +653,14 @@
         colorPicker.addEventListener('input', (e) => { 
             currentColor = e.target.value; 
             colorBtn.style.background = currentColor; 
+            toolSettings[currentMode].color = currentColor;
             if(currentMode === 'node') {
                 nodePenSlots[currentNodeSlotIndex] = currentColor;
             }
+        });
+
+        sizeSlider.addEventListener('input', (e) => {
+            toolSettings[currentMode].size = parseInt(e.target.value);
         });
 
         tools['smooth'].addEventListener('click', () => setActiveTool('smooth')); 
@@ -657,7 +674,6 @@
             screenDirty = true; 
         });
 
-        // 100% Responsive & Instant Pointer Drawing Logic for All Pens & Brushes
         canvas.addEventListener('pointerdown', (e) => {
             isDrawing = true;
             try { canvas.setPointerCapture(e.pointerId); } catch(err){}
@@ -679,7 +695,6 @@
             } else {
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.strokeStyle = currentColor;
-                // Draw initial dot for taps
                 ctx.fillStyle = currentColor;
                 ctx.beginPath();
                 ctx.arc(lastX, lastY, baseSize / 2, 0, Math.PI * 2);
@@ -790,7 +805,6 @@
                         });
                     }
 
-                    // Render custom image if present
                     if (customImgContainer.style.display !== 'none' && customImgElement.src) {
                         await new Promise((resolve) => {
                             const customImg = new Image();
@@ -900,7 +914,6 @@
                             }
                         }
 
-                        // Draw custom image in recording frame if active
                         if (customImgContainer.style.display !== 'none' && customImgElement.complete && customImgElement.src) {
                             const rect = customImgContainer.getBoundingClientRect();
                             const scaleX = recCanvas.width / window.innerWidth;
