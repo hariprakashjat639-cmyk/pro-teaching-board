@@ -6,7 +6,6 @@
     <title>Pro EduCreator Studio - Clean Audio Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PDF.js & JSZip for PPTX/PDF Conversion -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -37,12 +36,12 @@
             z-index: 10; cursor: default; 
         }
 
-        /* Movable Floating Icon Style */
+        /* Fixed Movable Floating Icon Style */
         #movable-icon {
             position: absolute; bottom: 80px; left: 30px; width: 60px; height: 60px;
-            z-index: 15; cursor: move; touch-action: none; display: none;
-            background: rgba(255, 255, 255, 0.1); border: 2px dashed rgba(255, 255, 255, 0.5);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            z-index: 15; cursor: move; touch-action: none;
+            background: rgba(255, 255, 255, 0.15); border: 2px dashed rgba(255, 255, 255, 0.7);
+            border-radius: 10px; display: none; align-items: center; justify-content: center;
             backdrop-filter: blur(5px);
         }
         #movable-icon img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; pointer-events: none; }
@@ -169,7 +168,6 @@
         <button class="rec-circle-btn" id="btn-stop" title="Stop & Save"><i class="fas fa-stop"></i></button>
         <button class="rec-circle-btn" id="btn-settings" title="Recording Settings"><i class="fas fa-cog"></i></button>
 
-        <!-- RECORDING SETTINGS & CLEAN AUDIO MENU -->
         <div id="rec-settings-menu">
             <div class="text-[11px] font-bold text-white border-b border-white/10 pb-1 mb-1">रिकॉर्डर सेटिंग्स</div>
             <div class="rec-setting-item">
@@ -184,30 +182,23 @@
                 </select>
             </div>
             
-            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-sliders"></i> ऑडियो फिल्टर्स (केवल 2 जरूरी)</div>
-            <div class="setting-desc">शुरुआत में सब ऑफ रहता है (Raw Audio)। जरूरत पड़ने पर टिक करें।</div>
-
-            <!-- Filter 1: Background Noise Removal -->
+            <div class="text-[11px] font-bold text-[#0a84ff] border-t border-white/10 pt-2 mt-1"><i class="fas fa-sliders"></i> ऑडियो फिल्टर्स</div>
             <div class="rec-setting-item">
                 <span class="font-semibold text-blue-400">Background Noise Remove:</span>
                 <input type="checkbox" id="setting-noise-remove">
             </div>
-            <div class="setting-desc">पंखे या आस-पास के बैकग्राउंड शोर को हटाकर आवाज़ साफ़ करता है।</div>
-
-            <!-- Filter 2: Audio Smooth & Vocal Natural -->
             <div class="rec-setting-item">
                 <span class="font-semibold text-green-400">Audio Smooth & Natural:</span>
                 <input type="checkbox" id="setting-audio-smooth">
             </div>
-            <div class="setting-desc">आवाज़ को बिना बदले बेहद नेचुरल, सॉफ्ट और क्रिस्प बनाता है।</div>
 
             <div class="text-[11px] font-bold text-gray-400 border-t border-white/10 pt-2 mt-1">वीडियो एडवांस ऑप्शंस</div>
             <div class="rec-setting-item">
                 <span>फ्रेम रेट (FPS):</span>
                 <select id="setting-fps">
-                    <option value="15">15 FPS (Ultra Low CPU)</option>
-                    <option value="30" selected>30 FPS (Standard)</option>
-                    <option value="60">60 FPS (Smooth)</option>
+                    <option value="15">15 FPS</option>
+                    <option value="30" selected>30 FPS</option>
+                    <option value="60">60 FPS</option>
                 </select>
             </div>
             <div class="rec-setting-item">
@@ -232,7 +223,7 @@
         <button class="dock-btn" id="dock-prev-btn" title="Previous Slide"><i class="fas fa-chevron-left text-[9px]"></i></button>
         <button class="dock-btn" id="dock-next-btn" title="Next Slide"><i class="fas fa-chevron-right text-[9px]"></i></button>
         <div class="dock-divider"></div>
-        <div class="color-picker-wrapper" title="रंग बदलें (Color)">
+        <div class="color-picker-wrapper" title="रंग बदलें">
             <input type="color" id="color-picker" value="#ffff00">
             <button class="dock-btn" id="color-btn" style="background: #ffff00; color: black; border: none;"><i class="fas fa-palette text-[7px]"></i></button>
         </div>
@@ -241,13 +232,12 @@
         <button class="dock-btn" id="eraser-btn" title="Eraser"><i class="fas fa-eraser text-[8px]"></i></button>
         <input type="range" id="pen-size" min="2" max="50" value="6" title="Pen Size" class="dock-slider">
         <div class="dock-divider"></div>
-        <!-- Add Icon Button -->
-        <button class="dock-btn" id="add-icon-btn" title="चोट्टी आइकन इमेज जोड़ें" style="color: #ff9f0a;"><i class="fas fa-image text-[8px]"></i></button>
+        <button class="dock-btn" id="add-icon-btn" title="आइकन इमेज जोड़ें" style="color: #ff9f0a;"><i class="fas fa-image text-[8px]"></i></button>
         <input type="file" id="icon-upload-input" accept="image/*" style="display: none;">
         <button class="dock-btn" id="clear-btn" title="Clear Slide" style="color: #ff453a;"><i class="fas fa-trash-alt text-[8px]"></i></button>
         <button class="dock-btn" id="fullscreen-btn" title="Full Screen"><i class="fas fa-expand text-[8px]"></i></button>
         <button class="dock-btn" id="hide-ui-btn" title="Hide/Show UI" style="color: #0a84ff;"><i class="fas fa-eye-slash text-[8px]"></i></button>
-        <button class="dock-btn" id="save-pdf-btn" title="चित्रण सहित PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[8px]"></i></button>
+        <button class="dock-btn" id="save-pdf-btn" title="PDF सेव करें" style="color: #30d158;"><i class="fas fa-file-pdf text-[8px]"></i></button>
     </div>
 
     <script>
@@ -266,7 +256,7 @@
         browseBtn.addEventListener('click', () => uploadInput.click());
         pptToPdfBtn.addEventListener('click', () => converterUpload.click());
 
-        // Movable Icon Drag Logic
+        // Fixed Movable Icon Drag Logic
         const movableIcon = document.getElementById('movable-icon');
         const movableIconImg = document.getElementById('movable-icon-img');
         const addIconBtn = document.getElementById('add-icon-btn');
@@ -362,7 +352,6 @@
         converterUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             uploadPrompt.style.display = 'none'; 
             loadingScreen.style.display = 'flex';
             loadingText.innerText = "PPTX फाइल को PDF में कन्वर्ट किया जा रहा है...";
@@ -379,23 +368,15 @@
                     }
                 });
 
-                if (imageFiles.length === 0) {
-                    throw new Error("इस PPTX में कोई इमेजेज नहीं मिलीं!");
-                }
-
+                if (imageFiles.length === 0) throw new Error("इस PPTX में कोई इमेजेज नहीं मिलीं!");
                 imageFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({
-                    orientation: 'landscape',
-                    unit: 'px',
-                    format: [1280, 720]
-                });
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1280, 720] });
 
                 for (let i = 0; i < imageFiles.length; i++) {
                     const imgBlob = await imageFiles[i].async('blob');
                     const imgDataUrl = await blobToDataURL(imgBlob);
-                    
                     if (i > 0) pdf.addPage([1280, 720], 'landscape');
                     pdf.addImage(imgDataUrl, 'JPEG', 0, 0, 1280, 720);
                 }
@@ -427,7 +408,6 @@
                     startApp();
                 };
                 fileReader.readAsArrayBuffer(pdfBlob);
-
             } catch (err) {
                 alert("त्रुटि: " + err.message);
                 loadingScreen.style.display = 'none'; 
@@ -487,7 +467,6 @@
             document.getElementById('recorder-ui').style.display = 'flex';
             document.getElementById('left-nav').style.display = 'flex';
             document.getElementById('right-nav').style.display = 'flex';
-            movableIcon.style.display = 'flex';
             loadSlide(0);
         }
 
@@ -496,17 +475,6 @@
             const counterText = `${currentSlideIndex + 1}/${slides.length}`;
             document.getElementById('slide-counter').innerText = counterText; 
             slideImage.onload = () => { resizeCanvas(); restoreInk(); screenDirty = true; }; 
-
-            const savePdfBtn = document.getElementById('save-pdf-btn');
-            if (savePdfBtn) {
-                if (currentSlideIndex === slides.length - 1) {
-                    savePdfBtn.style.border = "1px solid #30d158";
-                    savePdfBtn.style.boxShadow = "0 0 8px rgba(48, 209, 88, 0.6)";
-                } else {
-                    savePdfBtn.style.border = "none";
-                    savePdfBtn.style.boxShadow = "none";
-                }
-            }
         }
 
         const handlePrevSlide = () => { if (currentSlideIndex > 0) loadSlide(currentSlideIndex - 1); };
@@ -516,11 +484,6 @@
         document.getElementById('right-nav').addEventListener('click', handleNextSlide);
         document.getElementById('dock-prev-btn').addEventListener('click', handlePrevSlide);
         document.getElementById('dock-next-btn').addEventListener('click', handleNextSlide);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === 'PageDown') { handleNextSlide(); }
-            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { handlePrevSlide(); }
-        });
 
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         fullscreenBtn.addEventListener('click', () => {
@@ -534,9 +497,6 @@
         const eraserBtn = document.getElementById('eraser-btn');
         const normalPenBtn = document.getElementById('normal-pen-btn');
         const smoothPenBtn = document.getElementById('smooth-pen-btn');
-        const slideCounter = document.getElementById('slide-counter');
-        const dockPrevBtn = document.getElementById('dock-prev-btn');
-        const dockNextBtn = document.getElementById('dock-next-btn');
         let isUiHidden = false;
 
         hideUiBtn.addEventListener('click', () => {
@@ -546,27 +506,17 @@
             const recorderUi = document.getElementById('recorder-ui');
             
             if (isUiHidden) {
-                leftNav.style.display = 'none';
-                rightNav.style.display = 'none';
-                recorderUi.style.display = 'none';
+                leftNav.style.display = 'none'; rightNav.style.display = 'none'; recorderUi.style.display = 'none';
                 Array.from(toolbar.children).forEach(child => {
-                    if (child !== hideUiBtn && child !== slideCounter && child !== dockPrevBtn && child !== dockNextBtn && child !== smoothPenBtn && child !== normalPenBtn && child !== eraserBtn && !child.classList.contains('dock-divider')) {
+                    if (child !== hideUiBtn && child !== document.getElementById('slide-counter') && child !== document.getElementById('dock-prev-btn') && child !== document.getElementById('dock-next-btn') && child !== smoothPenBtn && child !== normalPenBtn && child !== eraserBtn && !child.classList.contains('dock-divider')) {
                         child.style.display = 'none';
                     }
                 });
                 hideUiBtn.innerHTML = '<i class="fas fa-eye text-[8px]"></i>';
-                hideUiBtn.style.color = '#ff453a';
-                hideUiBtn.title = "Show UI";
             } else {
-                leftNav.style.display = 'flex';
-                rightNav.style.display = 'flex';
-                recorderUi.style.display = 'flex';
-                Array.from(toolbar.children).forEach(child => {
-                    child.style.display = '';
-                });
+                leftNav.style.display = 'flex'; rightNav.style.display = 'flex'; recorderUi.style.display = 'flex';
+                Array.from(toolbar.children).forEach(child => { child.style.display = ''; });
                 hideUiBtn.innerHTML = '<i class="fas fa-eye-slash text-[8px]"></i>';
-                hideUiBtn.style.color = '#0a84ff';
-                hideUiBtn.title = "Hide/Show UI";
             }
             screenDirty = true;
         });
@@ -600,36 +550,23 @@
 
             let baseSize = parseInt(sizeSlider.value);
             const cp = points[points.length - 2];
-            const ep = { 
-                x: (points[points.length - 2].x + points[points.length - 1].x) / 2, 
-                y: (points[points.length - 2].y + points[points.length - 1].y) / 2 
-            };
+            const ep = { x: (points[points.length - 2].x + points[points.length - 1].x) / 2, y: (points[points.length - 2].y + points[points.length - 1].y) / 2 };
 
             ctx.globalCompositeOperation = 'source-over';
             ctx.shadowBlur = 0;
 
             if (currentMode === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = baseSize;
-                ctx.strokeStyle = 'rgba(0,0,0,1)';
-                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(ep.x, ep.y);
-            } 
-            else if (currentMode === 'smooth') {
-                ctx.lineWidth = baseSize;
-                ctx.strokeStyle = currentColor;
-                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(ep.x, ep.y);
-            } 
-            else { 
-                ctx.lineWidth = baseSize;
-                ctx.strokeStyle = currentColor;
-                ctx.lineTo(e.clientX, e.clientY);
-                ctx.stroke();
+                ctx.lineWidth = baseSize; ctx.strokeStyle = 'rgba(0,0,0,1)';
+                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(ep.x, ep.y);
+            } else if (currentMode === 'smooth') {
+                ctx.lineWidth = baseSize; ctx.strokeStyle = currentColor;
+                ctx.quadraticCurveTo(cp.x, cp.y, ep.x, ep.y); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(ep.x, ep.y);
+            } else { 
+                ctx.lineWidth = baseSize; ctx.strokeStyle = currentColor;
+                ctx.lineTo(e.clientX, e.clientY); ctx.stroke();
             }
             screenDirty = true;
         });
@@ -638,65 +575,45 @@
 
         function saveCurrentInk() { if(slides.length > 0) slideInks[currentSlideIndex] = canvas.toDataURL(); }
         function restoreInk() { 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            ctx.shadowBlur = 0; 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.shadowBlur = 0; 
             if (slideInks[currentSlideIndex]) { 
-                let img = new Image(); 
-                img.src = slideInks[currentSlideIndex]; 
-                img.onload = () => { 
-                    ctx.drawImage(img, 0, 0); 
-                    screenDirty = true; 
-                }; 
+                let img = new Image(); img.src = slideInks[currentSlideIndex]; 
+                img.onload = () => { ctx.drawImage(img, 0, 0); screenDirty = true; }; 
             } 
         }
 
         const savePdfBtn = document.getElementById('save-pdf-btn');
         savePdfBtn.addEventListener('click', async () => {
-            if (slides.length === 0) {
-                alert("कोई स्लाइड उपलब्ध नहीं है!");
-                return;
-            }
-
-            saveCurrentInk();
-            loadingScreen.style.display = 'flex';
-            loadingText.innerText = "चित्रण सहित पूरी PDF तैयार की जा रही है...";
+            if (slides.length === 0) return;
+            saveCurrentInk(); loadingScreen.style.display = 'flex';
+            loadingText.innerText = "PDF तैयार की जा रही है...";
 
             try {
-                const { jsPDF } = window.jspdf;
-                let pdf = null;
-
+                const { jsPDF } = window.jspdf; let pdf = null;
                 for (let i = 0; i < slides.length; i++) {
                     const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = canvas.width || 1280;
-                    tempCanvas.height = canvas.height || 720;
+                    tempCanvas.width = canvas.width || 1280; tempCanvas.height = canvas.height || 720;
                     const tempCtx = tempCanvas.getContext('2d');
-
-                    tempCtx.fillStyle = '#030305';
-                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    tempCtx.fillStyle = '#030305'; tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
                     if (slides[i]) {
                         await new Promise((resolve) => {
-                            const img = new Image();
-                            img.crossOrigin = "anonymous";
+                            const img = new Image(); img.crossOrigin = "anonymous";
                             img.onload = () => {
-                                let hRatio = tempCanvas.width / img.naturalWidth;
-                                let vRatio = tempCanvas.height / img.naturalHeight;
+                                let hRatio = tempCanvas.width / img.naturalWidth; let vRatio = tempCanvas.height / img.naturalHeight;
                                 let ratio = Math.min(hRatio, vRatio);
                                 let centerShiftX = (tempCanvas.width - img.naturalWidth * ratio) / 2;
                                 let centerShiftY = (tempCanvas.height - img.naturalHeight * ratio) / 2;
                                 tempCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, centerShiftX, centerShiftY, img.naturalWidth * ratio, img.naturalHeight * ratio);
                                 resolve();
                             };
-                            img.onerror = resolve;
-                            img.src = slides[i];
+                            img.onerror = resolve; img.src = slides[i];
                         });
                     }
 
-                    // Render Movable Icon on PDF if visible
                     if (movableIcon.style.display !== 'none') {
                         await new Promise((resolve) => {
-                            const iconImg = new Image();
-                            iconImg.crossOrigin = "anonymous";
+                            const iconImg = new Image(); iconImg.crossOrigin = "anonymous";
                             iconImg.onload = () => {
                                 const rect = movableIcon.getBoundingClientRect();
                                 const scaleX = tempCanvas.width / window.innerWidth;
@@ -704,41 +621,30 @@
                                 tempCtx.drawImage(iconImg, rect.left * scaleX, rect.top * scaleY, rect.width * scaleX, rect.height * scaleY);
                                 resolve();
                             };
-                            iconImg.onerror = resolve;
-                            iconImg.src = movableIconImg.src;
+                            iconImg.onerror = resolve; iconImg.src = movableIconImg.src;
                         });
                     }
 
                     if (slideInks[i]) {
                         await new Promise((resolve) => {
                             const inkImg = new Image();
-                            inkImg.onload = () => {
-                                tempCtx.drawImage(inkImg, 0, 0);
-                                resolve();
-                            };
-                            inkImg.onerror = resolve;
-                            inkImg.src = slideInks[i];
+                            inkImg.onload = () => { tempCtx.drawImage(inkImg, 0, 0); resolve(); };
+                            inkImg.onerror = resolve; inkImg.src = slideInks[i];
                         });
                     }
 
                     const pageImgData = tempCanvas.toDataURL('image/jpeg', 0.95);
-
                     if (i === 0) {
-                        pdf = new jsPDF({
-                            orientation: tempCanvas.width >= tempCanvas.height ? 'landscape' : 'portrait',
-                            unit: 'px',
-                            format: [tempCanvas.width, tempCanvas.height]
-                        });
+                        pdf = new jsPDF({ orientation: tempCanvas.width >= tempCanvas.height ? 'landscape' : 'portrait', unit: 'px', format: [tempCanvas.width, tempCanvas.height] });
                         pdf.addImage(pageImgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                     } else {
                         pdf.addPage([tempCanvas.width, tempCanvas.height], tempCanvas.width >= tempCanvas.height ? 'landscape' : 'portrait');
                         pdf.addImage(pageImgData, 'JPEG', 0, 0, tempCanvas.width, tempCanvas.height);
                     }
                 }
-
-                pdf.save(`Class_Notes_With_Inks_${new Date().getTime()}.pdf`);
+                pdf.save(`Class_Notes_${new Date().getTime()}.pdf`);
             } catch (err) {
-                alert("PDF सेव करने में समस्या आई: " + err.message);
+                alert("त्रुटि: " + err.message);
             } finally {
                 loadingScreen.style.display = 'none';
             }
@@ -748,21 +654,7 @@
         btnSettings.addEventListener('click', (e) => { e.stopPropagation(); recSettingsMenu.style.display = recSettingsMenu.style.display === 'flex' ? 'none' : 'flex'; });
         window.addEventListener('click', () => { recSettingsMenu.style.display = 'none'; }); recSettingsMenu.addEventListener('click', (e) => e.stopPropagation());
 
-        const btnRequestPermission = document.getElementById('btn-request-permission');
-        if(btnRequestPermission) {
-            btnRequestPermission.addEventListener('click', async () => {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                    stream.getTracks().forEach(track => track.stop());
-                    alert("माइक्रोफोन की अनुमति मिल गई है!");
-                } catch (err) {
-                    alert("माइक्रोफोन की अनुमति नहीं मिल सकी।");
-                }
-            });
-        }
-
         let mediaRecorder; let recordedChunks = []; let timerInterval, seconds = 0; let recordingLoopActive = false;
-        
         const btnStart = document.getElementById('btn-start'); const btnStop = document.getElementById('btn-stop'); const timerText = document.getElementById('timer-text');
 
         btnStart.addEventListener('click', async () => {
@@ -771,7 +663,6 @@
                 const quality = document.getElementById('setting-quality').value;
                 const targetFps = parseInt(document.getElementById('setting-fps').value) || 30;
                 const bitrateMbps = parseFloat(document.getElementById('setting-bitrate').value) || 3;
-                
                 const useNoiseRemove = document.getElementById('setting-noise-remove').checked;
                 const useAudioSmooth = document.getElementById('setting-audio-smooth').checked;
 
@@ -782,7 +673,6 @@
                 if (slides.length > 0 && slides[currentSlideIndex]) activeSlideImg.src = slides[currentSlideIndex];
 
                 recordingLoopActive = true; screenDirty = true;
-                
                 let activeIconImg = new Image();
                 if(movableIcon.style.display !== 'none') activeIconImg.src = movableIconImg.src;
 
@@ -799,7 +689,6 @@
                             }
                         }
 
-                        // Draw Movable Icon in Recording
                         if (movableIcon.style.display !== 'none' && activeIconImg.complete) {
                             const rect = movableIcon.getBoundingClientRect();
                             const scaleX = recCanvas.width / window.innerWidth;
@@ -819,52 +708,29 @@
                 videoStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
 
                 if (useMic) {
-                    const micStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: false }, 
-                        video: false 
-                    });
-
+                    const micStream = await navigator.mediaDevices.getUserMedia({ audio: { noiseSuppression: true, echoCancellation: true }, video: false });
                     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     if (audioCtx.state === 'suspended') await audioCtx.resume();
-                    
                     const source = audioCtx.createMediaStreamSource(micStream);
                     const destination = audioCtx.createMediaStreamDestination();
-
                     let currentNode = source;
 
                     if (useNoiseRemove) {
                         const noiseGate = audioCtx.createDynamicsCompressor();
-                        noiseGate.threshold.value = -45;
-                        noiseGate.knee.value = 12;
-                        noiseGate.ratio.value = 4;
-                        currentNode.connect(noiseGate);
-                        currentNode = noiseGate;
+                        noiseGate.threshold.value = -45; noiseGate.ratio.value = 4;
+                        currentNode.connect(noiseGate); currentNode = noiseGate;
                     }
-
                     if (useAudioSmooth) {
-                        const highPass = audioCtx.createBiquadFilter();
-                        highPass.type = 'highpass';
-                        highPass.frequency.value = 75;
-
-                        const vocalEq = audioCtx.createBiquadFilter();
-                        vocalEq.type = 'peaking';
-                        vocalEq.frequency.value = 2000;
-                        vocalEq.gain.value = 2.5;
-                        vocalEq.Q.value = 1.0;
-
-                        currentNode.connect(highPass);
-                        highPass.connect(vocalEq);
-                        currentNode = vocalEq;
+                        const highPass = audioCtx.createBiquadFilter(); highPass.type = 'highpass'; highPass.frequency.value = 75;
+                        const vocalEq = audioCtx.createBiquadFilter(); vocalEq.type = 'peaking'; vocalEq.frequency.value = 2000; vocalEq.gain.value = 2.5;
+                        currentNode.connect(highPass); highPass.connect(vocalEq); currentNode = vocalEq;
                     }
-
                     currentNode.connect(destination);
                     destination.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
                 }
 
                 let mimeType = 'video/webm;codecs=vp9,opus'; let fileExtension = 'webm';
-                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4'; } 
-                else if (MediaRecorder.isTypeSupported('video/mp4')) { mimeType = 'video/mp4'; fileExtension = 'mp4'; } 
-                else if (!MediaRecorder.isTypeSupported(mimeType)) { mimeType = 'video/webm'; }
+                if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,aac')) { mimeType = 'video/mp4;codecs=avc1.42E01E,aac'; fileExtension = 'mp4'; }
 
                 mediaRecorder = new MediaRecorder(finalStream, { mimeType: mimeType, videoBitsPerSecond: bitrateMbps * 1000000 });
                 recordedChunks = [];
@@ -874,34 +740,29 @@
                     recordingLoopActive = false; clearInterval(timerInterval);
                     timerText.style.display = 'none'; btnStart.style.display = 'flex'; btnStop.style.display = 'none';
                     seconds = 0; timerText.innerText = "00:00";
-
                     const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); a.href = url;
-                    a.download = `Pro_Class_Recording_${new Date().getTime()}.${fileExtension}`;
+                    a.download = `Class_Recording_${new Date().getTime()}.${fileExtension}`;
                     a.click(); URL.revokeObjectURL(url);
                     finalStream.getTracks().forEach(track => track.stop());
                 };
 
                 mediaRecorder.start(1000); 
                 btnStart.style.display = 'none'; btnStop.style.display = 'flex'; timerText.style.display = 'block';
-                
                 timerInterval = setInterval(() => {
                     seconds++;
                     const mins = String(Math.floor(seconds / 60)).padStart(2, '0'); const secs = String(seconds % 60).padStart(2, '0');
                     timerText.innerText = `${mins}:${secs}`;
                 }, 1000);
-
             } catch (err) {
-                alert("रिकॉर्डिंग शुरू करने में समस्या आई: " + err.message);
+                alert("रिकॉर्डिंग त्रुटि: " + err.message);
                 btnStart.style.display = 'flex'; btnStop.style.display = 'none';
             }
         });
 
         btnStop.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
         });
     </script>
 </body>
