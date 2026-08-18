@@ -32,12 +32,17 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
         }
         
-        /* Draggable & Resizable Image Element on Slide (Canvas के नीचे ताकि अनलॉक होने पर मूव/रिसाइज हो सके) */
+        #drawing-canvas { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; cursor: default; pointer-events: auto; 
+        }
+
+        /* Draggable & Resizable Image Element on Slide */
         #slide-custom-image-container {
             position: absolute;
             top: 100px; left: 100px;
             width: 150px; height: 150px;
-            z-index: 5;
+            z-index: 15;
             display: none;
             resize: both;
             overflow: hidden;
@@ -49,19 +54,12 @@
         #slide-custom-image-container.locked {
             border: none;
             resize: none;
-            pointer-events: none; /* लॉक होने पर टच/माउस इवेंट कैनवास पर चले जाएंगे ताकि ऊपर लिख सकें */
         }
         #slide-custom-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
             pointer-events: none;
-        }
-
-        /* Drawing canvas हमेशा ऊपर रहेगा ताकि लॉक इमेज या स्लाइड पर कहीं भी लिख सकें */
-        #drawing-canvas { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 10; cursor: default; pointer-events: auto; 
         }
         
         #upload-prompt {
@@ -277,6 +275,7 @@
         let nodePenSlots = ['#ffff00', '#00ffcc', '#ff3b30', '#30d158'];
         let currentNodeSlotIndex = 0;
 
+        // --- पेन स्टेट (हर पेन का अलग कलर और साइज़ याद रखने के लिए) ---
         let toolSettings = {
             'smooth': { color: '#ffff00', size: 6 },
             'normal': { color: '#00ffcc', size: 4 },
@@ -295,6 +294,7 @@
         const loadingScreen = document.getElementById('loading-screen');
         const loadingText = document.getElementById('loading-text');
 
+        // Custom Image elements
         const addImageBtn = document.getElementById('add-image-btn');
         const lockImageBtn = document.getElementById('lock-image-btn');
         const customImageUpload = document.getElementById('custom-image-upload');
@@ -631,7 +631,9 @@
         }
         window.addEventListener('resize', resizeCanvas);
 
+        // --- टूल स्विच करने पर उस टूल की सेटिंग्स (कलर और साइज़) लोड करना ---
         function setActiveTool(mode) {
+            // वर्तमान टूल की सेटिंग्स सेव करें
             toolSettings[currentMode].color = currentColor;
             toolSettings[currentMode].size = parseInt(sizeSlider.value);
 
@@ -639,6 +641,7 @@
             Object.values(tools).forEach(btn => btn.classList.remove('active')); 
             if(tools[mode]) tools[mode].classList.add('active');
 
+            // नए टूल की सेव की हुई सेटिंग्स रिस्टोर करें
             currentColor = toolSettings[currentMode].color;
             sizeSlider.value = toolSettings[currentMode].size;
             colorPicker.value = currentColor;
@@ -650,6 +653,7 @@
         }
         setActiveTool('smooth');
 
+        // कलर बदलने पर करंट टूल में अपडेट करना
         colorPicker.addEventListener('input', (e) => { 
             currentColor = e.target.value; 
             colorBtn.style.background = currentColor; 
@@ -659,6 +663,7 @@
             }
         });
 
+        // साइज स्लाइडर बदलने पर करंट टूल में अपडेट करना
         sizeSlider.addEventListener('input', (e) => {
             toolSettings[currentMode].size = parseInt(e.target.value);
         });
@@ -674,6 +679,7 @@
             screenDirty = true; 
         });
 
+        // 100% Responsive & Instant Pointer Drawing Logic for All Pens & Brushes
         canvas.addEventListener('pointerdown', (e) => {
             isDrawing = true;
             try { canvas.setPointerCapture(e.pointerId); } catch(err){}
@@ -695,6 +701,7 @@
             } else {
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.strokeStyle = currentColor;
+                // Draw initial dot for taps
                 ctx.fillStyle = currentColor;
                 ctx.beginPath();
                 ctx.arc(lastX, lastY, baseSize / 2, 0, Math.PI * 2);
@@ -805,6 +812,7 @@
                         });
                     }
 
+                    // Render custom image if present
                     if (customImgContainer.style.display !== 'none' && customImgElement.src) {
                         await new Promise((resolve) => {
                             const customImg = new Image();
@@ -914,6 +922,7 @@
                             }
                         }
 
+                        // Draw custom image in recording frame if active
                         if (customImgContainer.style.display !== 'none' && customImgElement.complete && customImgElement.src) {
                             const rect = customImgContainer.getBoundingClientRect();
                             const scaleX = recCanvas.width / window.innerWidth;
